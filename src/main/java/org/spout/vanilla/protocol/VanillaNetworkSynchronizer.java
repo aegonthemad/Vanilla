@@ -496,4 +496,13 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		queuedInventoryUpdates.clear();
 	}
 
+	@Override
+	public Message getChatMessage(String message) {
+		return new ChatMessage(message);
+	}
+
+	@Override
+	public Message getKickMessage(String message) {
+		return new KickMessage(message);
+	}
 }
