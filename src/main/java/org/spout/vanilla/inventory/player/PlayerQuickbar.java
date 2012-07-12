@@ -26,19 +26,24 @@
  */
 package org.spout.vanilla.inventory.player;
 
+import org.spout.api.Spout;
 import org.spout.api.inventory.InventoryBase;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.inventory.special.InventoryRange;
 import org.spout.api.inventory.special.InventorySlot;
+import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.event.player.PlayerSlotChangeEvent;
 
 public class PlayerQuickbar extends InventoryRange {
 	private static final long serialVersionUID = 1L;
 	public static final int QUICKBAR_SIZE = 9;
 	private final InventorySlot[] slots;
+	private final VanillaPlayer owner;
 	private int currentSlot = 0;
 
-	public PlayerQuickbar(InventoryBase main) {
+	public PlayerQuickbar(VanillaPlayer owner, InventoryBase main) {
 		super(main, 0, QUICKBAR_SIZE);
+		this.owner = owner;
 		this.slots = new InventorySlot[QUICKBAR_SIZE];
 		for (int i = 0; i < this.slots.length; i++) {
 			this.slots[i] = new InventorySlot(this, i);
@@ -53,16 +58,16 @@ public class PlayerQuickbar extends InventoryRange {
 	public InventorySlot getSlotInventory(int slot) {
 		return this.slots[slot];
 	}
-	
+
 	/**
 	 * Sets the quickbar slot index the player currently has selected
 	 * @param slotIndex to set to
 	 */
 	public void setCurrentSlot(int slotIndex) {
 		this.checkSlotRange(slotIndex);
-		this.currentSlot = slotIndex;
+		this.currentSlot = Spout.getEventManager().callEvent(new PlayerSlotChangeEvent(this.owner.getPlayer(), this.currentSlot, slotIndex)).getNewSlotIndex();
 	}
-	
+
 	/**
 	 * Gets the quickbar slot index the player currently has selected
 	 * @return slot index

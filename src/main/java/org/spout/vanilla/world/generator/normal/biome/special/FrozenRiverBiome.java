@@ -26,24 +26,13 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.special;
 
-import org.spout.api.util.cuboid.CuboidShortBuffer;
+import org.spout.vanilla.world.generator.normal.biome.IcyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
 
-import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.world.generator.normal.NormalGenerator;
-import org.spout.vanilla.world.generator.normal.biome.basic.RiverBiome;
-
-public class FrozenRiverBiome extends RiverBiome {
+public class FrozenRiverBiome extends IcyBiome {
 	public FrozenRiverBiome(int biomeId) {
-		super(biomeId);
-	}
-
-	@Override
-	protected void replaceBlocks(CuboidShortBuffer blockData, int x, int chunkY, int z) {
-		super.replaceBlocks(blockData, x, chunkY, z);
-		if (chunkY * 16 <= NormalGenerator.SEA_LEVEL && (chunkY + 1) * 16 > NormalGenerator.SEA_LEVEL
-				&& blockData.get(x, NormalGenerator.SEA_LEVEL, z) == VanillaMaterials.STATIONARY_WATER.getId()) {
-			blockData.set(x, NormalGenerator.SEA_LEVEL, z, VanillaMaterials.ICE.getId());
-		}
+		super(biomeId, new OreDecorator());
+		setMinMax((byte) 55, (byte) 57);
 	}
 
 	@Override

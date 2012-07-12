@@ -26,10 +26,7 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
@@ -41,7 +38,7 @@ import org.spout.vanilla.material.item.weapon.Sword;
 public class Ladder extends AbstractAttachable implements Mineable {
 	public Ladder(String name, int id) {
 		super(name, id);
-		this.setAttachable(BlockFaces.WESN).setHardness(0.4F).setResistance(0.7F).setOpacity(1);
+		this.setAttachable(BlockFaces.WESN).setHardness(0.4F).setResistance(0.7F).setTransparent();
 	}
 
 	@Override
@@ -52,13 +49,6 @@ public class Ladder extends AbstractAttachable implements Mineable {
 	@Override
 	public BlockFace getAttachedFace(Block block) {
 		return BlockFaces.WESN.get(block.getData() - 2);
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	@Override

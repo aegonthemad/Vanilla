@@ -43,7 +43,7 @@ public final class WindowClickMessageHandler extends MessageHandler<WindowClickM
 		if (!(entity.getController() instanceof VanillaPlayer)) {
 			return;
 		}
-		
+
 		VanillaPlayer controller = (VanillaPlayer) entity.getController();
 		Window window = controller.getActiveWindow();
 		boolean result = false;
@@ -53,7 +53,7 @@ public final class WindowClickMessageHandler extends MessageHandler<WindowClickM
 		} else {
 			int slot = window.getSlotIndexMap().getSpoutSlot(message.getSlot());
 			if (slot != -1) {
-				result = window.onClick(slot, message.isRightClick(), message.isShift());
+				result = window.onClickGlobal(slot, message.isRightClick(), message.isShift());
 			}
 		}
 		session.send(new TransactionMessage(message.getWindowId(), message.getTransaction(), result));

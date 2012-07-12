@@ -24,42 +24,59 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.material.block.misc.fence;
+package org.spout.vanilla.material.block.fence;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.block.BlockFace;
 
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-
-import org.spout.vanilla.material.block.misc.Fence;
-import org.spout.vanilla.material.item.tool.Pickaxe;
+import org.spout.vanilla.material.Burnable;
+import org.spout.vanilla.material.Fuel;
+import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.Fence;
+import org.spout.vanilla.material.item.tool.Axe;
 import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.util.VanillaPlayerUtil;
+import org.spout.vanilla.util.Instrument;
 
-public class NetherBrickFence extends Fence {
-	public NetherBrickFence(String name, int id) {
+public class WoodenFence extends Fence implements Fuel, Burnable {
+	public final float BURN_TIME = 15.f;
+
+	public WoodenFence(String name, int id) {
 		super(name, id);
-		this.setResistance(30.F);
+		this.setResistance(5.0F);
 	}
 
 	@Override
-	public boolean canBurn() {
+	public float getFuelTime() {
+		return BURN_TIME;
+	}
+
+	@Override
+	public Instrument getInstrument() {
+		return Instrument.BASSGUITAR;
+	}
+
+	@Override
+	public int getCombustChance() {
+		return 20;
+	}
+
+	@Override
+	public int getBurnPower() {
+		return 5;
+	}
+
+	@Override
+	public boolean canSupport(BlockMaterial material, BlockFace face) {
+		if (material.equals(VanillaMaterials.FIRE)) {
+			return true;
+		} else if (super.canSupport(material, face)) {
+			return true;
+		}
 		return false;
 	}
 
 	@Override
-	public List<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-		if (held != null && held.getMaterial() instanceof Pickaxe) {
-			drops.add(new ItemStack(this, 1));
-		}
-		return drops;
-	}
-
-	@Override
 	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
+		return tool instanceof Axe ? (short) 1 : (short) 2;
 	}
 }

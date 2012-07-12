@@ -27,6 +27,7 @@
 package org.spout.vanilla.material.block.liquid;
 
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
@@ -37,13 +38,12 @@ import org.spout.vanilla.protocol.msg.PlayEffectMessage.Messages;
 import org.spout.vanilla.util.VanillaNetworkUtil;
 
 public class Lava extends Liquid {
-
 	public Lava(String name, int id, boolean flowing) {
 		super(name, id, flowing);
 	}
 
 	@Override
-	public void onUpdate(Block block) {
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
 		if (!this.isFlowingDown(block)) {
 			int level = this.getLevel(block);
 			if (level > 0) {
@@ -59,7 +59,7 @@ public class Lava extends Liquid {
 				}
 			}
 		}
-		super.onUpdate(block);
+		super.onUpdate(oldMaterial, block);
 	}
 
 	@Override
@@ -88,8 +88,8 @@ public class Lava extends Liquid {
 	}
 
 	@Override
-	public int getTickDelay() {
-		return 10;
+	public int getFlowDelay() {
+		return 1500;
 	}
 
 	@Override

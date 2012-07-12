@@ -24,49 +24,38 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.world.generator.normal.object.largeplant;
+package org.spout.vanilla.material.block.fence;
 
-import java.util.Random;
+import org.spout.api.geo.cuboid.Block;
+import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.world.generator.normal.object.RandomObject;
+import org.spout.vanilla.material.block.Fence;
+import org.spout.vanilla.material.item.tool.Pickaxe;
+import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.util.Instrument;
 
-public abstract class LargePlantObject extends RandomObject {
-	// size control
-	protected byte baseHeight;
-	protected byte randomHeight;
-	protected byte totalHeight;
-
-	protected LargePlantObject(byte baseHeight, byte randomHeight) {
-		this(null, baseHeight, randomHeight);
-	}
-
-	protected LargePlantObject(Random random, byte baseHeight, byte randomHeight) {
-		super(random);
-		this.baseHeight = baseHeight;
-		this.randomHeight = randomHeight;
-		randomizeHeight();
-	}
-
-	public void setBaseHeight(byte baseHeight) {
-		this.baseHeight = baseHeight;
-		randomizeHeight();
-	}
-
-	public void setRandomHeight(byte randHeight) {
-		this.randomHeight = randHeight;
-		randomizeHeight();
-	}
-
-	public void setTotalHeight(byte height) {
-		this.totalHeight = height;
-	}
-
-	public final void randomizeHeight() {
-		totalHeight = (byte) (baseHeight + random.nextInt(randomHeight));
+public class NetherBrickFence extends Fence {
+	public NetherBrickFence(String name, int id) {
+		super(name, id);
+		this.setResistance(30.F);
 	}
 
 	@Override
-	public void randomize() {
-		randomizeHeight();
+	public Instrument getInstrument() {
+		return Instrument.BASSDRUM;
+	}
+
+	@Override
+	public boolean canDrop(Block block, ItemStack holding) {
+		if (holding != null && holding.getMaterial().getMaterial() instanceof Pickaxe) {
+			return super.canDrop(block, holding);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public short getDurabilityPenalty(Tool tool) {
+		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
 	}
 }

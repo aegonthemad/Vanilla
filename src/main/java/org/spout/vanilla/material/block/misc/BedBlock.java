@@ -26,14 +26,12 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
+import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -41,10 +39,15 @@ import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class BedBlock extends VanillaBlockMaterial implements Mineable {
+public class BedBlock extends VanillaBlockMaterial implements Mineable, InitializableMaterial {
 	public BedBlock(String name, int id) {
 		super(name, id);
-		this.setHardness(0.2F).setResistance(0.3F).setOpacity((byte) 1);
+		this.setHardness(0.2F).setResistance(0.3F).setTransparent();
+	}
+
+	@Override
+	public void initialize() {
+		this.setDropMaterial(VanillaMaterials.BED);
 	}
 
 	@Override
@@ -62,15 +65,9 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable {
 	 */
 	public void setOccupied(Block bedBlock, boolean occupied) {
 		bedBlock = getCorrectHalf(bedBlock, false);
-		short data = bedBlock.getData();
-		if (occupied) {
-			data |= 0x4;
-		} else {
-			data &= ~0x4;
-		}
-		bedBlock.setData(data);
+		bedBlock.setDataBits(0x4, occupied);
 		//set to the same data for the head, but set the head flag
-		getCorrectHalf(bedBlock, true).setData((short) (data | 0x8));
+		getCorrectHalf(bedBlock, true).setData(bedBlock.getData() | 0x8);
 	}
 
 	/**
@@ -79,7 +76,7 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable {
 	 * @return True if occupied
 	 */
 	public boolean isOccupied(Block bedBlock) {
-		return (bedBlock.getData() & 0x4) == 0x4;
+		return bedBlock.isDataBitSet(0x4);
 	}
 
 	/**
@@ -99,12 +96,17 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable {
 	 * @return the face
 	 */
 	public void setFacing(Block bedBlock, BlockFace facing) {
-		short data = bedBlock.getData();
-		data = (short) ((data & ~0x3) + BlockFaces.WNES.indexOf(facing, 0));
-		bedBlock.setData(data);
+		bedBlock.setDataField(0x3, BlockFaces.WNES.indexOf(facing, 0));
 	}
 
-	public void create(Block footBlock, Block headBlock, BlockFace facing) {
+	/**
+	 * Creates a bed using the parameters specified
+	 * 
+	 * @param footBlock of the bed
+	 * @param facing of the bed
+	 */
+	public void create(Block footBlock, BlockFace facing) {
+		Block headBlock = footBlock.translate(facing);
 		footBlock.setMaterial(this, 0x0);
 		headBlock.setMaterial(this, 0x8);
 		setFacing(footBlock, facing);
@@ -128,18 +130,13 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable {
 		if (face == BlockFace.BOTTOM) {
 			BlockFace facing = VanillaPlayerUtil.getFacing(block.getSource());
 			Block head = block.translate(facing);
+			// Check if the head block can be placed
 			if (this.canPlace(head, data, face, false)) {
-				create(block, head, facing);
+				create(block, facing);
+				return true;
 			}
 		}
 		return false;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(VanillaMaterials.BED, 1));
-		return drops;
 	}
 
 	/**
@@ -150,7 +147,7 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable {
 	 */
 	private Block getCorrectHalf(Block bedBlock, boolean head) {
 		BlockFace facing = getFacing(bedBlock);
-		if ((bedBlock.getData() & 0x8) == 0x8) {
+		if (bedBlock.isDataBitSet(0x8)) {
 			if (!head) {
 				bedBlock = bedBlock.translate(facing.getOpposite());
 			}
@@ -181,4 +178,6 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable {
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
+
+
 }

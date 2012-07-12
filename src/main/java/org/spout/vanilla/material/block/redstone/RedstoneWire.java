@@ -26,11 +26,7 @@
  */
 package org.spout.vanilla.material.block.redstone;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
@@ -40,6 +36,7 @@ import org.spout.api.material.range.ListEffectRange;
 import org.spout.api.material.range.PlusEffectRange;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
+import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -48,7 +45,7 @@ import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.RedstonePowerMode;
 import org.spout.vanilla.util.RedstoneUtil;
 
-public class RedstoneWire extends GroundAttachable implements Mineable, RedstoneSource, RedstoneTarget {
+public class RedstoneWire extends GroundAttachable implements Mineable, RedstoneSource, RedstoneTarget, InitializableMaterial {
 	private static final EffectRange physicsRange = new ListEffectRange(
 			new PlusEffectRange(2, false),
 			new CubicEffectRange(1));
@@ -60,35 +57,31 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 	}
 
 	@Override
+	public void initialize() {
+		this.setDropMaterial(VanillaMaterials.REDSTONE_DUST);
+	}
+
+	@Override
 	public boolean hasPhysics() {
 		return true;
 	}
 
-	private void disableRedstone(Block middle, List<Block> wires) {
+	private void disableRedstone(Block middle) {
 		Block block;
 		for (BlockFace face : BlockFaces.NESWBT) {
 			block = middle.translate(face);
 			if (block.getMaterial().equals(this)) {
 				if (block.getData() > 0) {
 					block.setData(0);
-					wires.add(block);
-					this.disableRedstone(block, wires);
+					this.disableRedstone(block);
 				}
 			}
 		}
 	}
 
-	private void disableAllRedstone(Block block, List<Block> wires) {
-		block = block.setSource(this);
-		this.disableRedstone(block, wires);
-		for (BlockFace face : BlockFaces.NESWB) {
-			this.disableRedstone(block.translate(face), wires);
-		}
-	}
-
 	@Override
-	public void onUpdate(Block block) {
-		super.onUpdate(block);
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
 		if (!VanillaConfiguration.REDSTONE_PHYSICS.getBoolean()) {
 			return;
 		}
@@ -103,8 +96,11 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 				block.setMaterial(this, receiving);
 			} else {
 				//Power became less, disable all attached wires and recalculate
-				List<Block> wires = new ArrayList<Block>();
-				this.disableAllRedstone(block, wires);
+				block = block.setSource(this);
+				this.disableRedstone(block);
+				for (BlockFace face : BlockFaces.NESWB) {
+					this.disableRedstone(block.translate(face));
+				}
 			}
 		}
 	}
@@ -151,13 +147,6 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 	@Override
 	public boolean isReceivingPower(Block block) {
 		return this.getReceivingPower(block) > 0;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(VanillaMaterials.REDSTONE_DUST, 1));
-		return drops;
 	}
 
 	public short getReceivingPower(Block block) {
@@ -216,17 +205,17 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 	public boolean isConnectedToSource(Block block, BlockFace face) {
 		Block target = block.translate(face);
 		BlockMaterial mat = target.getMaterial();
-		if (mat instanceof RedstoneSource || mat instanceof RedstoneTarget) {
+		if (mat instanceof RedstoneSource) {
 			return true;
 		}
 		//check below
 		if (!RedstoneUtil.isConductor(mat)) {
-			if (target.translate(BlockFace.BOTTOM).getMaterial().equals(this)) {
+			if (target.translate(BlockFace.BOTTOM).isMaterial(this)) {
 				return true;
 			}
 		}
 		//check above
-		if (target.translate(BlockFace.TOP).getMaterial().equals(this)) {
+		if (target.translate(BlockFace.TOP).isMaterial(this)) {
 			if (!RedstoneUtil.isConductor(block.translate(BlockFace.TOP))) {
 				return true;
 			}

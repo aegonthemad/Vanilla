@@ -26,12 +26,10 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
+import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
@@ -52,17 +50,17 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 
 	public TrapDoor(String name, int id) {
 		super(name, id);
-		this.setAttachable(BlockFaces.NESW).setHardness(3.0F).setResistance(5.0F).setOpacity((byte) 1);
+		this.setAttachable(BlockFaces.NESW).setHardness(3.0F).setResistance(5.0F).setTransparent();
 	}
 
 	@Override
-	public void onUpdate(Block block) {
-		super.onUpdate(block);
-		if (block.getMaterial().equals(this)) {
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
+		if (!(oldMaterial instanceof TrapDoor) && block.getMaterial().equals(this)) {
 			boolean powered = this.isReceivingPower(block);
 			if (powered != this.isOpen(block)) {
 				this.setOpen(block, powered);
-				playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_FIZZ);
+				playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_DOOR);
 			}
 		}
 	}
@@ -79,7 +77,7 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 
 	@Override
 	public boolean isReceivingPower(Block block) {
-		return RedstoneUtil.isReceivingPower(block, false);
+		return RedstoneUtil.isReceivingPower(block);
 	}
 
 	@Override
@@ -112,13 +110,6 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 	@Override
 	public BlockFace getAttachedFace(Block block) {
 		return BlockFaces.WESN.get(block.getData() & ~0x4);
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	@Override

@@ -26,17 +26,22 @@
  */
 package org.spout.vanilla.protocol.bootstrap;
 
+import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.protocol.Message;
 import org.spout.api.protocol.Protocol;
 import org.spout.api.protocol.bootstrap.BootstrapProtocol;
-
+import org.spout.vanilla.chat.style.VanillaStyleHandler;
 import org.spout.vanilla.protocol.VanillaProtocol;
+import org.spout.vanilla.protocol.msg.ChatMessage;
+import org.spout.vanilla.protocol.msg.HandshakeMessage;
+import org.spout.vanilla.protocol.msg.KickMessage;
 
 public class VanillaBootstrapProtocol extends BootstrapProtocol {
-	private static final Protocol vanilla = new VanillaProtocol();
+	private static final Protocol VANILLA_PROTOCOL = new VanillaProtocol();
 
 	public VanillaBootstrapProtocol() {
-		super("VanillaBootstrap", new VanillaBootstrapCodecLookupService(), new VanillaBootstrapHandlerLookupService());
+		super("VanillaBootstrap", new VanillaBootstrapCodecLookupService(),
+				new VanillaBootstrapHandlerLookupService());
 	}
 
 	@Override
@@ -46,6 +51,21 @@ public class VanillaBootstrapProtocol extends BootstrapProtocol {
 
 	@Override
 	public Protocol getDefaultProtocol() {
-		return vanilla;
+		return VANILLA_PROTOCOL;
+	}
+
+	@Override
+	public Message getChatMessage(Object... message) {
+		return new ChatMessage(ChatStyle.stringify(VanillaStyleHandler.ID, message));
+	}
+
+	@Override
+	public Message getKickMessage(Object... message) {
+		return new KickMessage(ChatStyle.stringify(VanillaStyleHandler.ID, message));
+	}
+	
+	@Override
+	public Message getIntroductionMessage(String playerName) {
+		return new HandshakeMessage(playerName);
 	}
 }

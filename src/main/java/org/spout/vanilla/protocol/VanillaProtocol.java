@@ -26,16 +26,37 @@
  */
 package org.spout.vanilla.protocol;
 
+import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.map.DefaultedKey;
 import org.spout.api.map.DefaultedKeyImpl;
+import org.spout.api.protocol.Message;
 import org.spout.api.protocol.Protocol;
+import org.spout.vanilla.chat.style.VanillaStyleHandler;
+import org.spout.vanilla.protocol.msg.ChatMessage;
+import org.spout.vanilla.protocol.msg.HandshakeMessage;
+import org.spout.vanilla.protocol.msg.KickMessage;
 
 public class VanillaProtocol extends Protocol {
-    public final static DefaultedKey<String> SESSION_ID = new DefaultedKeyImpl<String>("sessionid", "0000000000000000");
-    public final static DefaultedKey<String> HANDSHAKE_USERNAME = new DefaultedKeyImpl<String>("handshake_username", "");
-    public final static DefaultedKey<Long> LOGIN_TIME = new DefaultedKeyImpl<Long>("handshake_time", -1L);
+	public final static DefaultedKey<String> SESSION_ID = new DefaultedKeyImpl<String>("sessionid", "0000000000000000");
+	public final static DefaultedKey<String> HANDSHAKE_USERNAME = new DefaultedKeyImpl<String>("handshake_username", "");
+	public final static DefaultedKey<Long> LOGIN_TIME = new DefaultedKeyImpl<Long>("handshake_time", -1L);
 
     public VanillaProtocol() {
         super("Vanilla", new VanillaCodecLookupService(), new VanillaHandlerLookupService());
     }
+	
+	@Override
+	public Message getChatMessage(Object... message) {
+		return new ChatMessage(ChatStyle.stringify(VanillaStyleHandler.ID, message));
+	}
+
+	@Override
+	public Message getKickMessage(Object... message) {
+		return new KickMessage(ChatStyle.stringify(VanillaStyleHandler.ID, message));
+	}
+	
+	@Override
+	public Message getIntroductionMessage(String playerName) {
+		return new HandshakeMessage(playerName);
+	}
 }

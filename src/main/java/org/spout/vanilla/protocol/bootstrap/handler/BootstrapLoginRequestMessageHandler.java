@@ -41,11 +41,11 @@ import org.spout.vanilla.protocol.msg.LoginRequestMessage;
 
 public class BootstrapLoginRequestMessageHandler extends MessageHandler<LoginRequestMessage> {
 	@Override
-	public void handle(final Session session, final Player player, final LoginRequestMessage message) {
+	public void handleServer(final Session session, final Player player, final LoginRequestMessage message) {
 		if (message.getId() > VanillaPlugin.MINECRAFT_PROTOCOL_ID) {
-			session.disconnect("Outdated server!", false);
+			session.disconnect(false, "Outdated server!");
 		} else if (message.getId() < VanillaPlugin.MINECRAFT_PROTOCOL_ID) {
-			session.disconnect("Outdated client!", false);
+			session.disconnect(false, "Outdated client!");
 		} else {
 			String handshakeUsername = session.getDataMap().get(VanillaProtocol.HANDSHAKE_USERNAME);
 			handshakeUsername = handshakeUsername.split(";")[0];

@@ -26,8 +26,6 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.block.BlockFace;
@@ -38,25 +36,26 @@ import org.spout.vanilla.material.block.solid.DoubleSlab;
 import org.spout.vanilla.material.item.tool.Pickaxe;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class Slab extends VanillaBlockMaterial implements Mineable {
-	public static final Slab STONE = new Slab("Stone Slab");
-	public static final Slab SANDSTONE = new Slab("Sandstone Slab", 1, STONE);
-	public static final Slab WOOD = new Slab("Wooden Slab", 2, STONE);
-	public static final Slab COBBLESTONE = new Slab("Cobblestone Slab", 3, STONE);
-	public static final Slab BRICK = new Slab("Brick Slab", 4, STONE);
-	public static final Slab STONE_BRICK = new Slab("Stone Brick Slab", 5, STONE);
+	public static final Slab STONE_SLAB = new Slab("Stone Slab");
+	public static final Slab SANDSTONE_SLAB = new Slab("Sandstone Slab", 1, STONE_SLAB);
+	public static final Slab WOOD_SLAB = new Slab("Wooden Slab", 2, STONE_SLAB);
+	public static final Slab COBBLESTONE_SLAB = new Slab("Cobblestone Slab", 3, STONE_SLAB);
+	public static final Slab BRICK_SLAB = new Slab("Brick Slab", 4, STONE_SLAB);
+	public static final Slab STONE_BRICK_SLAB = new Slab("Stone Brick Slab", 5, STONE_SLAB);
 	private DoubleSlab doubletype;
 
 	private Slab(String name) {
 		super((short) 0x0007, name, 44);
-		this.setHardness(2.0F).setResistance(10.0F).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(10.0F).setTransparent();
+		//TODO: Make bottom or top half occlude bottom or top
 	}
 
 	private Slab(String name, int data, Slab parent) {
 		super(name, 44, data, parent);
-		this.setHardness(2.0F).setResistance(10.0F).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(10.0F).setTransparent();
+		//TODO: Make bottom or top half occlude bottom or top
 	}
 
 	public Slab setDoubleType(DoubleSlab doubletype) {
@@ -137,12 +136,11 @@ public class Slab extends VanillaBlockMaterial implements Mineable {
 	}
 
 	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-		if (held != null && held.getMaterial() instanceof Pickaxe) {
-			drops.add(new ItemStack(this, 1));
+	public boolean canDrop(Block block, ItemStack holding) {
+		if (holding != null && holding.getMaterial() instanceof Pickaxe) {
+			return super.canDrop(block, holding);
+		} else {
+			return false;
 		}
-		return drops;
 	}
 }

@@ -29,13 +29,29 @@ package org.spout.vanilla.protocol.msg;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import org.spout.api.protocol.Message;
+import org.spout.api.protocol.proxy.ConnectionInfo;
+import org.spout.api.protocol.proxy.ConnectionInfoMessage;
+import org.spout.api.protocol.proxy.ProxyStartMessage;
+import org.spout.api.protocol.proxy.TransformableMessage;
 import org.spout.api.util.SpoutToStringStyle;
 
-public final class LoginRequestMessage extends Message {
+import org.spout.vanilla.VanillaPlugin;
+import org.spout.vanilla.protocol.proxy.VanillaConnectionInfo;
+
+public final class LoginRequestMessage extends Message implements ConnectionInfoMessage, ProxyStartMessage, TransformableMessage {
 	private final int id, dimension, mode, difficulty, worldHeight, maxPlayers;
 	private final String name, worldType;
+	private final boolean server;
+
+	public LoginRequestMessage(String name) {
+		this(false, VanillaPlugin.MINECRAFT_PROTOCOL_ID, name, 0, 0, 0, 256, 0, "");
+	}
 
 	public LoginRequestMessage(int id, String name, int mode, int dimension, int difficulty, int worldHeight, int maxPlayers, String worldType) {
+		this(true, id, name, mode, dimension, difficulty, worldHeight, maxPlayers, worldType);
+	}
+
+	public LoginRequestMessage(boolean server, int id, String name, int mode, int dimension, int difficulty, int worldHeight, int maxPlayers, String worldType) {
 		this.id = id;
 		this.name = name;
 		this.mode = mode;
@@ -44,6 +60,32 @@ public final class LoginRequestMessage extends Message {
 		this.worldHeight = worldHeight;
 		this.maxPlayers = maxPlayers;
 		this.worldType = worldType;
+		this.server = server;
+	}
+
+	@Override
+	public ConnectionInfo getConnectionInfo(boolean upstream, ConnectionInfo info) {
+		if (info != null && !(info instanceof VanillaConnectionInfo)) {
+			return info;
+		} else {
+			VanillaConnectionInfo vInfo = (VanillaConnectionInfo) info;
+			if (server) {
+				String name = vInfo == null ? "" : vInfo.getIdentifier();
+				return new VanillaConnectionInfo(name, id);
+			} else {
+				int entityId = vInfo == null ? 0 : vInfo.getEntityId();
+				return new VanillaConnectionInfo(name, entityId);
+			}
+		}
+	}
+
+	@Override
+	public Message transform(boolean upstream, int connects, ConnectionInfo info, ConnectionInfo auxChannelInfo) {
+		if (!upstream || connects == 1) {
+			return this;
+		} else {
+			return new RespawnMessage(dimension, (byte) difficulty, (byte) mode, worldHeight, worldType);
+		}
 	}
 
 	public int getId() {
@@ -89,6 +131,7 @@ public final class LoginRequestMessage extends Message {
 				.append("maxPlayers", maxPlayers)
 				.append("name", name)
 				.append("worldType", worldType)
+				.append("server", server)
 				.toString();
 	}
 

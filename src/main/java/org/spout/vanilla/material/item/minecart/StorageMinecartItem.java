@@ -24,53 +24,19 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.material.block.misc.fence;
+package org.spout.vanilla.material.item.minecart;
 
-import java.util.ArrayList;
+import org.spout.api.entity.component.Controller;
 
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.block.BlockFace;
+import org.spout.vanilla.controller.object.vehicle.minecart.StorageMinecart;
 
-import org.spout.vanilla.material.Fuel;
-import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.material.block.misc.Fence;
-import org.spout.vanilla.material.item.tool.Axe;
-import org.spout.vanilla.material.item.tool.Tool;
-
-public class WoodenFence extends Fence implements Fuel {
-	public final float BURN_TIME = 15.f;
-
-	public WoodenFence(String name, int id) {
+public class StorageMinecartItem extends MinecartItem {
+	public StorageMinecartItem(String name, int id) {
 		super(name, id);
-		this.setResistance(5.0F);
 	}
 
 	@Override
-	public float getFuelTime() {
-		return BURN_TIME;
-	}
-
-	@Override
-	public boolean canSupport(BlockMaterial material, BlockFace face) {
-		if (material.equals(VanillaMaterials.FIRE)) {
-			return true;
-		} else if (super.canSupport(material, face)) {
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Axe ? (short) 1 : (short) 2;
+	protected Controller getSpawnedEntity() {
+		return new StorageMinecart();
 	}
 }

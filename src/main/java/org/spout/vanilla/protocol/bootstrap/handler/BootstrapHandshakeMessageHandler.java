@@ -54,17 +54,17 @@ public class BootstrapHandshakeMessageHandler extends MessageHandler<HandshakeMe
 				int keySize = VanillaConfiguration.ENCRYPT_KEY_SIZE.getInt();
 				String keyAlgorithm = VanillaConfiguration.ENCRYPT_KEY_ALGORITHM.getString();
 				AsymmetricCipherKeyPair keys = SecurityHandler.getInstance().getKeyPair(keySize, keyAlgorithm);
-				session.send(new EncryptionKeyRequestMessage(sessionId, keys.getPublic(), false), true);
+				session.send(true, new EncryptionKeyRequestMessage(sessionId, keys.getPublic(), false));
 			} else if (VanillaConfiguration.ONLINE_MODE.getBoolean()) {
 				session.setState(Session.State.EXCHANGE_IDENTIFICATION);
 				String sessionId = getSessionId();
 				session.getDataMap().put(VanillaProtocol.SESSION_ID, sessionId);
-				session.send(new HandshakeMessage(sessionId), true);
+				session.send(true, new HandshakeMessage(sessionId));
 			} else {
 				session.setState(Session.State.EXCHANGE_IDENTIFICATION);
 				String sessionId = "-";
 				session.getDataMap().put(VanillaProtocol.SESSION_ID, sessionId);
-				session.send(new HandshakeMessage(sessionId), true);
+				session.send(true, new HandshakeMessage(sessionId));
 			}
 		} else {
 			session.disconnect("Handshake already exchanged.", false);

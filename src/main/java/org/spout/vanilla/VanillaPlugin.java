@@ -64,12 +64,15 @@ import org.spout.vanilla.data.Data;
 import org.spout.vanilla.data.Difficulty;
 import org.spout.vanilla.data.Dimension;
 import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.inventory.recipe.VanillaRecipes;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.protocol.VanillaProtocol;
 import org.spout.vanilla.protocol.bootstrap.VanillaBootstrapProtocol;
 import org.spout.vanilla.resources.MapPalette;
+import org.spout.vanilla.resources.RecipeYaml;
 import org.spout.vanilla.resources.loader.MapPaletteLoader;
+import org.spout.vanilla.resources.loader.RecipeLoader;
 import org.spout.vanilla.world.generator.VanillaGenerator;
 import org.spout.vanilla.world.generator.flat.FlatGenerator;
 import org.spout.vanilla.world.generator.nether.NetherGenerator;
@@ -131,6 +134,7 @@ public class VanillaPlugin extends CommonPlugin {
 		config = new VanillaConfiguration(getDataFolder());
 		Protocol.registerProtocol("VanillaProtocol", new VanillaProtocol());
 		Spout.getFilesystem().registerLoader("mappalette", new MapPaletteLoader());
+		Spout.getFilesystem().registerLoader("recipe", new RecipeLoader());
 
 		if (engine.getPlatform() == Platform.SERVER || engine.getPlatform() == Platform.PROXY) {
 			int port = 25565;
@@ -150,6 +154,8 @@ public class VanillaPlugin extends CommonPlugin {
 
 		VanillaMaterials.initialize();
 		MapPalette.DEFAULT = (MapPalette) Spout.getFilesystem().getResource("mappalette://Vanilla/resources/map/mapColorPalette.dat");
+		RecipeYaml.DEFAULT = (RecipeYaml) Spout.getFilesystem().getResource("recipe://Vanilla/resources/recipes.yml");
+		VanillaRecipes.initialize();
 		getLogger().info("loaded");
 	}
 
@@ -233,8 +239,6 @@ public class VanillaPlugin extends CommonPlugin {
 			} else {
 				throw new IllegalArgumentException("Invalid sky type for world '" + world.getName() + "': " + skyType);
 			}
-			sky.setWorld(world);
-			VanillaSky.setSky(world, sky);
 			world.createAndSpawnEntity(new Point(world, 0, 0, 0), sky);
 		}
 	}

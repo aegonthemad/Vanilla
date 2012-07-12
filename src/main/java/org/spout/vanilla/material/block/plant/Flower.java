@@ -26,10 +26,6 @@
  */
 package org.spout.vanilla.material.block.plant;
 
-import java.util.ArrayList;
-
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
@@ -42,7 +38,7 @@ import org.spout.vanilla.material.item.weapon.Sword;
 public class Flower extends GroundAttachable implements Plant {
 	public Flower(String name, int id) {
 		super(name, id);
-		this.setHardness(0.0F).setResistance(0.0F).setOpacity((byte) 0);
+		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	@Override
@@ -66,13 +62,6 @@ public class Flower extends GroundAttachable implements Plant {
 			return material.equals(VanillaMaterials.GRASS) || material.equals(VanillaMaterials.DIRT);
 		}
 		return false;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	@Override

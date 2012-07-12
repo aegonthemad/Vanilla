@@ -26,39 +26,46 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.basic;
 
-import net.royawesome.jlibnoise.module.modifier.ScalePoint;
+import java.util.Random;
 
-import org.spout.vanilla.configuration.BiomeConfiguration;
-import org.spout.vanilla.world.generator.normal.biome.NormalBiome;
+import org.spout.vanilla.world.generator.normal.biome.GrassyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.FlowerDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.PumpkinDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SugarCaneDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TreeDecorator;
+import org.spout.vanilla.world.generator.normal.object.tree.PineTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.SpruceTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
 
-public class TaigaBiome extends NormalBiome {
-	private final static ScalePoint NOISE = new ScalePoint();
-
-	static {
-		NOISE.SetSourceModule(0, NormalBiome.MASTER);
-		NOISE.setxScale(BiomeConfiguration.TAIGA_X_SCALE.getDouble());
-		NOISE.setyScale(BiomeConfiguration.TAIGA_Y_SCALE.getDouble());
-		NOISE.setzScale(BiomeConfiguration.TAIGA_Z_SCALE.getDouble());
-	}
-
+public class TaigaBiome extends GrassyBiome {
 	public TaigaBiome(int biomeId) {
-		super(biomeId, NOISE);
-
-		this.minDensityTerrainHeight = BiomeConfiguration.TAIGA_MIN_DENSITY_TERRAIN_HEIGHT.getByte();
-		this.maxDensityTerrainHeight = BiomeConfiguration.TAIGA_MAX_DENSITY_TERRAIN_HEIGHT.getByte();
-
-		this.minDensityTerrainThickness = BiomeConfiguration.TAIGA_MIN_DENSITY_TERRAIN_THICKNESS.getByte();
-		this.maxDensityTerrainThickness = BiomeConfiguration.TAIGA_MAX_DENSITY_TERRAIN_THICKNESS.getByte();
-
-		this.upperHeightMapScale = BiomeConfiguration.TAIGA_UPPER_HEIGHT_MAP_SCALE.getFloat();
-		this.bottomHeightMapScale = BiomeConfiguration.TAIGA_BOTTOM_HEIGHT_MAP_SCALE.getFloat();
-
-		this.densityTerrainThicknessScale = BiomeConfiguration.TAIGA_DENSITY_TERRAIN_THICKNESS_SCALE.getFloat();
-		this.densityTerrainHeightScale = BiomeConfiguration.TAIGA_DENSITY_TERRAIN_HEIGHT_SCALE.getFloat();
+		super(biomeId, new OreDecorator(), new SandAndClayDecorator(), new TreeDecorator(new TaigaTreeWGOFactory()),
+				new FlowerDecorator(), new TallGrassDecorator(new NormalTallGrassFactory()), new MushroomDecorator(),
+				new SugarCaneDecorator(), new PumpkinDecorator());
+		setMinMax((byte) 67, (byte) 71);
 	}
 
 	@Override
 	public String getName() {
 		return "Taiga";
+	}
+
+	private static class TaigaTreeWGOFactory extends NormalTreeWGOFactory {
+		@Override
+		public byte amount(Random random) {
+			return (byte) (10 + super.amount(random));
+		}
+
+		@Override
+		public TreeObject make(Random random) {
+			if (random.nextInt(3) == 0) {
+				return new SpruceTreeObject(random);
+			}
+			return new PineTreeObject(random);
+		}
 	}
 }

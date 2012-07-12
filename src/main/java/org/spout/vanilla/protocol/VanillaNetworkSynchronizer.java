@@ -37,6 +37,9 @@ import org.spout.api.generator.biome.Biome;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.cuboid.ChunkSnapshot;
+import org.spout.api.geo.cuboid.ChunkSnapshot.EntityType;
+import org.spout.api.geo.cuboid.ChunkSnapshot.ExtraData;
+import org.spout.api.geo.cuboid.ChunkSnapshot.SnapshotType;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.InventoryBase;
 import org.spout.api.inventory.ItemStack;
@@ -61,12 +64,10 @@ import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.WorldType;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.protocol.msg.BlockChangeMessage;
-import org.spout.vanilla.protocol.msg.ChatMessage;
 import org.spout.vanilla.protocol.msg.CompressedChunkMessage;
 import org.spout.vanilla.protocol.msg.EntityEquipmentMessage;
 import org.spout.vanilla.protocol.msg.EntityTeleportMessage;
 import org.spout.vanilla.protocol.msg.KeepAliveMessage;
-import org.spout.vanilla.protocol.msg.KickMessage;
 import org.spout.vanilla.protocol.msg.LoadChunkMessage;
 import org.spout.vanilla.protocol.msg.LoginRequestMessage;
 import org.spout.vanilla.protocol.msg.PlayerLookMessage;
@@ -118,7 +119,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		Point p = player.getEntity().getPosition();
 		p.getWorld().getChunkFromBlock(p);
 	}
-	
+
 	private Object initChunkLock = new Object();
 
 	@Override
@@ -148,7 +149,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			}*/
 		}
 	}
-	
+
 	@Override
 	protected void initChunk(Point p) {
 
@@ -175,7 +176,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		}
 		column.add(y);
 	}
-	
+
 	private static BlockMaterial[][] getColumnTopmostMaterials(Point p) {
 		BlockMaterial[][] materials = new BlockMaterial[Chunk.BLOCKS.SIZE][Chunk.BLOCKS.SIZE];
 
@@ -251,9 +252,9 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (y < 0 || y >= c.getWorld().getHeight() >> Chunk.BLOCKS.BITS) {
 			return;
 		}
-		
+
 		initChunk(c.getBase());
-		
+
 		if (activeChunks.add(x, z)) {
 			Point p = c.getBase();
 			int[][] heights = getColumnHeights(p);
@@ -265,7 +266,6 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 				packetChunkData[cube] = getChunkHeightMap(heights, materials, cube);
 			}
 
-			
 			LoadChunkMessage loadChunk = new LoadChunkMessage(x, z, true);
 			owner.getSession().send(loadChunk);
 
@@ -283,8 +283,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, true, new boolean[16], 0, packetChunkData, biomeData);
 			owner.getSession().send(CCMsg);
 		}
-		
-		ChunkSnapshot snapshot = c.getSnapshot(false);
+
+		ChunkSnapshot snapshot = c.getSnapshot(SnapshotType.BOTH, EntityType.NO_ENTITIES, ExtraData.NO_EXTRA_DATA);
 		short[] rawBlockIdArray = snapshot.getBlockIds();
 		short[] rawBlockData = snapshot.getBlockData();
 		byte[] rawBlockLight = snapshot.getBlockLight();
@@ -342,7 +342,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			int entityId = owner.getEntity().getId();
 			VanillaPlayer vc = (VanillaPlayer) owner.getEntity().getController();
 			LoginRequestMessage idMsg = new LoginRequestMessage(entityId, owner.getName(), gamemode.getId(), dimension.getId(), difficulty.getId(), 256, session.getEngine().getMaxPlayers(), worldType.toString());
-			owner.getSession().send(idMsg, true);
+			owner.getSession().send(true, idMsg);
 			owner.getSession().setState(State.GAME);
 			for (int slot = 0; slot < 4; slot++) {
 				ItemStack slotItem = vc.getInventory().getArmor().getItem(slot);
@@ -369,7 +369,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (currentTime > lastKeepAlive + TIMEOUT) {
 			KeepAliveMessage PingMsg = new KeepAliveMessage((int) currentTime);
 			lastKeepAlive = currentTime;
-			owner.getSession().send(PingMsg, true);
+			owner.getSession().send(true, PingMsg);
 		}
 
 		for (TIntObjectIterator<Message> i = queuedInventoryUpdates.iterator(); i.hasNext(); ) {
@@ -474,7 +474,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (item == null) {
 			message = new SetWindowSlotMessage(window.getInstanceId(), slot);
 		} else {
-			message = new SetWindowSlotMessage(window.getInstanceId(), slot, getMinecraftId(item.getMaterial().getId()), item.getAmount(), item.getData(), item.getNBTData());
+			message = new SetWindowSlotMessage(window.getInstanceId(), slot, getMinecraftId(item.getMaterial()), item.getAmount(), item.getData(), item.getNBTData());
 		}
 		queuedInventoryUpdates.put(slot, message);
 	}
@@ -496,13 +496,4 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		queuedInventoryUpdates.clear();
 	}
 
-	@Override
-	public Message getChatMessage(String message) {
-		return new ChatMessage(message);
-	}
-
-	@Override
-	public Message getKickMessage(String message) {
-		return new KickMessage(message);
-	}
 }

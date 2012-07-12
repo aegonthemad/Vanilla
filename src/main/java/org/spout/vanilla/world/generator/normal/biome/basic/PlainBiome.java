@@ -26,37 +26,21 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.basic;
 
-import net.royawesome.jlibnoise.module.modifier.ScalePoint;
+import org.spout.vanilla.world.generator.normal.biome.GrassyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.FlowerDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.PumpkinDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SugarCaneDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator;
 
-import org.spout.vanilla.configuration.BiomeConfiguration;
-import org.spout.vanilla.world.generator.normal.biome.NormalBiome;
-
-public class PlainBiome extends NormalBiome {
-	private final static ScalePoint NOISE = new ScalePoint();
-
-	static {
-		NOISE.SetSourceModule(0, NormalBiome.MASTER);
-		NOISE.setxScale(BiomeConfiguration.PLAINS_X_SCALE.getDouble());
-		NOISE.setyScale(BiomeConfiguration.PLAINS_Y_SCALE.getDouble());
-		NOISE.setzScale(BiomeConfiguration.PLAINS_Z_SCALE.getDouble());
-	}
-
+public class PlainBiome extends GrassyBiome {
 	public PlainBiome(int id) {
-		super(id, NOISE/*
-				 * , new PondDecorator(), new GrassDecorator(), new FlowerDecorator()
-				 */);
-
-		this.minDensityTerrainHeight = BiomeConfiguration.PLAINS_MIN_DENSITY_TERRAIN_HEIGHT.getByte();
-		this.maxDensityTerrainHeight = BiomeConfiguration.PLAINS_MAX_DENSITY_TERRAIN_HEIGHT.getByte();
-
-		this.minDensityTerrainThickness = BiomeConfiguration.PLAINS_MIN_DENSITY_TERRAIN_THICKNESS.getByte();
-		this.maxDensityTerrainThickness = BiomeConfiguration.PLAINS_MAX_DENSITY_TERRAIN_THICKNESS.getByte();
-
-		this.upperHeightMapScale = BiomeConfiguration.PLAINS_UPPER_HEIGHT_MAP_SCALE.getFloat();
-		this.bottomHeightMapScale = BiomeConfiguration.PLAINS_BOTTOM_HEIGHT_MAP_SCALE.getFloat();
-
-		this.densityTerrainThicknessScale = BiomeConfiguration.PLAINS_DENSITY_TERRAIN_THICKNESS_SCALE.getFloat();
-		this.densityTerrainHeightScale = BiomeConfiguration.PLAINS_DENSITY_TERRAIN_HEIGHT_SCALE.getFloat();
+		super(id, new OreDecorator(), new SandAndClayDecorator(), new FlowerDecorator((byte) 4),
+				new TallGrassDecorator(new NormalTallGrassFactory(), (byte) 10),
+				new MushroomDecorator(), new SugarCaneDecorator(), new PumpkinDecorator());
+		setMinMax((byte) 67, (byte) 69);
 	}
 
 	@Override

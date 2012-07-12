@@ -24,19 +24,41 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.material.item.misc;
+package org.spout.vanilla.material.item.minecart;
 
+import org.spout.api.entity.Entity;
 import org.spout.api.entity.component.Controller;
+import org.spout.api.event.player.PlayerInteractEvent.Action;
+import org.spout.api.geo.cuboid.Block;
+import org.spout.api.material.block.BlockFace;
 
-import org.spout.vanilla.controller.object.vehicle.minecart.PoweredMinecart;
+import org.spout.vanilla.controller.object.vehicle.minecart.TransportMinecart;
+import org.spout.vanilla.material.block.rail.RailBase;
+import org.spout.vanilla.material.item.VanillaItemMaterial;
 
-public class PoweredMinecartItem extends MinecartItem {
-	public PoweredMinecartItem(String name, int id) {
+public class MinecartItem extends VanillaItemMaterial {
+	public MinecartItem(String name, int id) {
 		super(name, id);
 	}
 
-	@Override
+	/**
+	 * Creates a new minecart controller to spawn when interacted
+	 * @return a new Minecart controller
+	 */
 	protected Controller getSpawnedEntity() {
-		return new PoweredMinecart();
+		return new TransportMinecart();
+	}
+
+	@Override
+	public void onInteract(Entity entity, Block block, Action type, BlockFace clickedface) {
+		super.onInteract(entity, block, type, clickedface);
+
+		//is clicked position a track?
+		if (block.getMaterial() instanceof RailBase) {
+			//spawn minecart on rail
+			block.getWorld().createAndSpawnEntity(block.getPosition(), this.getSpawnedEntity());
+			//TODO: Subtracting one from the held item?
+			//Shouldn't the held item be passed to this function instead?
+		}
 	}
 }

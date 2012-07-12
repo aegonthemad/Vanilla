@@ -37,7 +37,7 @@ import org.spout.vanilla.util.MoveReaction;
 public class NetherPortal extends Portal {
 	public NetherPortal(String name, int id) {
 		super(name, id);
-		this.setHardness(-1.0F).setResistance(0.0F).setOpacity((byte) 1);
+		this.setHardness(-1.0F).setResistance(0.0F);
 	}
 
 	@Override
@@ -49,7 +49,7 @@ public class NetherPortal extends Portal {
 	public MoveReaction getMoveReaction(Block block) {
 		return MoveReaction.DENY;
 	}
-	
+
 	/**
 	 * Tries to create a portal model at the location given
 	 * @param bottomBlock of the portal (is Obsidian)

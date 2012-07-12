@@ -26,23 +26,19 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import java.util.ArrayList;
-
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-
+import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.block.BlockFace;
+import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
+import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.material.item.tool.Axe;
 import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.util.EnchantmentUtil;
 import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class BookShelf extends Solid implements Mineable, Fuel {
+public class BookShelf extends Solid implements Mineable, Fuel, InitializableMaterial, Burnable {
 	public final float BURN_TIME = 15.f;
 
 	public BookShelf(String name, int id) {
@@ -51,8 +47,23 @@ public class BookShelf extends Solid implements Mineable, Fuel {
 	}
 
 	@Override
+	public void initialize() {
+		this.setDropMaterial(VanillaMaterials.BOOK, 3);
+	}
+
+	@Override
 	public float getFuelTime() {
 		return BURN_TIME;
+	}
+
+	@Override
+	public int getCombustChance() {
+		return 20;
+	}
+
+	@Override
+	public int getBurnPower() {
+		return 30;
 	}
 
 	@Override
@@ -61,20 +72,12 @@ public class BookShelf extends Solid implements Mineable, Fuel {
 	}
 
 	@Override
-	public boolean canBurn() {
-		return true;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-		if (held != null && held.getMaterial() instanceof Tool && EnchantmentUtil.hasEnchantment(held, Enchantments.SILK_TOUCH)) {
-			drops.add(new ItemStack(this, 1));
+	public boolean canSupport(BlockMaterial material, BlockFace face) {
+		if (material.equals(VanillaMaterials.FIRE)) {
+			return true;
 		} else {
-			drops.add(new ItemStack(VanillaMaterials.BOOK, 3));
+			return super.canSupport(material, face);
 		}
-		return drops;
 	}
 
 	@Override

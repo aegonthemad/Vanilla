@@ -24,30 +24,27 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.world.generator.normal.object;
+package org.spout.vanilla.chat.style;
 
-import java.util.Random;
+import org.spout.api.chat.style.StyleFormatter;
 
-import org.spout.api.generator.WorldGeneratorObject;
+/**
+ * @author zml2008
+ */
+public class VanillaStyleFormatter implements StyleFormatter {
+	public static final String COLOR_CHAR = "\u00A7";
 
-public abstract class RandomObject extends WorldGeneratorObject {
-	protected Random random;
+	private final char styleChar;
 
-	protected RandomObject() {
-		this.random = new Random();
+	public VanillaStyleFormatter(char styleChar) {
+		this.styleChar = styleChar;
 	}
 
-	protected RandomObject(Random random) {
-		if (random == null) {
-			this.random = new Random();
-		} else {
-			this.random = random;
-		}
+	public char getStyleChar() {
+		return styleChar;
 	}
 
-	public abstract void randomize();
-
-	public void setRandom(Random random) {
-		this.random = random;
+	public String format(String text) {
+		return COLOR_CHAR + styleChar + text;
 	}
 }

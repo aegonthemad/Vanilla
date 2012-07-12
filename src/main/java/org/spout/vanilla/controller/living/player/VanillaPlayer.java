@@ -48,9 +48,9 @@ import org.spout.vanilla.controller.object.moving.Item;
 import org.spout.vanilla.controller.source.DamageCause;
 import org.spout.vanilla.controller.source.HealthChangeReason;
 import org.spout.vanilla.data.GameMode;
-import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.inventory.player.PlayerInventory;
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.material.item.armor.Armor;
 import org.spout.vanilla.protocol.msg.ChangeGameStateMessage;
 import org.spout.vanilla.protocol.msg.DestroyEntityMessage;
@@ -77,7 +77,7 @@ public class VanillaPlayer extends Human implements PlayerController {
 	protected float foodSaturation = 5.0f, exhaustion = 0.0f;
 	protected boolean poisoned;
 	protected boolean flying;
-	protected final PlayerInventory playerInventory = new PlayerInventory();
+	protected final PlayerInventory playerInventory = new PlayerInventory(this);
 	protected Window activeWindow = new DefaultWindow(this);
 	protected String tabListName;
 	protected GameMode gameMode;
@@ -122,8 +122,10 @@ public class VanillaPlayer extends Human implements PlayerController {
 	@Override
 	public void onTick(float dt) {
 		super.onTick(dt);
-		if(playerDead) return;
-		
+		if (playerDead) {
+			return;
+		}
+
 		Player player = getPlayer();
 		if (player == null || player.getSession() == null) {
 			return;
@@ -552,7 +554,7 @@ public class VanillaPlayer extends Human implements PlayerController {
 		this.getInventory().getQuickbar().setCurrentItem(current);
 		getParent().getWorld().createAndSpawnEntity(getHeadPosition().add(0.0, 0.4, 0.0), control);
 	}
-	
+
 	/**
 	 * Rolls the credits located on the client.
 	 */

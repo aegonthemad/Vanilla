@@ -32,6 +32,8 @@ import org.spout.api.geo.World;
 import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.Liquid;
+import org.spout.vanilla.material.block.Solid;
 import org.spout.vanilla.material.block.plant.Sapling;
 
 public class HugeTreeObject extends TreeObject {
@@ -49,16 +51,18 @@ public class HugeTreeObject extends TreeObject {
 		super(random, (byte) 10, (byte) 30, (short) 3);
 		overridable.add(VanillaMaterials.AIR);
 		overridable.add(VanillaMaterials.LEAVES);
+		overridable.add(VanillaMaterials.DIRT);
+		overridable.add(VanillaMaterials.GRASS);
+		overridable.add(VanillaMaterials.LOG);
 		overridable.add(Sapling.JUNGLE);
+		overridable.add(Sapling.BIRCH);
+		overridable.add(Sapling.DEFAULT);
+		overridable.add(Sapling.SPRUCE);
 	}
 
 	@Override
 	public boolean canPlaceObject(World w, int x, int y, int z) {
-		if (y < 1 || y + totalHeight + 1 > w.getHeight()) {
-			return false;
-		}
-		final BlockMaterial under = w.getBlockMaterial(x, y - 1, z);
-		if (under != VanillaMaterials.DIRT && under != VanillaMaterials.GRASS) {
+		if (!super.canPlaceObject(w, x, y, z)) {
 			return false;
 		}
 		byte checkRadius = 1;
@@ -116,7 +120,8 @@ public class HugeTreeObject extends TreeObject {
 			for (byte xx = (byte) -radius; xx < radius + 1; xx++) {
 				for (byte zz = (byte) -radius; zz < radius + 1; zz++) {
 					final short circle = (short) (xx * xx + zz * zz - 1);
-					if (!world.getBlockMaterial(x + xx, y + yy, z + zz).isSolid()
+					final BlockMaterial material = world.getBlockMaterial(x + xx, y + yy, z + zz);
+					if (!(material instanceof Solid || material instanceof Liquid)
 							&& (xx > -1 || zz > -1 || circle < radius * radius)
 							&& ((xx < 1 && zz < 1) || circle < Math.pow(radius + 1, 2))
 							&& (random.nextInt(4) != 0 || circle < Math.pow(radius - 1, 2))) {

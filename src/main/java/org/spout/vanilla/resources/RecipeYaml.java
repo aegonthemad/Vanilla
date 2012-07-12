@@ -24,47 +24,23 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.world.generator.normal.decorator;
+package org.spout.vanilla.resources;
 
-import java.util.Random;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.spout.api.inventory.Recipe;
+import org.spout.api.resource.Resource;
 
-import org.spout.api.generator.biome.Decorator;
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.geo.cuboid.Chunk;
-import org.spout.api.material.block.BlockFace;
-
-import org.spout.vanilla.material.VanillaMaterials;
-
-public class GrassDecorator implements Decorator {
-	private int minSteps = 7, maxSteps = 20, chance = 30;
-
-	@Override
-	public void populate(Chunk source, Random random) {
-		if (source.getY() < 4) {
-			return;
-		}
-		if (random.nextInt(100) > chance) {
-			return;
-		}
-
-		int x = source.getBlockX();
-		int z = source.getBlockZ();
-		int y;
-		int numSteps = random.nextInt(maxSteps - minSteps + 1) + minSteps;
-		for (int i = 0; i < numSteps; i++) {
-			x += random.nextInt(3) - 1;
-			z += random.nextInt(3) - 1;
-			y = source.getBlockY() + 15;
-			Block b = source.getWorld().getBlock(x, y, z);
-			while (b.getMaterial() == VanillaMaterials.AIR) {
-				b = b.translate(BlockFace.BOTTOM);
-				if (--y < 0) {
-					return;
-				}
-			}
-			if (b.getMaterial() == VanillaMaterials.GRASS) {
-				b = b.translate(BlockFace.TOP).setMaterial(VanillaMaterials.TALL_GRASS);
-			}
-		}
+public class RecipeYaml extends Resource {
+	public static RecipeYaml DEFAULT;
+	private Map<String, Recipe> recipes = new HashMap<String, Recipe>();
+	
+	public RecipeYaml(Map<String, Recipe> recipes) {
+		this.recipes = recipes;
+	}
+	
+	public Map<String, Recipe> getRecipes() {
+		return Collections.unmodifiableMap(recipes);
 	}
 }

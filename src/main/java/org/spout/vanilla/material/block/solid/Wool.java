@@ -26,36 +26,37 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
+import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.DataSource;
 
+import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
 
-public class Wool extends Solid implements Mineable {
-	public static final Wool WHITE = new Wool("White Wool");
-	public static final Wool ORANGE = new Wool("Orange Wool", WoolColor.ORANGE, WHITE);
-	public static final Wool MAGENTA = new Wool("Magenta Wool", WoolColor.MAGENTA, WHITE);
-	public static final Wool LIGHTBLUE = new Wool("Light Blue Wool", WoolColor.LIGHTBLUE, WHITE);
-	public static final Wool YELLOW = new Wool("Yellow Wool", WoolColor.YELLOW, WHITE);
-	public static final Wool LIME = new Wool("Lime Wool", WoolColor.LIME, WHITE);
-	public static final Wool PINK = new Wool("Pink Wool", WoolColor.PINK, WHITE);
-	public static final Wool GRAY = new Wool("Gray Wool", WoolColor.GRAY, WHITE);
-	public static final Wool SILVER = new Wool("Silver Wool", WoolColor.SILVER, WHITE);
-	public static final Wool CYAN = new Wool("Cyan Wool", WoolColor.CYAN, WHITE);
-	public static final Wool PURPLE = new Wool("Purple Wool", WoolColor.PURPLE, WHITE);
-	public static final Wool BLUE = new Wool("Blue Wool", WoolColor.BLUE, WHITE);
-	public static final Wool BROWN = new Wool("Brown Wool", WoolColor.BROWN, WHITE);
-	public static final Wool GREEN = new Wool("Green Wool", WoolColor.GREEN, WHITE);
-	public static final Wool RED = new Wool("Red Wool", WoolColor.RED, WHITE);
-	public static final Wool BLACK = new Wool("Black Wool", WoolColor.BLACK, WHITE);
+public class Wool extends Solid implements Mineable, Burnable {
+	public static final Wool WHITE_WOOL = new Wool("White Wool");
+	public static final Wool ORANGE_WOOL = new Wool("Orange Wool", WoolColor.ORANGE, WHITE_WOOL);
+	public static final Wool MAGENTA_WOOL = new Wool("Magenta Wool", WoolColor.MAGENTA, WHITE_WOOL);
+	public static final Wool LIGHTBLUE_WOOL = new Wool("Light Blue Wool", WoolColor.LIGHTBLUE, WHITE_WOOL);
+	public static final Wool YELLOW_WOOL = new Wool("Yellow Wool", WoolColor.YELLOW, WHITE_WOOL);
+	public static final Wool LIME_WOOL = new Wool("Lime Wool", WoolColor.LIME, WHITE_WOOL);
+	public static final Wool PINK_WOOL = new Wool("Pink Wool", WoolColor.PINK, WHITE_WOOL);
+	public static final Wool GRAY_WOOL = new Wool("Gray Wool", WoolColor.GRAY, WHITE_WOOL);
+	public static final Wool SILVER_WOOL = new Wool("Light Gray Wool", WoolColor.SILVER, WHITE_WOOL);
+	public static final Wool CYAN_WOOL = new Wool("Cyan Wool", WoolColor.CYAN, WHITE_WOOL);
+	public static final Wool PURPLE_WOOL = new Wool("Purple Wool", WoolColor.PURPLE, WHITE_WOOL);
+	public static final Wool BLUE_WOOL = new Wool("Blue Wool", WoolColor.BLUE, WHITE_WOOL);
+	public static final Wool BROWN_WOOL = new Wool("Brown Wool", WoolColor.BROWN, WHITE_WOOL);
+	public static final Wool GREEN_WOOL = new Wool("Green Wool", WoolColor.GREEN, WHITE_WOOL);
+	public static final Wool RED_WOOL = new Wool("Red Wool", WoolColor.RED, WHITE_WOOL);
+	public static final Wool BLACK_WOOL = new Wool("Black Wool", WoolColor.BLACK, WHITE_WOOL);
 	private final WoolColor color;
 
 	private Wool(String name) {
@@ -70,6 +71,16 @@ public class Wool extends Solid implements Mineable {
 		this.setHardness(0.8F).setResistance(1.3F);
 	}
 
+	@Override
+	public int getBurnPower() {
+		return 30;
+	}
+
+	@Override
+	public int getCombustChance() {
+		return 60;
+	}
+
 	public WoolColor getColor() {
 		return color;
 	}
@@ -80,15 +91,12 @@ public class Wool extends Solid implements Mineable {
 	}
 
 	@Override
-	public boolean canBurn() {
-		return true;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
+	public boolean canSupport(BlockMaterial material, BlockFace face) {
+		if (material.equals(VanillaMaterials.FIRE)) {
+			return true;
+		} else {
+			return super.canSupport(material, face);
+		}
 	}
 
 	@Override

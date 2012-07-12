@@ -59,7 +59,7 @@ public class CreativeMessageHandler extends MessageHandler<CreativeMessage> {
 			active.setItemOnCursor(null);
 			int slot = active.getSlotIndexMap().getSpoutSlot(message.getSlot());
 			if (slot != -1) {
-				active.onLeftClick(slot, false);
+				active.onClickGlobal(slot, false, false);
 			}
 		} else {
 			Material material = VanillaMaterials.getMaterial(message.getId());
@@ -79,7 +79,7 @@ public class CreativeMessageHandler extends MessageHandler<CreativeMessage> {
 					}
 				}
 			} else {
-				player.kick("Unknown item ID: " + message.getId() + " and durability " + message.getDamage() + "!");
+				player.kick("Unknown item ID: ", message.getId(), " and durability ", message.getDamage(), "!");
 			}
 		}
 	}

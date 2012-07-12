@@ -24,41 +24,19 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.material.block.misc;
+package org.spout.vanilla.material.item.minecart;
 
-import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.block.BlockFace;
+import org.spout.api.entity.component.Controller;
 
-import org.spout.vanilla.material.Mineable;
-import org.spout.vanilla.material.VanillaBlockMaterial;
-import org.spout.vanilla.material.block.controlled.SignBase;
-import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.controller.object.vehicle.minecart.PoweredMinecart;
 
-public abstract class Fence extends VanillaBlockMaterial implements Mineable {
-	public Fence(String name, int id) {
+public class PoweredMinecartItem extends MinecartItem {
+	public PoweredMinecartItem(String name, int id) {
 		super(name, id);
 	}
 
 	@Override
-	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
-	}
-
-	@Override
-	public boolean canSupport(BlockMaterial material, BlockFace face) {
-		if (material instanceof SignBase) {
-			return true;
-		}
-		if (face == BlockFace.TOP) {
-			if (material instanceof Torch) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public boolean canBurn() {
-		return true;
+	protected Controller getSpawnedEntity() {
+		return new PoweredMinecart();
 	}
 }

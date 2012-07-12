@@ -101,7 +101,7 @@ public class BootstrapEncryptionKeyResponseMessageHandler extends MessageHandler
 
 						message.getProcessorHandler().setProcessor(fromClientProcessor);
 
-						session.send(response, true);
+						session.send(true, response);
 					}
 
 					session.disconnect("Encryption not supported yet");

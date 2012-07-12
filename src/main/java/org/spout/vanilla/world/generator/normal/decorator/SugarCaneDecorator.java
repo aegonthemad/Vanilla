@@ -31,63 +31,67 @@ import java.util.Random;
 import org.spout.api.generator.biome.Decorator;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
-import org.spout.api.material.block.BlockFace;
+import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.world.generator.normal.object.largeplant.SugarCaneStackObject;
 
 /**
  * Decorator that decorates a biome with sugar canes.
  */
-public class SugarCaneDecorator implements Decorator {
-	/* How many times should we try to generate a sugar cane stack.
-		 * Seems a lot, but vanilla mc does 10 reed decorations per chunk.
-		 * Each decoration does 20 tries, so 200 tries total.
-		 * We should stick at 50 for now.
-		 */
-	private static final short TRIES = 50;
-	// Height control
-	private static final byte BASE_HEIGHT = 2;
-	private static final byte RAND_HEIGHT = 3;
-	// Offset from main point control
-	private static final byte RAND_X = 4;
-	private static final byte RAND_Z = 4;
+public class SugarCaneDecorator extends Decorator {
+	private static final SugarCaneStackObject CANES = new SugarCaneStackObject();
+	private final byte maxClusterSize;
+	private final byte clusterPlaceAttempts;
+	private final byte numberOfClusters;
+
+	public SugarCaneDecorator() {
+		this((byte) 6, (byte) 20, (byte) 1);
+	}
+
+	public SugarCaneDecorator(byte maxClusterSize, byte clusterPlaceAttempts, byte numberOfClusters) {
+		this.maxClusterSize = maxClusterSize;
+		this.clusterPlaceAttempts = clusterPlaceAttempts;
+		this.numberOfClusters = numberOfClusters;
+	}
 
 	@Override
 	public void populate(Chunk chunk, Random random) {
-		if (chunk.getY() < 4) {
-			return;
-		}
-		int x = chunk.getBlockX(random) + 8;
-		int z = chunk.getBlockZ(random) + 8;
-		int y = getHighestWorkableBlock(chunk, x, z);
-		if (y == -1) {
+		if (chunk.getY() != 4) {
 			return;
 		}
 		final World world = chunk.getWorld();
-		y += chunk.getBlockY();
-		for (int i = 0; i < TRIES; i++) {
-			generateSugarCaneStack(world, random, x + random.nextInt(RAND_X * 2 - 1) - (RAND_X - 1), y, z + random.nextInt(RAND_Z * 2 - 1) - (RAND_Z - 1));
-		}
-	}
-
-	private void generateSugarCaneStack(World world, Random random, int x, int y, int z) {
-		if (!VanillaMaterials.SUGAR_CANE_BLOCK.canPlace(world.getBlock(x, y, z), (short) 0, BlockFace.TOP, false)) {
-			return;
-		}
-		final int height = y + BASE_HEIGHT + random.nextInt(RAND_HEIGHT);
-		for (; y < height; y++) {
-			if (world.getBlockMaterial(x, y, z) != VanillaMaterials.AIR) {
+		CANES.setRandom(random);
+		byte successfulClusterCount = 0;
+		for (byte count = 0; count < clusterPlaceAttempts; count++) {
+			final int x = chunk.getBlockX(random);
+			final int z = chunk.getBlockZ(random);
+			final int y = getHighestWorkableBlock(world, x, z);
+			if (y == -1 || !CANES.canPlaceObject(world, x, y, z)) {
+				continue;
+			}
+			successfulClusterCount++;
+			CANES.randomize();
+			CANES.placeObject(world, x, y, z);
+			for (byte placed = 1; placed < maxClusterSize; placed++) {
+				final int xx = x - 3 + random.nextInt(7);
+				final int zz = z - 3 + random.nextInt(7);
+				CANES.randomize();
+				if (CANES.canPlaceObject(world, xx, y, zz)) {
+					CANES.placeObject(world, xx, y, zz);
+				}
+			}
+			if (successfulClusterCount >= numberOfClusters) {
 				return;
 			}
-			world.getBlock(x, y, z).setMaterial(VanillaMaterials.SUGAR_CANE_BLOCK);
 		}
 	}
 
-	private int getHighestWorkableBlock(Chunk c, int x, int z) {
-		byte y = 15;
-		while (c.getBlockMaterial(x, y, z) == VanillaMaterials.AIR) {
+	private int getHighestWorkableBlock(World world, int x, int z) {
+		int y = world.getHeight();
+		while (!world.getBlockMaterial(x, y, z).equals(VanillaMaterials.DIRT, VanillaMaterials.GRASS, VanillaMaterials.SAND)) {
 			y--;
-			if (y == 0 || c.getBlockMaterial(x, y, z) == VanillaMaterials.WATER) {
+			if (y == 0) {
 				return -1;
 			}
 		}

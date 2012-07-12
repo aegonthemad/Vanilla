@@ -37,17 +37,27 @@ import org.spout.api.material.block.BlockFaces;
 import org.spout.api.util.BlockIterator;
 
 import org.spout.vanilla.controller.living.Living;
+import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class Vines extends VanillaBlockMaterial implements Plant {
+public class Vines extends VanillaBlockMaterial implements Plant, Burnable {
 	public Vines(String name, int id) {
 		super(name, id);
-		this.setHardness(0.2F).setResistance(0.3F).setOpacity((byte) 0);
+		this.setHardness(0.2F).setResistance(0.3F).setTransparent();
+	}
+
+	@Override
+	public int getBurnPower() {
+		return 15;
+	}
+
+	@Override
+	public int getCombustChance() {
+		return 100;
 	}
 
 	private int getMask(BlockFace face) {
@@ -66,8 +76,7 @@ public class Vines extends VanillaBlockMaterial implements Plant {
 	}
 
 	public boolean isAttachedTo(Block block, BlockFace face) {
-		int mask = getMask(face);
-		return (block.getData() & mask) == mask;
+		return block.isDataBitSet(getMask(face));
 	}
 
 	/**
@@ -92,7 +101,7 @@ public class Vines extends VanillaBlockMaterial implements Plant {
 	}
 
 	@Override
-	public void onUpdate(Block block) {
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
 		//check all directions if it still supports it
 		Block above = block.translate(BlockFace.TOP);
 		if (block.getData() != 0) {
@@ -159,7 +168,7 @@ public class Vines extends VanillaBlockMaterial implements Plant {
 
 	@Override
 	public boolean canSupport(BlockMaterial material, BlockFace face) {
-		return false;
+		return material.equals(VanillaMaterials.FIRE);
 	}
 
 	@Override
@@ -246,10 +255,9 @@ public class Vines extends VanillaBlockMaterial implements Plant {
 	}
 
 	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
+	public ArrayList<ItemStack> getDrops(Block block, ItemStack holding) {
 		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-		if (held != null && held.getMaterial().equals(VanillaMaterials.SHEARS)) {
+		if (holding != null && holding.isMaterial(VanillaMaterials.SHEARS)) {
 			drops.add(new ItemStack(this, 1));
 		}
 		return drops;

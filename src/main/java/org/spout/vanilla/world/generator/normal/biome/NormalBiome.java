@@ -26,11 +26,11 @@
  */
 package org.spout.vanilla.world.generator.normal.biome;
 
+import java.util.Random;
+
 import net.royawesome.jlibnoise.NoiseQuality;
-import net.royawesome.jlibnoise.module.Module;
 import net.royawesome.jlibnoise.module.combiner.Add;
 import net.royawesome.jlibnoise.module.combiner.Multiply;
-import net.royawesome.jlibnoise.module.modifier.Clamp;
 import net.royawesome.jlibnoise.module.modifier.Exponent;
 import net.royawesome.jlibnoise.module.modifier.ScalePoint;
 import net.royawesome.jlibnoise.module.modifier.Turbulence;
@@ -42,38 +42,31 @@ import org.spout.api.math.MathHelper;
 import org.spout.api.util.cuboid.CuboidShortBuffer;
 
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.plant.TallGrass;
 import org.spout.vanilla.world.generator.VanillaBiome;
-import org.spout.vanilla.world.generator.normal.NormalGenerator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator.TallGrassFactory;
+import org.spout.vanilla.world.generator.normal.decorator.TreeDecorator.TreeWGOFactory;
+import org.spout.vanilla.world.generator.normal.object.tree.BigTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.SmallTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
 
 public abstract class NormalBiome extends VanillaBiome {
 	// the master noise to be used by biomes extending this class
-	protected static final Add MASTER = new Add();
+	private static final ScalePoint MASTER = new ScalePoint();
 	// the parts for the master noise
 	private static final Perlin ELEVATION = new Perlin();
 	private static final Perlin ROUGHNESS = new Perlin();
 	private static final Perlin DETAIL = new Perlin();
+	// scale of height maps
+	private static final float HEIGHT_MAP_SCALE = 4f;
+	// a turbulent version of the modified master, used for density gen
+	private static final Turbulence TURBULENT_MASTER = new Turbulence();
 	// a scaled version of the elevation for block replacing
 	protected static final ScalePoint BLOCK_REPLACER = new ScalePoint();
-	// a modified version of the master, provided by the extending biome
-	private final Module modifiedMaster;
-	// a turbulent version of the modified master, used for density gen
-	private final Turbulence mainMaster = new Turbulence();
-	// noise used to gen the height map parts, based on the mainMaster
-	private final Clamp bottomHeightMapMaster = new Clamp();
-	private final Clamp upperHeightMapMaster = new Clamp();
-	// params to be modified by the extending biome
-	// these are defaults to gen forest terrain (appropriate for many biomes)
-	// limits of height maps
-	protected byte minDensityTerrainHeight = 71;
-	protected byte maxDensityTerrainHeight = 74;
-	protected byte minDensityTerrainThickness = 0;
-	protected byte maxDensityTerrainThickness = 3;
-	// scale of height maps
-	protected float upperHeightMapScale = 4f;
-	protected float bottomHeightMapScale = 5f;
-	// scale of the density layer
-	protected float densityTerrainThicknessScale = 6f;
-	protected float densityTerrainHeightScale = 4f;
+	// height settings
+	protected byte min;
+	protected byte max;
+	protected byte diff;
 
 	static {
 		ELEVATION.setFrequency(0.2D);
@@ -98,35 +91,32 @@ public abstract class NormalBiome extends VanillaBiome {
 		multiply.SetSourceModule(0, ROUGHNESS);
 		multiply.SetSourceModule(1, DETAIL);
 
-		MASTER.SetSourceModule(0, multiply);
-		MASTER.SetSourceModule(1, ELEVATION);
+		final Add add = new Add();
+		add.SetSourceModule(0, multiply);
+		add.SetSourceModule(1, ELEVATION);
+
+		MASTER.SetSourceModule(0, add);
+		MASTER.setxScale(0.07);
+		MASTER.setyScale(0.04);
+		MASTER.setzScale(0.07);
 
 		BLOCK_REPLACER.SetSourceModule(0, ELEVATION);
 		BLOCK_REPLACER.setxScale(4D);
 		BLOCK_REPLACER.setyScale(1D);
 		BLOCK_REPLACER.setzScale(4D);
-	}
-
-	protected NormalBiome(int biomeId, Module modifiedMaster, Decorator... decorators) {
-		super(biomeId, decorators);
-
-		this.modifiedMaster = modifiedMaster;
 
 		final Exponent contrast = new Exponent();
-		contrast.SetSourceModule(0, modifiedMaster);
+		contrast.SetSourceModule(0, MASTER);
 		contrast.setExponent(1.5D);
 
-		mainMaster.SetSourceModule(0, contrast);
-		mainMaster.setFrequency(0.005D);
-		mainMaster.setPower(6D);
+		TURBULENT_MASTER.SetSourceModule(0, contrast);
+		TURBULENT_MASTER.setFrequency(0.005D);
+		TURBULENT_MASTER.setPower(6D);
+		TURBULENT_MASTER.setRoughness(1);
+	}
 
-		bottomHeightMapMaster.SetSourceModule(0, mainMaster);
-		bottomHeightMapMaster.setUpperBound(0D);
-		bottomHeightMapMaster.setLowerBound(-minDensityTerrainHeight);
-
-		upperHeightMapMaster.SetSourceModule(0, mainMaster);
-		upperHeightMapMaster.setUpperBound(maxDensityTerrainThickness);
-		upperHeightMapMaster.setLowerBound(0D);
+	protected NormalBiome(int biomeId, Decorator... decorators) {
+		super(biomeId, decorators);
 	}
 
 	@Override
@@ -136,7 +126,7 @@ public abstract class NormalBiome extends VanillaBiome {
 			return;
 		}
 
-		final byte size = (byte) blockData.getSize().getY();
+		final short size = (short) blockData.getSize().getY();
 
 		final int startY = chunkY * 16;
 		final int endY = startY + size;
@@ -149,32 +139,28 @@ public abstract class NormalBiome extends VanillaBiome {
 	protected void fill(CuboidShortBuffer blockData, int x, int startY, int endY, int z) {
 
 		final int seed = (int) blockData.getWorld().getSeed();
-		ROUGHNESS.setSeed(seed);
-		DETAIL.setSeed(seed);
 		ELEVATION.setSeed(seed);
-		mainMaster.setSeed(seed);
+		ROUGHNESS.setSeed(seed * 2);
+		DETAIL.setSeed(seed * 3);
+		TURBULENT_MASTER.setSeed(seed * 5);
 
 		final int densityTerrainHeightMin = getDensityTerrainHeight(x, z);
 		final int densityTerrainHeightMax = densityTerrainHeightMin + getDensityTerrainThickness(x, z);
 
-		final int bottomHeightMapHeight = getBottomHeightMapValue(x, z, densityTerrainHeightMin);
-		final int upperHeightMapHeight = getUpperHeightMapValue(x, z, densityTerrainHeightMax);
+		final int heightMapHeight = getHeightMapValue(x, z, densityTerrainHeightMin);
 
 		for (int y = startY; y < endY; y++) {
-			if (y <= densityTerrainHeightMin) {
-				for (; y <= bottomHeightMapHeight && y < endY; y++) {
+			if (y < densityTerrainHeightMin) {
+				for (; y <= heightMapHeight && y < endY; y++) {
 					blockData.set(x, y, z, VanillaMaterials.STONE.getId());
 				}
 				if (y >= endY) { // if not, we fill the rest with density terrain
 					break;
 				}
-			} else if (y > densityTerrainHeightMax) {
-				for (; y < upperHeightMapHeight && y < endY; y++) {
-					blockData.set(x, y, z, VanillaMaterials.STONE.getId());
-				}
+			} else if (y >= densityTerrainHeightMax) {
 				break; // we're done for the entire world column!
 			}
-			if (mainMaster.GetValue(x, y, z) > 0) {
+			if (TURBULENT_MASTER.GetValue(x, y, z) > 0) {
 				blockData.set(x, y, z, VanillaMaterials.STONE.getId());
 			} else {
 				blockData.set(x, y, z, VanillaMaterials.AIR.getId());
@@ -183,84 +169,19 @@ public abstract class NormalBiome extends VanillaBiome {
 	}
 
 	private int getDensityTerrainHeight(int x, int z) {
-		return (int) MathHelper.clamp(modifiedMaster.GetValue(x, minDensityTerrainHeight, z) * densityTerrainHeightScale
-				+ minDensityTerrainHeight + (maxDensityTerrainHeight - minDensityTerrainHeight) / 2,
-				minDensityTerrainHeight, maxDensityTerrainHeight);
+		return (int) MathHelper.clamp(MASTER.GetValue(x, min, z) * diff / 2 + diff / 2 + min, min, max);
 	}
 
-	private int getDensityTerrainThickness(int x, int z) { //TODO this does not seem right...you work with doubles, and then just cast them to an int? Pretty big loss of precision...
-		return (int) MathHelper.clamp(modifiedMaster.GetValue(x, minDensityTerrainHeight, z) * densityTerrainThicknessScale
-				+ minDensityTerrainThickness + (maxDensityTerrainThickness - minDensityTerrainThickness) / 2,
-				minDensityTerrainThickness, maxDensityTerrainThickness);
+	private int getDensityTerrainThickness(int x, int z) {
+		return (int) MathHelper.clamp(MASTER.GetValue(x, -min, z) * diff / 2 + diff / 2, 0, diff);
 	}
 
-	private int getBottomHeightMapValue(int x, int z, int densityTerrainHeightMin) {
-		return (int) Math.ceil(bottomHeightMapMaster.GetValue(x, densityTerrainHeightMin, z)
-				* bottomHeightMapScale + densityTerrainHeightMin + 1);
-	}
-
-	private int getUpperHeightMapValue(int x, int z, int densityTerrainHeightMax) {
-		return (int) Math.ceil(upperHeightMapMaster.GetValue(x, densityTerrainHeightMax, z)
-				* upperHeightMapScale + densityTerrainHeightMax);
+	private int getHeightMapValue(int x, int z, int densityTerrainHeightMin) {
+		return (int) (TURBULENT_MASTER.GetValue(x, densityTerrainHeightMin, z)
+				* HEIGHT_MAP_SCALE + densityTerrainHeightMin + 1);
 	}
 
 	protected void replaceBlocks(CuboidShortBuffer blockData, int x, int chunkY, int z) {
-
-		final byte size = (byte) blockData.getSize().getY();
-
-		if (size < 16) {
-			return; // ignore samples
-		}
-
-		final int endY = chunkY * 16;
-		final int startY = endY + size - 1;
-
-		final byte maxGroudCoverDepth = (byte) MathHelper.clamp(BLOCK_REPLACER.GetValue(x, 0, z) * 2 + 4, 2D, 5D);
-		final byte sampleSize = (byte) (maxGroudCoverDepth + 1);
-
-		boolean hasSurface = false;
-		byte groundCoverDepth = 0;
-		// check the column above by sampling, determining any missing blocks
-		// to add to the current column
-		if (blockData.get(x, startY, z) != VanillaMaterials.AIR.getId()) {
-			final int nextChunkStart = (chunkY + 1) * 16;
-			final int nextChunkEnd = nextChunkStart + sampleSize;
-			final CuboidShortBuffer sample = getSample(blockData.getWorld(), x, nextChunkStart, nextChunkEnd, z);
-			for (int y = nextChunkStart; y < nextChunkEnd; y++) {
-				if (sample.get(x, y, z) != VanillaMaterials.AIR.getId()) {
-					groundCoverDepth++;
-				} else {
-					hasSurface = true;
-					break;
-				}
-			}
-		}
-		// place ground cover
-		for (int y = startY; y >= endY; y--) {
-			final short id = blockData.get(x, y, z);
-			if (id == VanillaMaterials.AIR.getId()) {
-				hasSurface = true;
-				groundCoverDepth = 0;
-				if (y <= NormalGenerator.SEA_LEVEL) {
-					blockData.set(x, y, z, VanillaMaterials.STATIONARY_WATER.getId());
-				}
-			} else {
-				if (hasSurface) {
-					if (groundCoverDepth == 0) {
-						short topCover = y >= NormalGenerator.SEA_LEVEL
-								? VanillaMaterials.GRASS.getId() : VanillaMaterials.DIRT.getId();
-						blockData.set(x, y, z, topCover);
-						groundCoverDepth++;
-					} else if (groundCoverDepth < maxGroudCoverDepth) {
-						blockData.set(x, y, z, VanillaMaterials.DIRT.getId());
-						groundCoverDepth++;
-					} else {
-						hasSurface = false;
-					}
-				}
-			}
-		}
-		// place bedrock
 		if (chunkY == 0) {
 			final byte bedrockDepth = (byte) MathHelper.clamp(BLOCK_REPLACER.GetValue(x, -5, z) * 2 + 4, 1D, 5D);
 			for (int y = 0; y <= bedrockDepth; y++) {
@@ -270,7 +191,6 @@ public abstract class NormalBiome extends VanillaBiome {
 	}
 
 	protected CuboidShortBuffer getSample(World world, int x, int startY, int endY, int z) {
-
 		int size;
 
 		if (endY <= startY) {
@@ -282,9 +202,48 @@ public abstract class NormalBiome extends VanillaBiome {
 		if (size >= 16) {
 			size = 15; // samples should not be larger than a column
 		}
-		// currently, using different size params will cause errors with the cuboid short buffer...
-		CuboidShortBuffer sample = new CuboidShortBuffer(world, x, startY, z, size, size, size);
+		final CuboidShortBuffer sample = new CuboidShortBuffer(world, x, startY, z, 1, size, 1);
 		fill(sample, x, startY, endY, z);
 		return sample;
+	}
+
+	protected void setMinMax(byte min, byte max) {
+		this.min = min;
+		this.max = max;
+		this.diff = (byte) (max - min);
+	}
+
+	public byte getMin() {
+		return min;
+	}
+
+	public byte getMax() {
+		return max;
+	}
+
+	public static class NormalTreeWGOFactory implements TreeWGOFactory {
+		@Override
+		public TreeObject make(Random random) {
+			if (random.nextInt(10) == 0) {
+				return new BigTreeObject(random);
+			} else {
+				return new SmallTreeObject(random);
+			}
+		}
+
+		@Override
+		public byte amount(Random random) {
+			if (random.nextInt(10) == 0) {
+				return 1;
+			}
+			return 0;
+		}
+	}
+
+	public static class NormalTallGrassFactory implements TallGrassFactory {
+		@Override
+		public TallGrass make(Random random) {
+			return TallGrass.TALL_GRASS;
+		}
 	}
 }

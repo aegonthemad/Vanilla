@@ -26,12 +26,10 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
+import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
@@ -51,7 +49,7 @@ import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
 public class FenceGate extends VanillaBlockMaterial implements Mineable, Openable, RedstoneTarget {
 	public FenceGate(String name, int id) {
 		super(name, id);
-		this.setHardness(2.0F).setResistance(3.0F).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(3.0F).setTransparent();
 	}
 
 	@Override
@@ -80,9 +78,9 @@ public class FenceGate extends VanillaBlockMaterial implements Mineable, Openabl
 	}
 
 	@Override
-	public void onUpdate(Block block) {
-		super.onUpdate(block);
-		if (block.getMaterial().equals(this)) {
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
+		if (!(oldMaterial instanceof FenceGate) && block.getMaterial().equals(this)) {
 			boolean powered = this.isReceivingPower(block);
 			if (powered != this.isOpen(block)) {
 				this.setOpen(block, powered);
@@ -126,13 +124,6 @@ public class FenceGate extends VanillaBlockMaterial implements Mineable, Openabl
 	@Override
 	public boolean isReceivingPower(Block block) {
 		return RedstoneUtil.isReceivingPower(block);
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	@Override

@@ -34,23 +34,38 @@ import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class TallGrass extends DeadBush {
+public class TallGrass extends DeadBush implements Burnable {
 	public static final TallGrass DEAD_GRASS = new TallGrass("Dead Grass");
 	public static final TallGrass TALL_GRASS = new TallGrass("Tall Grass", 1, DEAD_GRASS);
 	public static final TallGrass FERN = new TallGrass("Fern", 2, DEAD_GRASS);
 
 	private TallGrass(String name) {
 		super((short) 0x0003, name, 31);
-		this.setResistance(0.0F).setHardness(0.0F).setOpacity((byte) 0);
+		this.setResistance(0.0F).setHardness(0.0F).setTransparent();
 	}
 
 	private TallGrass(String name, int data, TallGrass parent) {
 		super(name, 31, data, parent);
-		this.setResistance(0.0F).setHardness(0.0F).setOpacity((byte) 0);
+		this.setResistance(0.0F).setHardness(0.0F).setTransparent();
+	}
+
+	@Override
+	public boolean canSupport(BlockMaterial mat, BlockFace face) {
+		return mat.equals(VanillaMaterials.FIRE);
+	}
+
+	@Override
+	public int getBurnPower() {
+		return 60;
+	}
+
+	@Override
+	public int getCombustChance() {
+		return 100;
 	}
 
 	@Override
@@ -69,10 +84,9 @@ public class TallGrass extends DeadBush {
 	}
 
 	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
+	public ArrayList<ItemStack> getDrops(Block block, ItemStack holding) {
 		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-		if (held != null && held.getMaterial().equals(VanillaMaterials.SHEARS)) {
+		if (holding != null && holding.isMaterial(VanillaMaterials.SHEARS)) {
 			drops.add(new ItemStack(this, 1));
 		} else {
 			Random rand = new Random();

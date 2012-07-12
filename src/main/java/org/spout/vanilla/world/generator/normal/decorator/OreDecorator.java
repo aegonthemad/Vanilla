@@ -32,22 +32,23 @@ import org.spout.api.generator.biome.Decorator;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 
-import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.normal.object.OreObject;
+import org.spout.vanilla.world.generator.normal.object.OreObject.OreType;
 
-public class OreDecorator implements Decorator {
-	public static OreObject[] objects;
+public class OreDecorator extends Decorator {
+	private static final OreObject[] ORES;
 
 	static {
-		objects = new OreObject[8];
-		objects[0] = new OreObject(VanillaMaterials.DIRT, 20, 32, 128);
-		objects[1] = new OreObject(VanillaMaterials.GRAVEL, 10, 32, 128);
-		objects[2] = new OreObject(VanillaMaterials.COAL_ORE, 20, 16, 128);
-		objects[3] = new OreObject(VanillaMaterials.IRON_ORE, 20, 8, 64);
-		objects[4] = new OreObject(VanillaMaterials.GOLD_ORE, 2, 8, 32);
-		objects[5] = new OreObject(VanillaMaterials.REDSTONE_ORE, 8, 7, 16);
-		objects[6] = new OreObject(VanillaMaterials.DIAMOND_ORE, 1, 7, 16);
-		objects[7] = new OreObject(VanillaMaterials.LAPIS_LAZULI_ORE, 1, 6, 32);
+		ORES = new OreObject[]{
+			new OreObject(OreType.DIRT),
+			new OreObject(OreType.GRAVEL),
+			new OreObject(OreType.COAL),
+			new OreObject(OreType.IRON),
+			new OreObject(OreType.REDSTONE),
+			new OreObject(OreType.LAPIS_LAZULI),
+			new OreObject(OreType.GOLD),
+			new OreObject(OreType.DIAMOND)
+		};
 	}
 
 	@Override
@@ -56,9 +57,9 @@ public class OreDecorator implements Decorator {
 			return;
 		}
 		final World world = chunk.getWorld();
-		for (OreObject object : objects) {
+		for (OreObject object : ORES) {
 			object.setRandom(random);
-			for (int i = 0; i < object.getCount(); i++) {
+			for (byte i = 0; i < object.getCount(); i++) {
 				final int x = chunk.getBlockX(random);
 				final int y = random.nextInt(object.getMaxHeight());
 				final int z = chunk.getBlockZ(random);

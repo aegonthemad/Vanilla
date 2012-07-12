@@ -26,20 +26,20 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import java.util.ArrayList;
-
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
+import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.DataSource;
 
+import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
 import org.spout.vanilla.material.item.tool.Axe;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
 
-public class Plank extends Solid implements Fuel, Mineable {
+public class Plank extends Solid implements Fuel, Mineable, Burnable {
 	public static final Plank PLANK = new Plank("Oak Plank");
 	public static final Plank PINE = new Plank("Pine Plank", WoodType.PINE, PLANK);
 	public static final Plank BIRCH = new Plank("Birch Plank", WoodType.BIRCH, PLANK);
@@ -64,6 +64,15 @@ public class Plank extends Solid implements Fuel, Mineable {
 		return Instrument.BASSGUITAR;
 	}
 
+	@Override
+	public boolean canSupport(BlockMaterial material, BlockFace face) {
+		if (material.equals(VanillaMaterials.FIRE)) {
+			return true;
+		} else {
+			return super.canSupport(material, face);
+		}
+	}
+
 	public WoodType getType() {
 		return type;
 	}
@@ -76,13 +85,6 @@ public class Plank extends Solid implements Fuel, Mineable {
 	@Override
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Axe ? (short) 1 : (short) 2;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	public static enum WoodType implements DataSource {
@@ -105,5 +107,15 @@ public class Plank extends Solid implements Fuel, Mineable {
 	@Override
 	public float getFuelTime() {
 		return BURN_TIME;
+	}
+
+	@Override
+	public int getBurnPower() {
+		return 5;
+	}
+
+	@Override
+	public int getCombustChance() {
+		return 20;
 	}
 }

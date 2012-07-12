@@ -26,8 +26,6 @@
  */
 package org.spout.vanilla.material.block.plant;
 
-import java.util.ArrayList;
-
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent;
 import org.spout.api.geo.World;
@@ -46,12 +44,12 @@ import org.spout.vanilla.material.item.weapon.Sword;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 import org.spout.vanilla.world.generator.normal.object.largeplant.HugeMushroomObject;
 import org.spout.vanilla.world.generator.normal.object.largeplant.HugeMushroomObject.HugeMushroomType;
-import org.spout.vanilla.world.generator.normal.object.largeplant.LargePlantObject;
+import org.spout.vanilla.world.generator.object.LargePlantObject;
 
 public class Mushroom extends GroundAttachable implements Plant {
 	public Mushroom(String name, int id) {
 		super(name, id);
-		this.setHardness(0.0F).setResistance(0.0F).setOpacity((byte) 0);
+		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	@Override
@@ -101,16 +99,10 @@ public class Mushroom extends GroundAttachable implements Plant {
 	@Override
 	public boolean isValidPosition(Block block, BlockFace attachedFace, boolean seekAlternative) {
 		if (super.isValidPosition(block, attachedFace, seekAlternative)) {
-			return block.getLight() <= 12 && block.getSkyLight() <= 12;
+			final Block under = block.translate(BlockFace.BOTTOM);
+			return under.isMaterial(VanillaMaterials.MYCELIUM) || block.getLight() <= 12 && under.getMaterial().isOpaque();
 		}
 		return false;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	@Override

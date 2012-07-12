@@ -30,72 +30,187 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spout.api.Spout;
-import org.spout.api.inventory.Inventory;
-import org.spout.api.inventory.InventoryBase;
-import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.Recipe;
-import org.spout.api.inventory.RecipeManager;
+import org.spout.api.inventory.*;
+import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.Material;
 
 import org.spout.vanilla.controller.WindowOwner;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.inventory.CraftingGrid;
+import org.spout.vanilla.inventory.CraftingInventory;
 
 public abstract class CraftingWindow extends Window {
-	protected final CraftingGrid craftingGrid;
+	protected final CraftingInventory craftingGrid;
 
-	public CraftingWindow(int id, String title, VanillaPlayer owner, CraftingGrid craftingGrid, WindowOwner... windowOwners) {
+	public CraftingWindow(int id, String title, VanillaPlayer owner, CraftingInventory craftingGrid, WindowOwner... windowOwners) {
 		super(id, title, owner, windowOwners);
 		this.craftingGrid = craftingGrid;
 	}
 
-	public CraftingGrid getCraftingGrid() {
+	public CraftingInventory getCraftingGrid() {
 		return craftingGrid;
 	}
 
 	@Override
-	public void onSlotSet(InventoryBase inventory, int slot, ItemStack item) {
-		super.onSlotSet(inventory, slot, item);
-		int size = 0;
-		for (InventoryBase i : getInventory().getInventories()) {
-			if (i != craftingGrid.getGridInventory() && slot > i.getSize() + size) {
-				size += i.getSize();
-			}
-		}
-		for (int i : craftingGrid.getGridArray()) {
-			if (i + size == slot) {
-				updateOutput();
-				break;
-			}
+	public boolean open() {
+		if (super.open()) {
+			this.craftingGrid.getGrid().addViewer(this);
+			return true;
+		} else {
+			return false;
 		}
 	}
 
 	@Override
-	public boolean onClick(int clickedSlot, boolean rightClick, boolean shift) {
-		int size = 0;
-		for (InventoryBase i : getInventory().getInventories()) {
-			if (i != craftingGrid.getGridInventory()) {
-				size += i.getSize();
-			}
-		}
-		if (itemOnCursor != null && clickedSlot == craftingGrid.getOutputSlot() + size && !shift) {
+	public boolean close() {
+		if (super.close()) {
+			this.craftingGrid.getGrid().removeViewer(this);
+			return true;
+		} else {
 			return false;
 		}
-		return super.onClick(clickedSlot, rightClick, shift);
 	}
 
+	@Override
+	public void onSlotSet(InventoryBase inventory, int slot, ItemStack item) {
+		if (inventory == this.getCraftingGrid().getGrid()) {
+			updateOutput();
+		} else {
+			super.onSlotSet(inventory, slot, item);
+		}
+	}
+
+	@Override
+	public boolean onClick(InventoryBase inventory, int clickedSlot, boolean rightClick, boolean shift) {
+		if (inventory == this.getCraftingGrid() && clickedSlot == this.getCraftingGrid().getOutput().getOffset()) {
+			ItemStack output = this.getCraftingGrid().getOutput().getItem();
+			if (output == null) {
+				return true;
+			}
+			if (shift) {
+				InventorySlot slot = this.craftingGrid.getOutput();
+				ItemStack clickedItem = slot.getItem().clone();
+				ItemStack[] before = this.craftingGrid.getGrid().getClonedContents();
+				ItemStack items = new ItemStack(clickedItem.getMaterial(), 0);
+				while (clickedItem.equalsIgnoreSize(slot.getItem())) {
+					items.setAmount(items.getAmount() + 1);
+					subtractFromCraftingArray();
+				}
+				if (!owner.getInventory().getMain().canItemFit(items, true, true)) {
+					this.craftingGrid.setContents(before);
+				} else {
+					owner.getInventory().getMain().addItem(items);
+				}
+			}
+		}
+		return super.onClick(inventory, clickedSlot, rightClick, shift);
+	}
+
+	@Override
+	public boolean onLeftClick(InventoryBase inventory, int clickedSlot, boolean shift) {
+		if (inventory == this.getCraftingGrid() && clickedSlot == this.getCraftingGrid().getOutput().getOffset()) {
+			InventorySlot slot = this.craftingGrid.getOutput();
+			ItemStack clickedItem = slot.getItem();
+			if (clickedItem == null) {
+				if (this.hasItemOnCursor()) {
+					return false;
+				}
+				return true;
+			}
+
+			if (!this.hasItemOnCursor()) {
+				// clicked item > cursor
+				this.setItemOnCursor(clickedItem);
+				slot.setItem(null);
+				subtractFromCraftingArray();
+				return true;
+			}
+			
+			// clickedItem != null && this.hasItemOnCursor()
+			// clicked item + cursor
+			ItemStack cursorItem = this.getItemOnCursor();
+			if (!cursorItem.equalsIgnoreSize(clickedItem)) {
+				return false;
+			}
+			
+			// stack
+			cursorItem.stack(clickedItem);
+			slot.setItem(clickedItem.getAmount() <= 0 ? null : clickedItem);
+			this.setItemOnCursor(cursorItem);
+			subtractFromCraftingArray();
+			return true;		
+		}
+		return super.onLeftClick(inventory, clickedSlot, shift);
+	}
+
+	@Override
+	public boolean onRightClick(InventoryBase inventory, int clickedSlot, boolean shift) {
+		if (inventory == this.getCraftingGrid() && clickedSlot == this.getCraftingGrid().getOutput().getOffset()) {
+			InventorySlot slot = craftingGrid.getOutput();
+			ItemStack clickedItem = slot.getItem();
+			if (shift) {
+				
+			}
+			if (clickedItem == null) {
+				if (this.hasItemOnCursor()) {
+					return false;
+				}
+				return true;
+			}
+			
+			if (this.hasItemOnCursor()) {
+				// clicked item + cursor
+				ItemStack cursorItem = this.getItemOnCursor();
+				if (!cursorItem.equalsIgnoreSize(clickedItem)) {
+					return false;
+				}
+				if (cursorItem.getAmount() + clickedItem.getAmount() > cursorItem.getMaxStackSize()) {
+					return false;
+				}
+				cursorItem.stack(clickedItem);
+				slot.setItem(null);
+				this.setItemOnCursor(cursorItem);
+			} else {
+				this.setItemOnCursor(clickedItem.clone());
+				slot.setItem(null);
+			}
+			subtractFromCraftingArray();
+			return true;
+		}
+		return super.onRightClick(inventory, clickedSlot, shift);
+	}
+
+	private void subtractFromCraftingArray() {
+		ItemStack[] clonedContents = craftingGrid.getGrid().getClonedContents();
+		for (int i = 0; i < clonedContents.length; i++) {
+			ItemStack clickedItem = clonedContents[i];
+			if (clickedItem == null) continue;
+			clickedItem.setAmount(clickedItem.getAmount() - 1);
+			if (clickedItem.isEmpty()) {
+				clickedItem = null;
+			}
+			clonedContents[i] = clickedItem;
+		}
+		List<InventoryViewer> viewers = craftingGrid.getViewers();
+		for (InventoryViewer viewer : viewers) {
+			craftingGrid.removeViewer(viewer);
+		}
+		craftingGrid.getGrid().setContents(clonedContents);
+		for (InventoryViewer viewer : viewers) {
+			craftingGrid.addViewer(viewer);
+		}
+		craftingGrid.notifyViewers(craftingGrid.getGrid().getSize() - 1, craftingGrid.getGrid().getItem(craftingGrid.getGrid().getSize() - 1)); // Notify all of last change
+	}
+	
 	private boolean updateOutput() {
 		RecipeManager recipeManager = Spout.getEngine().getRecipeManager();
-		Inventory grid = craftingGrid.getGridInventory();
-		int[] gridArray = craftingGrid.getGridArray();
+		InventoryBase grid = craftingGrid.getGrid();
 		int rowSize = craftingGrid.getRowSize();
 		List<List<Material>> materials = new ArrayList<List<Material>>();
 		List<Material> current = new ArrayList<Material>();
 		List<Material> shapeless = new ArrayList<Material>();
 		int cntr = 0;
-		for (int slot : gridArray) {
+		for (ItemStack item : grid) {
 			cntr++;
-			ItemStack item = grid.getItem(slot);
 			Material mat = null;
 			if (item != null) {
 				mat = item.getMaterial();
@@ -110,17 +225,17 @@ public abstract class CraftingWindow extends Window {
 				cntr = 0;
 			}
 		}
-		Recipe recipe = null;
-		recipe = recipeManager.matchShapedRecipe(materials);
+		Recipe recipe = recipeManager.matchShapedRecipe(materials);
 		if (recipe == null) {
 			recipe = recipeManager.matchShapelessRecipe(shapeless);
 		}
 		if (recipe != null) {
-			int outputSlot = craftingGrid.getOutputSlot();
-			if (grid.getItem(outputSlot) == null) {
-				grid.setItem(outputSlot, recipe.getResult());
+			if (this.getCraftingGrid().getOutput().getItem() == null) {
+				this.getCraftingGrid().getOutput().setItem(recipe.getResult());
 			}
 			return true;
+		} else {
+			craftingGrid.getOutput().setItem(null);
 		}
 		return false;
 	}

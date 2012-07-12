@@ -26,7 +26,6 @@
  */
 package org.spout.vanilla.material.block.plant;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 import org.spout.api.entity.Entity;
@@ -39,6 +38,7 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.range.EffectRange;
+
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Plant;
@@ -60,12 +60,12 @@ public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMat
 
 	private Sapling(String name) {
 		super(dataMask, name, 6);
-		this.setHardness(0.0F).setResistance(0.0F).setOpacity((byte) 0);
+		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	private Sapling(String name, int data, Sapling parent) {
 		super(name, 6, data, parent);
-		this.setHardness(0.0F).setResistance(0.0F).setOpacity((byte) 0);
+		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	@Override
@@ -110,13 +110,6 @@ public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMat
 			}
 			this.growTree(block);
 		}
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	/**

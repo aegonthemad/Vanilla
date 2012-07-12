@@ -34,12 +34,21 @@ import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.world.generator.normal.object.tree.ShrubObject;
+import org.spout.vanilla.material.block.Solid;
+import org.spout.vanilla.world.generator.normal.object.BlockPatchObject;
 
-public class ShrubDecorator implements Decorator {
-	// How many shrub decorations per chunk
-	// this number is valid for jungles only
-	private static final byte AMOUNT = 20;
+public class SandAndClayDecorator extends Decorator {
+	private static final byte FIRST_SAND_ROUND = 3;
+	private static final byte SECOND_SAND_ROUND = 1;
+	private static final byte CLAY_ROUND = 1;
+	private static final BlockPatchObject SAND = new BlockPatchObject(VanillaMaterials.SAND);
+	private static final BlockPatchObject CLAY = new BlockPatchObject(VanillaMaterials.CLAY_BLOCK);
+
+	static {
+		CLAY.setHeightRadius((byte) 1);
+		CLAY.getOverridableMaterials().clear();
+		CLAY.getOverridableMaterials().add(VanillaMaterials.DIRT);
+	}
 
 	@Override
 	public void populate(Chunk chunk, Random random) {
@@ -47,26 +56,41 @@ public class ShrubDecorator implements Decorator {
 			return;
 		}
 		final World world = chunk.getWorld();
-		final ShrubObject shrub = new ShrubObject(random);
-		for (byte i = 0; i < AMOUNT; i++) {
+		SAND.setRandom(random);
+		CLAY.setRandom(random);
+		for (byte count = 0; count < FIRST_SAND_ROUND; count++) {
 			final int x = chunk.getBlockX(random);
 			final int z = chunk.getBlockZ(random);
 			final int y = getHighestWorkableBlock(world, x, z);
-			if (y == -1) {
-				continue;
+			if (y != -1 && SAND.canPlaceObject(world, x, y, z)) {
+				SAND.placeObject(world, x, y, z);
 			}
-			if (shrub.canPlaceObject(world, x, y, z)) {
-				shrub.placeObject(world, x, y, z);
+		}
+		for (byte count = 0; count < CLAY_ROUND; count++) {
+			final int x = chunk.getBlockX(random);
+			final int z = chunk.getBlockZ(random);
+			final int y = getHighestWorkableBlock(world, x, z);
+			if (y != -1 && CLAY.canPlaceObject(world, x, y, z)) {
+				CLAY.placeObject(world, x, y, z);
+			}
+		}
+		for (byte count = 0; count < SECOND_SAND_ROUND; count++) {
+			final int x = chunk.getBlockX(random);
+			final int z = chunk.getBlockZ(random);
+			final int y = getHighestWorkableBlock(world, x, z);
+			if (y != -1 && SAND.canPlaceObject(world, x, y, z)) {
+				SAND.placeObject(world, x, y, z);
 			}
 		}
 	}
 
 	private int getHighestWorkableBlock(World world, int x, int z) {
-		byte y = 127;
+		int y = world.getHeight();
 		BlockMaterial material;
-		while ((material = world.getBlockMaterial(x, y, z)) == VanillaMaterials.AIR || material == VanillaMaterials.LEAVES) {
+		while ((material = world.getBlockMaterial(x, y, z)) == VanillaMaterials.ICE
+				|| !(material instanceof Solid)) {
 			y--;
-			if (y == 0 || world.getBlockMaterial(x, y, z) == VanillaMaterials.WATER) {
+			if (y == 0) {
 				return -1;
 			}
 		}

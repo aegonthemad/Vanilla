@@ -27,6 +27,7 @@
 package org.spout.vanilla.material;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.block.BlockSnapshot;
 import org.spout.api.math.Vector3;
+
 import org.spout.vanilla.controller.object.moving.Item;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
 import org.spout.vanilla.material.enchantment.Enchantments;
@@ -124,8 +126,8 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	}
 
 	@Override
-	public void onUpdate(Block block) {
-		super.onUpdate(block);
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
 	}
 
 	@Override
@@ -296,13 +298,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	}
 
 	/**
-	 * Gets if this block material can burn and be destroyed as a result of fire
-	 */
-	public boolean canBurn() {
-		return false;
-	}
-
-	/**
 	 * Gets the move reaction of block material for the block specified
 	 * @param block that is being moved
 	 * @return the move reaction
@@ -336,19 +331,19 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	 * @return a list of drops
 	 */
 	public List<ItemStack> getDrops(Block block, ItemStack holding) {
-		if (!canDrop(block, holding)) {
-			return Collections.<ItemStack>emptyList();
-		}
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		if (holding != null && EnchantmentUtil.hasEnchantment(holding, Enchantments.SILK_TOUCH)) {
-			drops.add(new ItemStack(this, 1));
-		} else {
-			for (Material m : dropMaterials.keySet()) {
-				int[] amount = dropMaterials.get(m);
-				drops.add(new ItemStack(m, amount[(int) Math.random() * amount.length]));
+		if (canDrop(block, holding)) {
+			if (holding != null && EnchantmentUtil.hasEnchantment(holding, Enchantments.SILK_TOUCH)) {
+				return Arrays.asList(new ItemStack(this, 1));
+			} else if (!this.dropMaterials.isEmpty()) {
+				ArrayList<ItemStack> drops = new ArrayList<ItemStack>(this.dropMaterials.size());
+				for (Material m : dropMaterials.keySet()) {
+					int[] amount = dropMaterials.get(m);
+					drops.add(new ItemStack(m, amount[(int) (Math.random() * amount.length)]));
+				}
+				return drops;
 			}
 		}
-		return drops;
+		return Collections.<ItemStack>emptyList();
 	}
 
 	/**
@@ -368,6 +363,13 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		return this;
 	}
 
+	/**
+	 * Gets whether this Block Material can spawn drops when dug by the held item specified
+	 * 
+	 * @param block to be broken
+	 * @param holding item of the diggers
+	 * @return True if it spawns items, False if not
+	 */
 	public boolean canDrop(Block block, ItemStack holding) {
 		if (this.miningLevel == 0) {
 			return true;
@@ -382,26 +384,55 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		return false;
 	}
 
+	/**
+	 * Sets the mining level required for this block to spawn drops
+	 * 
+	 * @param miningLevel to set to
+	 * @return this material
+	 */
 	public VanillaBlockMaterial setMiningLevel(int miningLevel) {
 		this.miningLevel = miningLevel;
 		return this;
 	}
 
+	/**
+	 * Gets the mining level required for this block to spawn drops
+	 * 
+	 * @return mining level
+	 */
 	public int getMiningLevel() {
 		return miningLevel;
 	}
 
+	/**
+	 * Sets the mining type of this Block material<br>
+	 * This type is used when checking for drops
+	 * 
+	 * @param miningType to set to
+	 * @return this material
+	 */
 	public VanillaBlockMaterial setMiningType(MiningType miningType) {
 		this.miningType = miningType;
 		return this;
 	}
 
+	/**
+	 * Gets the mining type of this Block material<br>
+	 * This type is used when checking for drops
+	 * 
+	 * @return the mining type
+	 */
 	public MiningType getMiningType() {
 		return miningType;
 	}
 
 	public VanillaBlockMaterial removeDropMaterial(Material dropMaterial) {
 		dropMaterials.remove(dropMaterial);
+		return this;
+	}
+
+	public VanillaBlockMaterial clearDropMaterials() {
+		dropMaterials.clear();
 		return this;
 	}
 

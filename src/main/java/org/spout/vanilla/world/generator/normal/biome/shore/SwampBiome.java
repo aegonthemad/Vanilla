@@ -26,39 +26,41 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.shore;
 
-import net.royawesome.jlibnoise.module.modifier.ScalePoint;
+import java.util.Random;
 
-import org.spout.vanilla.configuration.BiomeConfiguration;
-import org.spout.vanilla.world.generator.normal.biome.NormalBiome;
+import org.spout.vanilla.world.generator.normal.biome.GrassyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.PumpkinDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SugarCaneDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TreeDecorator;
+import org.spout.vanilla.world.generator.normal.object.tree.SwampTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
 
-public class SwampBiome extends NormalBiome {
-	private final static ScalePoint NOISE = new ScalePoint();
-
-	static {
-		NOISE.SetSourceModule(0, NormalBiome.MASTER);
-		NOISE.setxScale(BiomeConfiguration.SWAMP_X_SCALE.getDouble());
-		NOISE.setyScale(BiomeConfiguration.SWAMP_Y_SCALE.getDouble());
-		NOISE.setzScale(BiomeConfiguration.SWAMP_Z_SCALE.getDouble());
-	}
-
+public class SwampBiome extends GrassyBiome {
 	public SwampBiome(int biomeId) {
-		super(biomeId, NOISE);
-
-		this.minDensityTerrainHeight = BiomeConfiguration.SWAMP_MIN_DENSITY_TERRAIN_HEIGHT.getByte();
-		this.maxDensityTerrainHeight = BiomeConfiguration.SWAMP_MAX_DENSITY_TERRAIN_HEIGHT.getByte();
-
-		this.minDensityTerrainThickness = BiomeConfiguration.SWAMP_MIN_DENSITY_TERRAIN_THICKNESS.getByte();
-		this.maxDensityTerrainThickness = BiomeConfiguration.SWAMP_MAX_DENSITY_TERRAIN_THICKNESS.getByte();
-
-		this.upperHeightMapScale = BiomeConfiguration.SWAMP_UPPER_HEIGHT_MAP_SCALE.getFloat();
-		this.bottomHeightMapScale = BiomeConfiguration.SWAMP_BOTTOM_HEIGHT_MAP_SCALE.getFloat();
-
-		this.densityTerrainThicknessScale = BiomeConfiguration.SWAMP_DENSITY_TERRAIN_THICKNESS_SCALE.getFloat();
-		this.densityTerrainHeightScale = BiomeConfiguration.SWAMP_DENSITY_TERRAIN_HEIGHT_SCALE.getFloat();
+		super(biomeId, new OreDecorator(), new SandAndClayDecorator(), new TreeDecorator(new SwampTreeWGOFactory()),
+				new TallGrassDecorator(new NormalTallGrassFactory()), new MushroomDecorator((byte) 1, (byte) 3),
+				new SugarCaneDecorator((byte) 6, (byte) 25, (byte) 2), new PumpkinDecorator());
+		setMinMax((byte) 61, (byte) 64);
 	}
 
 	@Override
 	public String getName() {
 		return "Swampland";
+	}
+
+	private static class SwampTreeWGOFactory extends NormalTreeWGOFactory {
+		@Override
+		public byte amount(Random random) {
+			return (byte) (2 + super.amount(random));
+		}
+
+		@Override
+		public TreeObject make(Random random) {
+			return new SwampTreeObject(random);
+		}
 	}
 }

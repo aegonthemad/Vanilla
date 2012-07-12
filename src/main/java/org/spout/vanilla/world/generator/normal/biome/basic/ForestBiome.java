@@ -26,48 +26,35 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.basic;
 
-import net.royawesome.jlibnoise.module.modifier.ScalePoint;
+import java.util.Random;
 
-import org.spout.api.util.cuboid.CuboidShortBuffer;
+import org.spout.vanilla.world.generator.normal.biome.GrassyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.FlowerDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.PumpkinDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SugarCaneDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TreeDecorator;
 
-import org.spout.vanilla.configuration.BiomeConfiguration;
-import org.spout.vanilla.world.generator.normal.biome.NormalBiome;
-
-public class ForestBiome extends NormalBiome {
-	private final static ScalePoint NOISE = new ScalePoint();
-
-	static {
-		NOISE.SetSourceModule(0, NormalBiome.MASTER);
-		NOISE.setxScale(BiomeConfiguration.FOREST_X_SCALE.getDouble());
-		NOISE.setyScale(BiomeConfiguration.FOREST_Y_SCALE.getDouble());
-		NOISE.setzScale(BiomeConfiguration.FOREST_Z_SCALE.getDouble());
-	}
-
+public class ForestBiome extends GrassyBiome {
 	public ForestBiome(int biomeId) {
-		super(biomeId, NOISE/*
-				 * , new PondDecorator(), new TreeDecorator(), new GrassDecorator()
-				 */);
-
-		this.minDensityTerrainHeight = BiomeConfiguration.FOREST_MIN_DENSITY_TERRAIN_HEIGHT.getByte();
-		this.maxDensityTerrainHeight = BiomeConfiguration.FOREST_MAX_DENSITY_TERRAIN_HEIGHT.getByte();
-
-		this.minDensityTerrainThickness = BiomeConfiguration.FOREST_MIN_DENSITY_TERRAIN_THICKNESS.getByte();
-		this.maxDensityTerrainThickness = BiomeConfiguration.FOREST_MAX_DENSITY_TERRAIN_THICKNESS.getByte();
-
-		this.upperHeightMapScale = BiomeConfiguration.FOREST_UPPER_HEIGHT_MAP_SCALE.getFloat();
-		this.bottomHeightMapScale = BiomeConfiguration.FOREST_BOTTOM_HEIGHT_MAP_SCALE.getFloat();
-
-		this.densityTerrainThicknessScale = BiomeConfiguration.FOREST_DENSITY_TERRAIN_THICKNESS_SCALE.getFloat();
-		this.densityTerrainHeightScale = BiomeConfiguration.FOREST_DENSITY_TERRAIN_HEIGHT_SCALE.getFloat();
-	}
-
-	@Override
-	public void generateColumn(CuboidShortBuffer blockData, int x, int chunkY, int z) {
-		super.generateColumn(blockData, x, chunkY, z);
+		super(biomeId, new OreDecorator(), new SandAndClayDecorator(), new TreeDecorator(new ForestTreeWGOFactory()),
+				new FlowerDecorator(), new TallGrassDecorator(new NormalTallGrassFactory(), (byte) 5),
+				new MushroomDecorator(), new SugarCaneDecorator(), new PumpkinDecorator());
+		setMinMax((byte) 67, (byte) 72);
 	}
 
 	@Override
 	public String getName() {
 		return "Forest";
+	}
+
+	private static class ForestTreeWGOFactory extends NormalTreeWGOFactory {
+		@Override
+		public byte amount(Random random) {
+			return (byte) (10 + super.amount(random));
+		}
 	}
 }

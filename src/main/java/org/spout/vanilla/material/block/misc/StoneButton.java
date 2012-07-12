@@ -26,13 +26,10 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
@@ -51,7 +48,7 @@ import org.spout.vanilla.util.VanillaPlayerUtil;
 import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
 
 public class StoneButton extends AbstractAttachable implements Mineable, PointAttachable, RedstoneSource, DynamicMaterial {
-	public static final int TICK_DELAY = 20;
+	public static final int TICK_DELAY = 1000;
 
 	public StoneButton(String name, int id) {
 		super(name, id);
@@ -121,13 +118,6 @@ public class StoneButton extends AbstractAttachable implements Mineable, PointAt
 	@Override
 	public boolean isPlacementSuppressed() {
 		return true;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 
 	@Override

@@ -26,38 +26,19 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.basic;
 
-import net.royawesome.jlibnoise.module.modifier.ScalePoint;
-
-import org.spout.api.util.cuboid.CuboidShortBuffer;
+import java.util.Random;
 
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.world.generator.normal.biome.NormalBiome;
+import org.spout.vanilla.world.generator.normal.biome.GrassyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
 
-public class MushroomBiome extends NormalBiome {
-	private final static ScalePoint NOISE = new ScalePoint();
-
-	static {
-		NOISE.SetSourceModule(0, NormalBiome.MASTER);
-		NOISE.setxScale(0.080D);
-		NOISE.setyScale(0.045D);
-		NOISE.setzScale(0.080D);
-	}
-
+public class MushroomBiome extends GrassyBiome {
 	public MushroomBiome(int biomeId) {
-		super(biomeId, NOISE);
-	}
-
-	@Override
-	protected void replaceBlocks(CuboidShortBuffer blockData, int x, int chunkY, int z) {
-		super.replaceBlocks(blockData, x, chunkY, z);
-		final byte size = (byte) blockData.getSize().getY();
-		final int startY = chunkY * 16;
-		final int endY = startY + size;
-		for (int y = startY; y < endY; y++) {
-			if (blockData.get(x, y, z) == VanillaMaterials.GRASS.getId()) {
-				blockData.set(x, y, z, VanillaMaterials.MYCELIUM.getId());
-			}
-		}
+		super(biomeId, new OreDecorator(), new SandAndClayDecorator(), new MushroomDecorator((byte) 1, (byte) 1));
+		setMinMax((byte) 67, (byte) 72);
+		this.topCover = VanillaMaterials.MYCELIUM;
 	}
 
 	@Override

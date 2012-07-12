@@ -26,24 +26,30 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
+import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.RandomBlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.item.tool.Spade;
 import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class Snow extends GroundAttachable implements Mineable {
+public class Snow extends GroundAttachable implements Mineable, RandomBlockMaterial, InitializableMaterial {
 	public Snow(String name, int id) {
 		super(name, id);
-		this.setLiquidObstacle(false).setHardness(0.1F).setResistance(0.2F).setOpacity((byte) 1);
+		this.setLiquidObstacle(false).setHardness(0.1F).setResistance(0.2F).setTransparent();
+		this.getOcclusion().set(BlockFace.BOTTOM);
+	}
+
+	@Override
+	public void initialize() {
+		this.setDropMaterial(VanillaMaterials.SNOWBALL);
 	}
 
 	@Override
@@ -62,20 +68,26 @@ public class Snow extends GroundAttachable implements Mineable {
 	}
 
 	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-		if (held != null && held.getMaterial() instanceof Spade) {
-			drops.add(new ItemStack(VanillaMaterials.SNOWBALL, 1));
+	public boolean canDrop(Block block, ItemStack holding) {
+		if (holding != null && holding.getMaterial() instanceof Spade) {
+			return super.canDrop(block, holding);
+		} else {
+			return false;
 		}
-		return drops;
 	}
 
 	@Override
-	public void onUpdate(Block block) {
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
 		BlockMaterial below = block.translate(BlockFace.BOTTOM).getMaterial();
 		if (below.getMaterial() == VanillaMaterials.AIR) {
 			block.setMaterial(VanillaMaterials.AIR);
+		}
+	}
+
+	@Override
+	public void onRandomTick(World world, int x, int y, int z) {
+		if (world.getBlockLight(x, y, z) > 11) {
+			world.setBlockMaterial(x, y, z, VanillaMaterials.AIR, (short) 0, world);
 		}
 	}
 }

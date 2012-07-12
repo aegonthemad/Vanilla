@@ -26,15 +26,18 @@
  */
 package org.spout.vanilla.material.block.plant;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.material.range.CuboidEffectRange;
+import org.spout.api.material.range.EffectRange;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.material.TimedCraftable;
@@ -46,7 +49,8 @@ import org.spout.vanilla.material.item.misc.Dye;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
 
-public class Cactus extends GroundAttachable implements Plant, TimedCraftable {
+public class Cactus extends GroundAttachable implements Plant, TimedCraftable, DynamicMaterial {
+	private static EffectRange dynamicRange = new CuboidEffectRange(0, 0, 0, 0, 1, 0);
 	private Set<BlockMaterial> allowedNeighbours = new HashSet<BlockMaterial>();
 
 	public Cactus(String name, int id) {
@@ -60,13 +64,13 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable {
 				VanillaMaterials.TALL_GRASS,
 				VanillaMaterials.REDSTONE_WIRE
 		);
-		this.setHardness(0.4F).setResistance(0.7F).setOpacity((byte) 0);
+		this.setHardness(0.4F).setResistance(0.7F).setTransparent();
 	}
 
 	@Override
-	public void onUpdate(Block block) {
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
 		if (VanillaConfiguration.CACTUS_PHYSICS.getBoolean()) {
-			super.onUpdate(block);
+			super.onUpdate(oldMaterial, block);
 		}
 	}
 
@@ -115,13 +119,6 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable {
 	}
 
 	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
-	}
-
-	@Override
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
@@ -139,5 +136,29 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable {
 	@Override
 	public int getMinimumLightToGrow() {
 		return 0;
+	}
+
+	@Override
+	public EffectRange getDynamicRange() {
+		return dynamicRange;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		if (b.translate(0, -1, 0).getMaterial() == VanillaMaterials.SAND) {
+			b.dynamicUpdate(currentTime + 1000 * 150);
+		}
+	}
+
+	@Override
+	public void onDynamicUpdate(Block b, Region r, long updateTime, long queuedTime, int data, Object hint) {
+		for (int i = 1; i < getNumGrowthStages(); i++) {
+			Block next = b.translate(0, i, 0);
+			if (next.getMaterial() == VanillaMaterials.AIR) {
+				next.setMaterial(this);
+				break;
+			}
+		}
+		b.dynamicUpdate(r.getWorld().getAge() + 1000 * 150);
 	}
 }

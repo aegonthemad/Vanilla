@@ -24,41 +24,48 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.material.item.misc;
+package org.spout.vanilla.world.generator.normal.object.tree;
 
-import org.spout.api.entity.Entity;
-import org.spout.api.entity.component.Controller;
-import org.spout.api.event.player.PlayerInteractEvent.Action;
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.material.block.BlockFace;
+import java.util.Random;
 
-import org.spout.vanilla.controller.object.vehicle.minecart.TransportMinecart;
-import org.spout.vanilla.material.block.rail.Rail;
-import org.spout.vanilla.material.item.VanillaItemMaterial;
+import org.spout.api.geo.World;
+import org.spout.api.material.BlockMaterial;
 
-public class MinecartItem extends VanillaItemMaterial {
-	public MinecartItem(String name, int id) {
-		super(name, id);
+import org.spout.vanilla.material.block.liquid.Water;
+
+public class SwampTreeObject extends SmallTreeObject {
+	public SwampTreeObject(Random random) {
+		super(random);
+		addLeavesVines(true);
+		setLeavesRadiusIncreaseXZ((byte) 1);
 	}
 
-	/**
-	 * Creates a new minecart controller to spawn when interacted
-	 * @return a new Minecart controller
-	 */
-	protected Controller getSpawnedEntity() {
-		return new TransportMinecart();
+	public SwampTreeObject() {
+		this(null);
 	}
 
 	@Override
-	public void onInteract(Entity entity, Block block, Action type, BlockFace clickedface) {
-		super.onInteract(entity, block, type, clickedface);
-
-		//is clicked position a track?
-		if (block.getMaterial() instanceof Rail) {
-			//spawn minecart on rail
-			block.getWorld().createAndSpawnEntity(block.getPosition(), this.getSpawnedEntity());
-			//TODO: Subtracting one from the held item?
-			//Shouldn't the held item be passed to this function instead?
+	public boolean canPlaceObject(World w, int x, int y, int z) {
+		if (!super.canPlaceObject(w, x, y, z)) {
+			return false;
 		}
+		byte radiusToCheck = radiusIncrease;
+		for (byte yy = 0; yy < totalHeight + 2; yy++) {
+			if (yy == 1 || yy == totalHeight - 1) {
+				radiusToCheck++;
+			}
+			for (byte xx = (byte) -radiusToCheck; xx < radiusToCheck + 1; xx++) {
+				for (byte zz = (byte) -radiusToCheck; zz < radiusToCheck + 1; zz++) {
+					final BlockMaterial material = w.getBlockMaterial(x + xx, y + yy, z + zz);
+					if (!overridable.contains(material)) {
+						if (yy == 0 && material instanceof Water) {
+							continue;
+						}
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 }

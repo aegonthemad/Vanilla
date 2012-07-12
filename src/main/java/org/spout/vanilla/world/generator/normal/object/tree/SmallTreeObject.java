@@ -33,22 +33,24 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.Liquid;
+import org.spout.vanilla.material.block.Solid;
 import org.spout.vanilla.material.block.plant.Sapling;
 
 public class SmallTreeObject extends TreeObject {
 	//size control
 	private byte leavesHeight = 3;
-	private byte radiusIncrease = 0;
+	protected byte radiusIncrease = 0;
 	// extras
 	private boolean addLeavesVines = false;
 	private boolean addLogVines = false;
 
-	public SmallTreeObject(TreeType treeType) {
-		this(null, treeType);
+	public SmallTreeObject() {
+		this(null);
 	}
 
-	public SmallTreeObject(Random random, TreeType treeType) {
-		super(random, (byte) 4, (byte) 3, treeType.getMetadata());
+	public SmallTreeObject(Random random) {
+		super(random, (byte) 4, (byte) 3, (short) 0);
 		overridable.add(VanillaMaterials.AIR);
 		overridable.add(VanillaMaterials.LEAVES);
 		overridable.add(Sapling.DEFAULT);
@@ -58,11 +60,7 @@ public class SmallTreeObject extends TreeObject {
 
 	@Override
 	public boolean canPlaceObject(World w, int x, int y, int z) {
-		if (y < 1 || y + totalHeight + 2 > w.getHeight()) {
-			return false;
-		}
-		final BlockMaterial under = w.getBlockMaterial(x, y - 1, z);
-		if (under != VanillaMaterials.DIRT && under != VanillaMaterials.GRASS) {
+		if (!super.canPlaceObject(w, x, y, z)) {
 			return false;
 		}
 		byte radiusToCheck = radiusIncrease;
@@ -89,7 +87,10 @@ public class SmallTreeObject extends TreeObject {
 			final byte xzRadius = (byte) ((radiusIncrease + 1) - yRadius / 2);
 			for (byte xx = (byte) -xzRadius; xx < xzRadius + 1; xx++) {
 				for (byte zz = (byte) -xzRadius; zz < xzRadius + 1; zz++) {
-					if (Math.abs(xx) != xzRadius || Math.abs(zz) != xzRadius || random.nextBoolean() && yRadius != 0) {
+					final BlockMaterial material = w.getBlockMaterial(x + xx, y + yy, z + zz);
+					if (Math.abs(xx) != xzRadius || Math.abs(zz) != xzRadius
+							|| random.nextBoolean() && yRadius != 0
+							&& !(material instanceof Solid || material instanceof Liquid)) {
 						w.setBlockMaterial(x + xx, y + yy, z + zz, VanillaMaterials.LEAVES, leavesMetadata, w);
 					}
 				}
@@ -117,28 +118,28 @@ public class SmallTreeObject extends TreeObject {
 	}
 
 	private void placeVines(World w, int x, int y, int z, byte faceOdd, boolean grow) {
-		if (w.getBlockMaterial(x + 1, y, z) == VanillaMaterials.AIR && random.nextInt(faceOdd) > 0) {
+		if (w.getBlockMaterial(x + 1, y, z) == VanillaMaterials.AIR && random.nextInt(faceOdd) == 0) {
 			if (grow) {
 				growVines(w, x + 1, y, z, (short) 2);
 			} else {
 				w.setBlockMaterial(x + 1, y, z, VanillaMaterials.VINES, (short) 2, w);
 			}
 		}
-		if (w.getBlockMaterial(x - 1, y, z) == VanillaMaterials.AIR && random.nextInt(faceOdd) > 0) {
+		if (w.getBlockMaterial(x - 1, y, z) == VanillaMaterials.AIR && random.nextInt(faceOdd) == 0) {
 			if (grow) {
 				growVines(w, x - 1, y, z, (short) 8);
 			} else {
 				w.setBlockMaterial(x - 1, y, z, VanillaMaterials.VINES, (short) 8, w);
 			}
 		}
-		if (w.getBlockMaterial(x, y, z + 1) == VanillaMaterials.AIR && random.nextInt(faceOdd) > 0) {
+		if (w.getBlockMaterial(x, y, z + 1) == VanillaMaterials.AIR && random.nextInt(faceOdd) == 0) {
 			if (grow) {
 				growVines(w, x, y, z + 1, (short) 4);
 			} else {
 				w.setBlockMaterial(x, y, z + 1, VanillaMaterials.VINES, (short) 4, w);
 			}
 		}
-		if (w.getBlockMaterial(x, y, z - 1) == VanillaMaterials.AIR && random.nextInt(faceOdd) > 0) {
+		if (w.getBlockMaterial(x, y, z - 1) == VanillaMaterials.AIR && random.nextInt(faceOdd) == 0) {
 			if (grow) {
 				growVines(w, x, y, z - 1, (short) 1);
 			} else {
@@ -150,7 +151,7 @@ public class SmallTreeObject extends TreeObject {
 	private void growVines(World world, int x, int y, int z, short facing) {
 		for (byte yy = 0; yy < 5; yy++) {
 			Block block = world.getBlock(x, y - yy, z);
-			if (block.getMaterial() != VanillaMaterials.AIR) {
+			if (!block.isMaterial(VanillaMaterials.AIR)) {
 				return;
 			}
 

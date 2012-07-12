@@ -24,41 +24,30 @@
  * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
  * including the MIT license.
  */
-package org.spout.vanilla.inventory;
+package org.spout.vanilla.world.generator.object;
 
-import org.spout.api.inventory.Inventory;
+import java.util.Random;
 
-/**
-* Represents a crafting grid.
-*/
-public interface CraftingGrid {
-	/**
-	 * Gets the slot index of the output slot in the grid.
-	 * @return output slot
-	 */
-	public int getOutputSlot();
+import org.spout.api.generator.WorldGeneratorObject;
 
-	/**
-	 * Gets the row size of the grid.
-	 * @return row size
-	 */
-	public int getRowSize();
+public abstract class RandomObject extends WorldGeneratorObject {
+	protected Random random;
 
-	/**
-	 * Gets the column size of the grid.
-	 * @return column size
-	 */
-	public int getColumnSize();
+	protected RandomObject() {
+		this.random = new Random();
+	}
 
-	/**
-	 * Gets an array with the slot indexes of the rows bottom to top.
-	 * @return row array
-	 */
-	public int[] getGridArray();
+	protected RandomObject(Random random) {
+		if (random == null) {
+			this.random = new Random();
+		} else {
+			this.random = random;
+		}
+	}
 
-	/**
-	 * Gets the inventory associated with the grid.
-	 * @return inventory.
-	 */
-	public Inventory getGridInventory();
+	public abstract void randomize();
+
+	public void setRandom(Random random) {
+		this.random = random;
+	}
 }

@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.spout.api.ChatColor;
 import org.spout.api.Spout;
+import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.command.CommandContext;
 import org.spout.api.command.CommandSource;
 import org.spout.api.command.annotated.Command;
@@ -58,8 +58,8 @@ import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.controller.source.HealthChangeReason;
 import org.spout.vanilla.data.effect.type.Speed;
 import org.spout.vanilla.util.explosion.ExplosionModels;
-import org.spout.vanilla.world.generator.VanillaObjects;
-import org.spout.vanilla.world.generator.normal.object.RandomObject;
+import org.spout.vanilla.world.generator.object.RandomObject;
+import org.spout.vanilla.world.generator.object.VanillaObjects;
 
 public class TestCommands {
 	private final Set<String> invisible = new HashSet<String>();
@@ -76,9 +76,12 @@ public class TestCommands {
 			throw new CommandException("You must be a player to cause an explosion");
 		}
 
-		VanillaPlayer player = (VanillaPlayer) source;
+		Entity entity = ((Player) source).getEntity();
+		Point position = entity.getPosition();
+		if (entity.getController() instanceof VanillaPlayer) {
+			position = position.add(((VanillaPlayer) entity.getController()).getLookingAt());
+		}
 
-		Point position = player.getParent().getPosition().add(player.getLookingAt());
 		ExplosionModels.SPHERICAL.execute(position, 4.0f);
 	}
 
@@ -137,7 +140,7 @@ public class TestCommands {
 
 		for (int i = 0; i < types.size(); i++) {
 			if (numbers.get(i) < 0) {
-				source.sendMessage(ChatColor.RED + "Increasing number of " + types.get(i).getName() + "s spawed to " + 0);
+				source.sendMessage(ChatStyle.RED, "Increasing number of ", types.get(i).getName(), "s spawned to 0");
 				numbers.set(i, 0);
 			}
 			toSpawn += numbers.get(i);
@@ -152,9 +155,9 @@ public class TestCommands {
 			int k = 0;
 			for (int i = 0; i < types.size(); i++) {
 				if (numbers.get(i) == 1) {
-					source.sendMessage(ChatColor.YELLOW + "Spawning a " + types.get(i).getName());
+					source.sendMessage(ChatStyle.YELLOW, "Spawning a ", types.get(i).getName());
 				} else {
-					source.sendMessage(ChatColor.YELLOW + "Spawning " + numbers.get(i) + " " + types.get(i).getName() + "s");
+					source.sendMessage(ChatStyle.YELLOW, "Spawning ", numbers.get(i) + " ", types.get(i).getName() + "s");
 				}
 				for (int j = 0; j < numbers.get(i); j++) {
 					typeArray[k++] = types.get(i);
@@ -184,7 +187,7 @@ public class TestCommands {
 	public void tppos(CommandContext args, CommandSource source) throws CommandException {
 		Player player = Spout.getEngine().getPlayer(args.getString(0), true);
 		if (!(source instanceof Player) && player == null) {
-			throw new CommandException("Must specifiy a valid player to tppos from the console.");
+			throw new CommandException("Must specify a valid player to tppos from the console.");
 		}
 
 		World world = Spout.getEngine().getWorld(args.getString(1));
@@ -204,15 +207,15 @@ public class TestCommands {
 		}
 	}
 
-	@Command(aliases = {"obj"}, usage = "<name> opt<force>", desc = "Spawn a WorldGeneratorObject at your location", min = 1, max = 2)
+	@Command(aliases = {"object", "obj"}, usage = "<name>", flags = "f", desc = "Spawn a WorldGeneratorObject at your location. Use -f to ignore canPlace check", min = 1, max = 2)
 	public void spawnObject(CommandContext args, CommandSource source) throws CommandException {
 		if (!(source instanceof Player)) {
-			throw new CommandException("Source must be player");
+			throw new CommandException("The source must be a player.");
 		}
 		final Player player = (Player) source;
 		final WorldGeneratorObject object = VanillaObjects.byName(args.getString(0));
 		if (object == null) {
-			player.sendMessage("Invalid object name");
+			player.sendMessage("Invalid object name.");
 			return;
 		}
 		final Point loc = player.getEntity().getPosition();
@@ -220,20 +223,13 @@ public class TestCommands {
 		final int x = loc.getBlockX();
 		final int y = loc.getBlockY();
 		final int z = loc.getBlockZ();
-		final String forceRaw = args.getString(1, "false");
-		boolean force;
-		if (forceRaw.equalsIgnoreCase("false")) {
-			force = false;
-		} else if (forceRaw.equalsIgnoreCase("true")) {
-			force = true;
-		} else {
-			force = false;
-		}
+		final boolean force = args.hasFlag('f');
 		if (!object.canPlaceObject(world, x, y, z)) {
-			player.sendMessage("Couldn't place the object");
+			player.sendMessage("Couldn't place the object.");
 			if (!force) {
 				return;
 			}
+			player.sendMessage("Forcing placement.");
 		}
 		object.placeObject(world, x, y, z);
 		if (object instanceof RandomObject) {
@@ -256,7 +252,7 @@ public class TestCommands {
 		}
 
 		BlockController controller = block.getController();
-		player.sendMessage("Material: " + controller.getMaterial().getName());
+		player.sendMessage("Material: ", controller.getMaterial().getName());
 	}
 
 	@Command(aliases = {"vanish", "v"}, desc = "Toggle your visibility", min = 0, max = 0)
@@ -316,7 +312,7 @@ public class TestCommands {
 		}
 		if (count > 0) {
 			if (!isConsole) {
-				source.sendMessage(count + " entity(es) have been killed. The console has a listing of what controllers were killed.");
+				source.sendMessage(count, " entity(es) have been killed. The console has a listing of what controllers were killed.");
 			}
 		} else {
 			source.sendMessage("No valid entities found to kill");

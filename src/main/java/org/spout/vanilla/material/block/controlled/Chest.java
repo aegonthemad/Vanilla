@@ -26,11 +26,9 @@
  */
 package org.spout.vanilla.material.block.controlled;
 
-import java.util.ArrayList;
-
-import org.spout.api.entity.component.controller.BlockController;
-import org.spout.api.entity.component.Controller;
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.component.Controller;
+import org.spout.api.entity.component.controller.BlockController;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
@@ -192,12 +190,5 @@ public class Chest extends ControlledMaterial implements Directional, Fuel, Mine
 	@Override
 	public boolean isPlacementSuppressed() {
 		return true;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
 	}
 }

@@ -26,41 +26,71 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.basic;
 
-import net.royawesome.jlibnoise.module.modifier.ScalePoint;
+import java.util.Random;
+import org.spout.vanilla.material.block.plant.TallGrass;
 
-import org.spout.vanilla.configuration.BiomeConfiguration;
-import org.spout.vanilla.world.generator.normal.biome.NormalBiome;
+import org.spout.vanilla.world.generator.normal.biome.GrassyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.FlowerDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator.TallGrassFactory;
+import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.PumpkinDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.SugarCaneDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TreeDecorator;
+import org.spout.vanilla.world.generator.normal.object.tree.BigTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.HugeTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.ShrubObject;
+import org.spout.vanilla.world.generator.normal.object.tree.SmallTreeObject;
+import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
 
-public class JungleBiome extends NormalBiome {
-	private final static ScalePoint NOISE = new ScalePoint();
-
-	static {
-		NOISE.SetSourceModule(0, NormalBiome.MASTER);
-		NOISE.setxScale(BiomeConfiguration.JUNGLE_X_SCALE.getDouble());
-		NOISE.setyScale(BiomeConfiguration.JUNGLE_Y_SCALE.getDouble());
-		NOISE.setzScale(BiomeConfiguration.JUNGLE_Z_SCALE.getDouble());
-	}
-
+public class JungleBiome extends GrassyBiome {
 	public JungleBiome(int biomeId) {
-		super(biomeId, NOISE/*
-				 * , new PondDecorator(), new TreeDecorator()
-				 */);
-
-		this.minDensityTerrainHeight = BiomeConfiguration.JUNGLE_MIN_DENSITY_TERRAIN_HEIGHT.getByte();
-		this.maxDensityTerrainHeight = BiomeConfiguration.JUNGLE_MAX_DENSITY_TERRAIN_HEIGHT.getByte();
-
-		this.minDensityTerrainThickness = BiomeConfiguration.JUNGLE_MIN_DENSITY_TERRAIN_THICKNESS.getByte();
-		this.maxDensityTerrainThickness = BiomeConfiguration.JUNGLE_MAX_DENSITY_TERRAIN_THICKNESS.getByte();
-
-		this.upperHeightMapScale = BiomeConfiguration.JUNGLE_UPPER_HEIGHT_MAP_SCALE.getFloat();
-		this.bottomHeightMapScale = BiomeConfiguration.JUNGLE_BOTTOM_HEIGHT_MAP_SCALE.getFloat();
-
-		this.densityTerrainThicknessScale = BiomeConfiguration.JUNGLE_DENSITY_TERRAIN_THICKNESS_SCALE.getFloat();
-		this.densityTerrainHeightScale = BiomeConfiguration.JUNGLE_DENSITY_TERRAIN_HEIGHT_SCALE.getFloat();
+		super(biomeId, new OreDecorator(), new SandAndClayDecorator(), new TreeDecorator(new JungleTreeWGOFactory()),
+				new FlowerDecorator((byte) 4), new TallGrassDecorator(new JungleTallGrassFactory(), (byte) 15),
+				new MushroomDecorator(), new SugarCaneDecorator(), new PumpkinDecorator());
+		setMinMax((byte) 67, (byte) 73);
 	}
 
 	@Override
 	public String getName() {
 		return "Jungle";
+	}
+
+	private static class JungleTreeWGOFactory extends NormalTreeWGOFactory {
+		@Override
+		public byte amount(Random random) {
+			return (byte) (50 + super.amount(random));
+		}
+
+		@Override
+		public TreeObject make(Random random) {
+			if (random.nextInt(10) == 0) {
+				return new BigTreeObject(random);
+			}
+			if (random.nextInt(2) == 0) {
+				return new ShrubObject(random);
+			}
+			if (random.nextInt(3) == 0) {
+				return new HugeTreeObject(random);
+			}
+			final SmallTreeObject smallJungleTree = new SmallTreeObject(random);
+			smallJungleTree.setTreeType(TreeObject.TreeType.JUNGLE);
+			smallJungleTree.setBaseHeight((byte) 4);
+			smallJungleTree.setRandomHeight((byte) 10);
+			smallJungleTree.addLogVines(true);
+			return smallJungleTree;
+		}
+	}
+
+	private static class JungleTallGrassFactory implements TallGrassFactory {
+		@Override
+		public TallGrass make(Random random) {
+			if (random.nextInt(4) == 0) {
+				return TallGrass.FERN;
+			}
+			return TallGrass.TALL_GRASS;
+		}
 	}
 }

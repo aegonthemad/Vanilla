@@ -26,13 +26,11 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import java.util.ArrayList;
-
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.material.source.DataSource;
 
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.material.Mineable;
@@ -44,7 +42,8 @@ import org.spout.vanilla.material.item.weapon.Sword;
 public class CakeBlock extends Solid implements Mineable {
 	public CakeBlock(String name, int id) {
 		super(name, id);
-		this.setHardness(0.5F).setResistance(0.8F).setOpacity((byte) 1);
+		this.setHardness(0.5F).setResistance(0.8F).setTransparent();
+		this.clearDropMaterials();
 	}
 
 	@Override
@@ -69,11 +68,6 @@ public class CakeBlock extends Solid implements Mineable {
 		}
 	}
 
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		return new ArrayList<ItemStack>();
-	}
-
 	/**
 	 * Returns the {@link CakeSize} of this cake material.
 	 * @param block Block with this cake material
@@ -95,7 +89,7 @@ public class CakeBlock extends Solid implements Mineable {
 	/**
 	 * Represents the size of a cake material.
 	 */
-	public enum CakeSize {
+	public enum CakeSize implements DataSource {
 		FULL(0x0),
 		FIVE_PIECES(0x1),
 		FOUR_PIECES(0x2),
@@ -108,6 +102,7 @@ public class CakeBlock extends Solid implements Mineable {
 			this.data = (short) data;
 		}
 
+		@Override
 		public short getData() {
 			return data;
 		}

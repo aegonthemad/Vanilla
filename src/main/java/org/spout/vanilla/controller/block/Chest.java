@@ -43,7 +43,7 @@ import org.spout.vanilla.window.block.ChestWindow;
 public class Chest extends VanillaWindowBlockController implements TransactionWindowOwner {
 	private final ChestInventory inventory;
 	private boolean opened = false;
-	
+
 	public Chest() {
 		super(VanillaControllerTypes.CHEST, VanillaMaterials.CHEST);
 		inventory = new ChestInventory(this);
@@ -95,10 +95,20 @@ public class Chest extends VanillaWindowBlockController implements TransactionWi
 		return VanillaMaterials.CHEST.getController(other);
 	}
 
+	/**
+	 * Checks if this Chest is a double chest
+	 * 
+	 * @return True if it is a double chest
+	 */
 	public boolean isDouble() {
 		return VanillaMaterials.CHEST.isDouble(this.getBlock());
 	}
 
+	/**
+	 * Gets whether this Chest is opened
+	 * 
+	 * @return True if it is opened, False if not
+	 */
 	public boolean isOpened() {
 		return opened;
 	}

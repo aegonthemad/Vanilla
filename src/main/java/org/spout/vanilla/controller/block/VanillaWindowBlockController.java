@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import org.spout.api.material.BlockMaterial;
+
 import org.spout.vanilla.controller.VanillaBlockController;
 import org.spout.vanilla.controller.VanillaControllerType;
 import org.spout.vanilla.controller.WindowOwner;
@@ -92,6 +93,11 @@ public abstract class VanillaWindowBlockController extends VanillaBlockControlle
 		return this.viewers.keySet();
 	}
 
+	/**
+	 * Gets an array of viewers currently viewing this controller
+	 * 
+	 * @return an array of player viewers
+	 */
 	public VanillaPlayer[] getViewerArray() {
 		return this.viewers.keySet().toArray(new VanillaPlayer[0]);
 	}

@@ -32,6 +32,7 @@ import org.spout.api.generator.biome.BiomeSelector;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
+
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Liquid;
 import org.spout.vanilla.world.generator.VanillaBiomeGenerator;
@@ -46,9 +47,8 @@ public class NormalGenerator extends VanillaBiomeGenerator implements VanillaGen
 
 	@Override
 	public void registerBiomes() {
-		//selector = new VanillaBiomeSelector(2.0, 2.0, 0.35, 0.05, true);
 		// if you want to check out a particular biome, use this!
-		//selector = new PerBlockBiomeSelector(VanillaBiomes.MUSHROOM);
+		//selector = new PerBlockBiomeSelector(VanillaBiomes.MUSHROOM_SHORE);
 		selector = new VanillaBiomeSelector(5f);
 		setSelector(selector);
 		addPopulator(new SmoothPopulator());

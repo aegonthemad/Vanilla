@@ -26,12 +26,10 @@
  */
 package org.spout.vanilla.material.block.controlled;
 
-import java.util.ArrayList;
-
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
+import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.controller.VanillaControllerTypes;
@@ -73,21 +71,26 @@ public class NoteBlock extends ControlledMaterial implements Fuel, Mineable {
 	}
 
 	@Override
+	public org.spout.vanilla.controller.block.NoteBlock getController(Block block) {
+		return (org.spout.vanilla.controller.block.NoteBlock) super.getController(block);
+	}
+
+	@Override
 	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, type, clickedFace);
+		org.spout.vanilla.controller.block.NoteBlock controller = getController(block);
 		if (type == Action.RIGHT_CLICK) {
-			org.spout.vanilla.controller.block.NoteBlock controller = (org.spout.vanilla.controller.block.NoteBlock) block.getController();
 			controller.setNote(controller.getNote() + 1);
 			controller.play();
-		} else if (type == Action.LEFT_CLICK && VanillaPlayerUtil.isCreative(entity)) {
-			((org.spout.vanilla.controller.block.NoteBlock) block.getController()).play();
+		} else if (type == Action.LEFT_CLICK && VanillaPlayerUtil.isSurvival(entity)) {
+			controller.play();
 		}
 	}
 
 	@Override
-	public void onUpdate(Block block) {
-		super.onUpdate(block);
-		((org.spout.vanilla.controller.block.NoteBlock) block.getController()).setPowered(isReceivingPower(block));
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
+		getController(block).setPowered(isReceivingPower(block));
 	}
 
 	@Override
@@ -96,14 +99,7 @@ public class NoteBlock extends ControlledMaterial implements Fuel, Mineable {
 	}
 
 	public boolean isReceivingPower(Block block) {
-		return RedstoneUtil.isReceivingPower(block, false);
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(this, 1));
-		return drops;
+		return RedstoneUtil.isReceivingPower(block);
 	}
 
 	@Override

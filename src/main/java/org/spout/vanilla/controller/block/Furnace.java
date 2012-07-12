@@ -57,10 +57,10 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 
 	@Override
 	public void onTick(float dt) {
-		ItemStack input = inventory.getIngredient(), output = inventory.getOutput();
+		ItemStack input = inventory.getIngredient().getItem(), output = inventory.getOutput().getItem();
 		if (burnTime <= 0 && inventory.hasIngredient() && inventory.hasFuel()) {
 			// Start burning
-			ItemStack fuelStack = inventory.getFuel();
+			ItemStack fuelStack = inventory.getFuel().getItem();
 			Fuel fuel = (Fuel) fuelStack.getMaterial();
 			burnTime = fuel.getFuelTime();
 			burnStartTime = burnTime;
@@ -72,7 +72,7 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 			craftTime = ingredient.getCraftTime();
 
 			int amount = fuelStack.getAmount();
-			inventory.setFuel(fuelStack.setAmount(amount - 1));
+			inventory.getFuel().setItem(fuelStack.setAmount(amount - 1));
 		}
 
 		if (burnTime > 0) {
@@ -86,7 +86,7 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 				if (progress <= 0) {
 					progress += dt;
 					progressIncrement = 0;
-					craftTime = ((TimedCraftable) inventory.getIngredient().getMaterial()).getCraftTime();
+					craftTime = ((TimedCraftable) inventory.getIngredient().getItem().getMaterial()).getCraftTime();
 				} else {
 					progress += dt;
 					progressIncrement += 180 / (craftTime * 20);
@@ -116,8 +116,8 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 
 				int inputAmount = input.getAmount();
 				int outputAmount = output.getAmount();
-				inventory.setIngredient(input.setAmount(inputAmount - 1));
-				inventory.setOutput(output.setAmount(outputAmount));
+				inventory.getIngredient().setItem(input.setAmount(inputAmount - 1));
+				inventory.getOutput().setItem(output.setAmount(outputAmount));
 			}
 
 			// Update viewers
@@ -133,22 +133,47 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 		return inventory;
 	}
 
-	public void setBurnTime(int burnTime) {
+	/**
+	 * Sets the remaining burn time for the current Furnace recipe to complete
+	 * 
+	 * @param burnTime in seconds
+	 */
+	public void setBurnTime(float burnTime) {
 		this.burnTime = burnTime;
 	}
 
+	/**
+	 * Gets the remaining burn time for the current Furnace recipe to complete
+	 * 
+	 * @return burnTime in seconds
+	 */
 	public float getBurnTime() {
 		return burnTime;
 	}
 
-	public void setProgress(int progress) {
+	/**
+	 * Sets the progress of burning
+	 * 
+	 * @param progress in seconds to set to
+	 */
+	public void setProgress(float progress) {
 		this.progress = progress;
 	}
 
+	/**
+	 * Gets the progress of burning
+	 * 
+	 * @return progress in seconds
+	 */
 	public float getProgress() {
 		return progress;
 	}
 
+	/**
+	 * Gets whether this Furnace is burning
+	 * 
+	 * @return True if it is burning, False if not
+	 */
 	public boolean isBurning() {
 		return burnTime > 0;
 	}
