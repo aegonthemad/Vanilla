@@ -49,6 +49,10 @@ public class PlayerListMessage extends Message {
 	public boolean playerIsOnline() {
 		return playerOnline;
 	}
+	
+	public boolean isPlayerOnline() {
+		return playerOnline;
+	}
 
 	public short getPing() {
 		return ping;
