@@ -49,4 +49,11 @@ public interface VanillaMaterial extends MaterialSource {
 	 * @return minecraft id
 	 */
 	public int getMinecraftId();
+
+	/**
+	 * Gets the associated 'minecraft' or notchian data for this material
+	 * @param data to convert
+	 * @return minecraft data
+	 */
+	public short getMinecraftData(short data);
 }

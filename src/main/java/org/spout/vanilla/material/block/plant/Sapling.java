@@ -42,6 +42,7 @@ import org.spout.api.material.range.EffectRange;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Plant;
+import org.spout.vanilla.material.block.Spreading;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.solid.Log;
 import org.spout.vanilla.material.item.misc.Dye;
@@ -50,7 +51,7 @@ import org.spout.vanilla.material.item.weapon.Sword;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
 
-public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMaterial {
+public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel, DynamicMaterial {
 	public static final Sapling DEFAULT = new Sapling("Sapling");
 	public static final Sapling SPRUCE = new Sapling("Spruce Sapling", 1, DEFAULT);
 	public static final Sapling BIRCH = new Sapling("Birch Sapling", 2, DEFAULT);
@@ -60,27 +61,14 @@ public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMat
 
 	private Sapling(String name) {
 		super(dataMask, name, 6);
+		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	private Sapling(String name, int data, Sapling parent) {
 		super(name, 6, data, parent);
+		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
-	}
-
-	@Override
-	public boolean hasGrowthStages() {
-		return true;
-	}
-
-	@Override
-	public int getNumGrowthStages() {
-		return 3;
-	}
-
-	@Override
-	public int getMinimumLightToGrow() {
-		return 8;
 	}
 
 	@Override
@@ -89,9 +77,15 @@ public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMat
 	}
 
 	@Override
-	public boolean canAttachTo(BlockMaterial material, BlockFace face) {
-		if (super.canAttachTo(material, face)) {
-			return material.equals(VanillaMaterials.GRASS, VanillaMaterials.DIRT);
+	public int getMinimumLightToSpread() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean canAttachTo(Block block, BlockFace face) {
+		if (super.canAttachTo(block, face)) {
+			return block.isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT);
 		}
 		return false;
 	}
@@ -104,7 +98,7 @@ public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMat
 		}
 		InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
 		ItemStack current = inv.getItem();
-		if (current != null && current.getSubMaterial().equals(Dye.BONE_MEAL)) {
+		if (current != null && current.isMaterial(Dye.BONE_MEAL)) {
 			if (VanillaPlayerUtil.isSurvival(entity)) {
 				inv.addItemAmount(0, -1);
 			}
@@ -148,7 +142,7 @@ public class Sapling extends GroundAttachable implements Plant, Fuel, DynamicMat
 	}
 
 	@Override
-	public void onDynamicUpdate(Block b, Region r, long updateTime, long lastUpdateTime, int data, Object hint) {
+	public void onDynamicUpdate(Block b, Region r, long updateTime, int data) {
 		short oldData = b.getData();
 		b.setMaterial(Log.DEFAULT);
 		b.setData(oldData & dataMask);

@@ -29,6 +29,7 @@ package org.spout.vanilla.material.block.piston;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.controller.VanillaControllerTypes;
 import org.spout.vanilla.material.Mineable;
@@ -56,7 +57,12 @@ public class PistonExtension extends ControlledMaterial implements Directional, 
 	}
 
 	@Override
-	public boolean canPlace(Block block, short data, BlockFace facing, boolean isClickedBlock) {
+	public boolean canPlace(Block block, short data, BlockFace facing, Vector3 clickedPos, boolean isClickedBlock) {
+		return false;
+	}
+
+	@Override
+	public boolean canSupport(BlockMaterial material, BlockFace face) {
 		return false;
 	}
 
@@ -67,7 +73,7 @@ public class PistonExtension extends ControlledMaterial implements Directional, 
 
 	@Override
 	public BlockFace getFacing(Block block) {
-		return Piston.BTEWNS.get(block.getData() & 0x7);
+		return Piston.BTEWNS.get(block.getDataField(0x7));
 	}
 
 	@Override

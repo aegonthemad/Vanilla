@@ -29,9 +29,4 @@ package org.spout.vanilla.material.block;
 import org.spout.vanilla.material.Mineable;
 
 public interface Plant extends Mineable {
-	public boolean hasGrowthStages();
-
-	public int getNumGrowthStages();
-
-	public int getMinimumLightToGrow();
 }

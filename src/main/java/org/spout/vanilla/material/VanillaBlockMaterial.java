@@ -45,12 +45,14 @@ import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.block.BlockSnapshot;
 import org.spout.api.math.Vector3;
 
-import org.spout.vanilla.controller.object.moving.Item;
+import org.spout.vanilla.data.effect.SoundEffect;
+import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
 import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.EnchantmentUtil;
 import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.util.ItemUtil;
 import org.spout.vanilla.util.MiningType;
 import org.spout.vanilla.util.MoveReaction;
 import org.spout.vanilla.util.RedstonePowerMode;
@@ -65,6 +67,7 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	private int miningLevel;
 	private MiningType miningType;
 	private boolean liquidObstacle = true;
+	private SoundEffect stepSound = SoundEffects.STEP_STONE;
 	private Map<Material, int[]> dropMaterials = new HashMap<Material, int[]>();
 
 	public VanillaBlockMaterial(String name, int id) {
@@ -94,6 +97,11 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	@Override
 	public final int getMinecraftId() {
 		return minecraftId;
+	}
+
+	@Override
+	public short getMinecraftData(short data) {
+		return (short) (data & 0xF);
 	}
 
 	/**
@@ -131,7 +139,7 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	}
 
 	@Override
-	public boolean canPlace(Block block, short data, BlockFace against, boolean isClickedBlock) {
+	public boolean canPlace(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
 		return !block.getMaterial().isPlacementObstacle();
 	}
 
@@ -143,6 +151,24 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	@Override
 	public VanillaBlockMaterial setHardness(float hardness) {
 		return (VanillaBlockMaterial) super.setHardness(hardness);
+	}
+
+	/**
+	 * Sets the sound played when the block is being walked over or is being placed
+	 * @param sound to play
+	 * @return this Material
+	 */
+	public VanillaBlockMaterial setStepSound(SoundEffect sound) {
+		this.stepSound = sound;
+		return this;
+	}
+
+	/**
+	 * Gets the sound played when the block is being walked over or is being placed
+	 * @return step sound
+	 */
+	public SoundEffect getStepSound() {
+		return this.stepSound;
 	}
 
 	@Override
@@ -201,7 +227,7 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 			if (item == null) {
 				continue;
 			}
-			block.getPosition().getWorld().createAndSpawnEntity(block.getPosition(), new Item(item, new Vector3(0, 5, 0)));
+			ItemUtil.dropItemNaturally(block.getPosition(), item);
 		}
 	}
 
@@ -365,7 +391,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 
 	/**
 	 * Gets whether this Block Material can spawn drops when dug by the held item specified
-	 * 
 	 * @param block to be broken
 	 * @param holding item of the diggers
 	 * @return True if it spawns items, False if not
@@ -374,7 +399,7 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		if (this.miningLevel == 0) {
 			return true;
 		}
-		Material heldMaterial = holding.getSubMaterial();
+		Material heldMaterial = holding.getMaterial();
 		if (heldMaterial instanceof Tool) {
 			Tool heldTool = (Tool) heldMaterial;
 			if (this.miningType.isInstance(heldTool) && heldTool.getMiningLevel() >= this.miningLevel) {
@@ -386,7 +411,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 
 	/**
 	 * Sets the mining level required for this block to spawn drops
-	 * 
 	 * @param miningLevel to set to
 	 * @return this material
 	 */
@@ -397,7 +421,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 
 	/**
 	 * Gets the mining level required for this block to spawn drops
-	 * 
 	 * @return mining level
 	 */
 	public int getMiningLevel() {
@@ -407,7 +430,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	/**
 	 * Sets the mining type of this Block material<br>
 	 * This type is used when checking for drops
-	 * 
 	 * @param miningType to set to
 	 * @return this material
 	 */
@@ -419,7 +441,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	/**
 	 * Gets the mining type of this Block material<br>
 	 * This type is used when checking for drops
-	 * 
 	 * @return the mining type
 	 */
 	public MiningType getMiningType() {

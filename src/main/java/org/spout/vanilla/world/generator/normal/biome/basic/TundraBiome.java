@@ -26,15 +26,16 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.basic;
 
-import org.spout.vanilla.world.generator.normal.biome.IcyBiome;
+import org.spout.vanilla.world.generator.normal.biome.SnowyBiome;
 import org.spout.vanilla.world.generator.normal.decorator.MushroomDecorator;
-import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
 import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
+import org.spout.vanilla.world.generator.normal.decorator.TreeDecorator;
 
-public class TundraBiome extends IcyBiome {
+public class TundraBiome extends SnowyBiome {
 	public TundraBiome(int id) {
-		super(id, new OreDecorator(), new SandAndClayDecorator(), new MushroomDecorator());
-		setMinMax((byte) 67, (byte) 70);
+		super(id, new SandAndClayDecorator(), new TreeDecorator(new NormalTreeWGOFactory()),
+				new MushroomDecorator());
+		setMinMax((byte) 67, (byte) 73);
 	}
 
 	@Override

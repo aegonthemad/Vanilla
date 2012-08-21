@@ -27,36 +27,34 @@
 package org.spout.vanilla.material.block.plant;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.inventory.special.InventorySlot;
-import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.RandomBlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.material.block.Plant;
+import org.spout.vanilla.material.block.Crop;
+import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.item.misc.Dye;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
+import org.spout.vanilla.util.VanillaBlockUtil;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class WheatCrop extends GroundAttachable implements Plant {
+public class WheatCrop extends GroundAttachable implements Growing, Crop, RandomBlockMaterial {
 	public WheatCrop(String name, int id) {
 		super(name, id);
 		this.setResistance(0.0F).setHardness(0.0F).setTransparent();
 	}
 
 	@Override
-	public boolean hasGrowthStages() {
-		return true;
-	}
-
-	@Override
-	public int getNumGrowthStages() {
+	public int getGrowthStageCount() {
 		return 8;
 	}
 
@@ -66,8 +64,23 @@ public class WheatCrop extends GroundAttachable implements Plant {
 	}
 
 	@Override
-	public boolean canAttachTo(BlockMaterial material, BlockFace face) {
-		return face == BlockFace.TOP && material.equals(VanillaMaterials.FARMLAND);
+	public int getGrowthStage(Block block) {
+		return block.getDataField(0x7);
+	}
+
+	@Override
+	public void setGrowthStage(Block block, int stage) {
+		block.setData(stage & 0x7);
+	}
+
+	@Override
+	public boolean isFullyGrown(Block block) {
+		return block.getData() == 0x7;
+	}
+
+	@Override
+	public boolean canAttachTo(Block block, BlockFace face) {
+		return face == BlockFace.TOP && block.isMaterial(VanillaMaterials.FARMLAND);
 	}
 
 	@Override
@@ -75,7 +88,7 @@ public class WheatCrop extends GroundAttachable implements Plant {
 		super.onInteractBy(entity, block, type, clickedFace);
 		InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
 		ItemStack current = inv.getItem();
-		if (current != null && current.getSubMaterial().equals(Dye.BONE_MEAL)) {
+		if (current != null && current.isMaterial(Dye.BONE_MEAL)) {
 			if (this.getGrowthStage(block) != 0x7) {
 				if (VanillaPlayerUtil.isSurvival(entity)) {
 					inv.addItemAmount(0, -1);
@@ -98,23 +111,22 @@ public class WheatCrop extends GroundAttachable implements Plant {
 		return drops;
 	}
 
-	public int getGrowthStage(Block block) {
-		return block.getData();
-	}
-
-	public void setGrowthStage(Block block, int stage) {
-		block.setData(stage & 0x7);
-	}
-
-	public boolean isFullyGrown(Block block) {
-		return block.getData() == 0x7;
-	}
+	// TODO: Trampling
 
 	@Override
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 
-	// TODO: Grow
-	// TODO: Trampling
+	@Override
+	public void onRandomTick(Block block) {
+		if (!this.isFullyGrown(block) && block.translate(BlockFace.TOP).getLight() >= this.getMinimumLightToGrow()) {
+			// Grow using a calculated chance of growing
+			Random rand = new Random(block.getWorld().getAge());
+			int chance = VanillaBlockUtil.getCropGrowthChance(block);
+			if (rand.nextInt(chance + 1) == 0) {
+				this.setGrowthStage(block, this.getGrowthStage(block));
+			}
+		}
+	}
 }

@@ -38,25 +38,31 @@ import org.spout.vanilla.VanillaPlugin;
 public class VanillaConfiguration extends ConfigurationHolderConfiguration {
 	// General
 	public static final ConfigurationHolder MOTD = new ConfigurationHolder("A Spout Server", "general", "motd");
+	public static final ConfigurationHolder UPNP = new ConfigurationHolder(true, "general", "upnp");
+	public static final ConfigurationHolder BONJOUR = new ConfigurationHolder(true, "general", "bonjour");
+	public static final ConfigurationHolder LAN_DISCOVERY = new ConfigurationHolder(true, "general", "lan-discovery");
 	public static final ConfigurationHolder ONLINE_MODE = new ConfigurationHolder(true, "general", "online-mode");
-	public static final ConfigurationHolder ENCRYPT_MODE = new ConfigurationHolder(false, "general", "encrypt-mode");
 	public static final ConfigurationHolder ENABLE_END_CREDITS = new ConfigurationHolder(true, "general", "enable-ending-credits");
 	public static final ConfigurationHolder SPAWN_RADIUS = new ConfigurationHolder(4, "general", "spawn-radius");
+	public static final ConfigurationHolder SPAWN_PROTECTION_RADIUS = new ConfigurationHolder(10, "general", "spawn-protection-radius");
+	public static final ConfigurationHolder CHUNK_INIT = new ConfigurationHolder("client", "general", "chunk-init");
 	// Physics
 	public static final ConfigurationHolder GRAVEL_PHYSICS = new ConfigurationHolder(true, "physics", "gravel");
 	public static final ConfigurationHolder FIRE_PHYSICS = new ConfigurationHolder(true, "physics", "fire");
-	public static final ConfigurationHolder LAVA_PHYSICS = new ConfigurationHolder(true, "physics", "lava");
 	public static final ConfigurationHolder PISTON_PHYSICS = new ConfigurationHolder(true, "physics", "piston");
 	public static final ConfigurationHolder REDSTONE_PHYSICS = new ConfigurationHolder(true, "physics", "redstone");
 	public static final ConfigurationHolder SAND_PHYSICS = new ConfigurationHolder(true, "physics", "sand");
-	public static final ConfigurationHolder WATER_PHYSICS = new ConfigurationHolder(true, "physics", "water");
 	public static final ConfigurationHolder CACTUS_PHYSICS = new ConfigurationHolder(true, "physics", "cactus");
+	public static final ConfigurationHolder LAVA_PHYSICS = new ConfigurationHolder(true, "physics", "lava", "enabled");
+	public static final ConfigurationHolder LAVA_DELAY = new ConfigurationHolder(1500, "physics", "lava", "delay");
+	public static final ConfigurationHolder WATER_PHYSICS = new ConfigurationHolder(true, "physics", "water", "enabled");
+	public static final ConfigurationHolder WATER_DELAY = new ConfigurationHolder(250, "physics", "water", "delay");
 	// Player
 	public static final ConfigurationHolder PLAYER_PVP_ENABLED = new ConfigurationHolder(true, "player", "pvp-enabled");
 	public static final ConfigurationHolder PLAYER_SURVIVAL_ENABLE_HEALTH = new ConfigurationHolder(true, "player", "survival", "enable-health");
 	public static final ConfigurationHolder PLAYER_SURVIVAL_ENABLE_HUNGER = new ConfigurationHolder(true, "player", "survival", "enable-hunger");
 	public static final ConfigurationHolder PLAYER_SURVIVAL_ENABLE_XP = new ConfigurationHolder(true, "player", "survival", "enable-xp");
-	public static final ConfigurationHolder PLAYER_TIMEOUT_TICKS = new ConfigurationHolder(240, "player", "timeout-ticks");
+	public static final ConfigurationHolder PLAYER_TIMEOUT_MS = new ConfigurationHolder(5000, "player", "timeout-ms");
 	public static final ConfigurationHolder PLAYER_SPEEDMINING_PREVENTION_ENABLED = new ConfigurationHolder(true, "player", "speedmining-prevention-enabled");
 	public static final ConfigurationHolder PLAYER_SPEEDMINING_PREVENTION_ALLOWANCE = new ConfigurationHolder(5, "player", "speedmining-prevention-allowance");
 	public static final ConfigurationHolder PLAYER_SPEEDMINING_PREVENTION_PERIOD = new ConfigurationHolder(50, "player", "speedmining-prevention-period");

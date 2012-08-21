@@ -32,14 +32,14 @@ import java.util.Set;
 import org.spout.api.Source;
 import org.spout.api.collision.BoundingBox;
 import org.spout.api.collision.CollisionModel;
+import org.spout.api.data.Data;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.controller.VanillaActionController;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.living.Creature;
 import org.spout.vanilla.controller.living.creature.Neutral;
 import org.spout.vanilla.controller.source.HealthChangeReason;
-import org.spout.vanilla.data.Data;
 import org.spout.vanilla.material.VanillaMaterials;
 
 public class Enderman extends Creature implements Neutral {
@@ -52,12 +52,13 @@ public class Enderman extends Creature implements Neutral {
 
 	@Override
 	public void onAttached() {
-		setHealth(40, HealthChangeReason.SPAWN);
+		super.onAttached();
 		setMaxHealth(40);
+		setHealth(40, HealthChangeReason.SPAWN);
 		if (data().containsKey(Data.HELD_ITEM)) {
 			heldItem = data().get(Data.HELD_ITEM);
 		}
-		super.onAttached();
+		setDeathAnimation(true);
 		getParent().setCollision(new CollisionModel(new BoundingBox(1, 3, 1, 2, 3, 1)));
 	}
 
@@ -74,7 +75,7 @@ public class Enderman extends Creature implements Neutral {
 	}
 
 	@Override
-	public Set<ItemStack> getDrops(Source source, VanillaActionController lastDamager) {
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
 		Set<ItemStack> drops = new HashSet<ItemStack>();
 		int count = getRandom().nextInt(2);
 		if (count > 0) {

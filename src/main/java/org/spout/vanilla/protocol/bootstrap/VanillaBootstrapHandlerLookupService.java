@@ -26,27 +26,20 @@
  */
 package org.spout.vanilla.protocol.bootstrap;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.spout.api.protocol.HandlerLookupService;
-import org.spout.api.protocol.Message;
-import org.spout.api.protocol.MessageHandler;
 import org.spout.api.protocol.common.handler.CustomDataMessageHandler;
 import org.spout.api.protocol.common.message.CustomDataMessage;
 
-import org.spout.vanilla.protocol.bootstrap.handler.BootstrapEncryptionKeyResponseMessageHandler;
-import org.spout.vanilla.protocol.bootstrap.handler.BootstrapHandshakeMessageHandler;
-import org.spout.vanilla.protocol.bootstrap.handler.BootstrapLoginRequestMessageHandler;
-import org.spout.vanilla.protocol.bootstrap.handler.BootstrapPingMessageHandler;
+import org.spout.vanilla.protocol.handler.bootstrap.BootstrapEncryptionKeyResponseMessageHandler;
+import org.spout.vanilla.protocol.handler.bootstrap.BootstrapHandshakeMessageHandler;
+import org.spout.vanilla.protocol.handler.bootstrap.BootstrapLoginRequestMessageHandler;
+import org.spout.vanilla.protocol.handler.bootstrap.BootstrapPingMessageHandler;
 import org.spout.vanilla.protocol.msg.EncryptionKeyResponseMessage;
-import org.spout.vanilla.protocol.msg.HandshakeMessage;
-import org.spout.vanilla.protocol.msg.LoginRequestMessage;
 import org.spout.vanilla.protocol.msg.ServerListPingMessage;
+import org.spout.vanilla.protocol.msg.login.HandshakeMessage;
+import org.spout.vanilla.protocol.msg.login.LoginRequestMessage;
 
 public class VanillaBootstrapHandlerLookupService extends HandlerLookupService {
-	protected static final Map<Class<? extends Message>, MessageHandler<?>> handlers = new HashMap<Class<? extends Message>, MessageHandler<?>>();
-
 	public VanillaBootstrapHandlerLookupService() {
 		try {
 			bind(HandshakeMessage.class, BootstrapHandshakeMessageHandler.class);
@@ -57,9 +50,5 @@ public class VanillaBootstrapHandlerLookupService extends HandlerLookupService {
 		} catch (Exception e) {
 			throw new ExceptionInInitializerError(e);
 		}
-	}
-
-	protected static <T extends Message> void bind(Class<T> clazz, Class<? extends MessageHandler<T>> handlerClass) throws InstantiationException, IllegalAccessException {
-		handlers.put(clazz, handlerClass.newInstance());
 	}
 }

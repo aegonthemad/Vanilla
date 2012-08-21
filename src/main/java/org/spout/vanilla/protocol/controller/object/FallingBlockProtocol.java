@@ -30,18 +30,16 @@ import java.util.Arrays;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.entity.component.Controller;
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.math.MathHelper;
 import org.spout.api.protocol.Message;
 import org.spout.api.util.Parameter;
 
-import org.spout.vanilla.controller.block.MovingBlock;
+import org.spout.vanilla.controller.object.moving.MovingBlock;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.protocol.controller.BasicVehicleEntityProtocol;
-import org.spout.vanilla.protocol.msg.EntityMetadataMessage;
-import org.spout.vanilla.protocol.msg.SpawnVehicleMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityMetadataMessage;
+import org.spout.vanilla.protocol.msg.entity.EntitySpawnVehicleMessage;
 
 public class FallingBlockProtocol extends BasicVehicleEntityProtocol {
 	public static final int BLOCK_TYPE_METADATA_INDEX = 30;
@@ -53,27 +51,21 @@ public class FallingBlockProtocol extends BasicVehicleEntityProtocol {
 	@Override
 	public Message[] getSpawnMessage(Entity entity) {
 		final Controller controller = entity.getController();
-		int spawnId = 0;
-		Block block = null;
 		if (controller instanceof MovingBlock) {
-			block = ((MovingBlock) controller).getBlock();
-			BlockMaterial mat = block.getMaterial();
+			int spawnId;
+			BlockMaterial mat = ((MovingBlock) controller).getMaterial();
 			if (mat.equals(VanillaMaterials.DRAGON_EGG)) {
 				spawnId = 74;
 			} else if (mat.equals(VanillaMaterials.GRAVEL)) {
 				spawnId = 71;
-			} else if (mat.equals(VanillaMaterials.SAND)) {
-				spawnId = 70;
+			} else {
+				spawnId = 70; // sand
 			}
-		}
-		if (spawnId > 0) {
 			Point position = entity.getPosition();
-			int x = MathHelper.floor(position.getX());
-			int y = MathHelper.floor(position.getY());
-			int z = MathHelper.floor(position.getZ());
-			SpawnVehicleMessage msg = new SpawnVehicleMessage(entity.getId(), spawnId, x, y, z);
-			return new Message[]{msg, new EntityMetadataMessage(entity.getId(), Arrays.<Parameter<?>>asList(new Parameter<Short>(Parameter.TYPE_SHORT, BLOCK_TYPE_METADATA_INDEX, VanillaMaterials.getMinecraftId(block.getMaterial()))))};
+			EntitySpawnVehicleMessage msg = new EntitySpawnVehicleMessage(entity.getId(), spawnId, position);
+			return new Message[]{msg, new EntityMetadataMessage(entity.getId(), Arrays.<Parameter<?>>asList(new Parameter<Short>(Parameter.TYPE_SHORT, BLOCK_TYPE_METADATA_INDEX, VanillaMaterials.getMinecraftId(mat))))};
+		} else {
+			return null;
 		}
-		return null;
 	}
 }

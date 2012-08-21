@@ -26,26 +26,36 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import java.util.EnumMap;
+
 import org.spout.api.Source;
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.material.range.EffectRange;
+import org.spout.api.material.range.ListEffectRange;
 import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.block.attachable.AbstractAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.util.RedstonePowerMode;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
-
 public class Lever extends AbstractAttachable implements Mineable, RedstoneSource {
+	private static EnumMap<BlockFace, EffectRange> physicsRanges = new EnumMap<BlockFace, EffectRange>(BlockFace.class);
+
+	static {
+		for (BlockFace face : BlockFaces.NESWBT) {
+			physicsRanges.put(face, new ListEffectRange(EffectRange.THIS_AND_NEIGHBORS, EffectRange.THIS_AND_NEIGHBORS.translate(face)));
+		}
+	}
+
 	public Lever(String name, int id) {
 		super(name, id);
 		this.setAttachable(BlockFaces.NESWB).setLiquidObstacle(false).setHardness(0.5F).setResistance(1.7F).setTransparent();
@@ -68,11 +78,7 @@ public class Lever extends AbstractAttachable implements Mineable, RedstoneSourc
 			return;
 		}
 		this.toggle(block);
-		if (this.isDown(block)) {
-			playBlockEffect(block, entity, PlayEffectMessage.Messages.RANDOM_CLICK_1);
-		} else {
-			playBlockEffect(block, entity, PlayEffectMessage.Messages.RANDOM_CLICK_2);
-		}
+		GeneralEffects.RANDOM_CLICK1.playGlobal(block.getPosition(), entity);
 	}
 
 	public boolean isDown(Block block) {
@@ -111,8 +117,8 @@ public class Lever extends AbstractAttachable implements Mineable, RedstoneSourc
 	}
 
 	@Override
-	public BlockFace getAttachedFace(Block block) {
-		return BlockFaces.NSEWB.get((block.getData() & ~0x8) - 1);
+	public BlockFace getAttachedFace(short data) {
+		return BlockFaces.NSEWB.get((data & 0x7) - 1);
 	}
 
 	@Override
@@ -138,5 +144,10 @@ public class Lever extends AbstractAttachable implements Mineable, RedstoneSourc
 	@Override
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
+	}
+
+	@Override
+	public EffectRange getPhysicsRange(short data) {
+		return physicsRanges.get(getAttachedFace(data));
 	}
 }

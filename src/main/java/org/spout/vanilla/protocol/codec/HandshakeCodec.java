@@ -32,7 +32,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.spout.api.protocol.MessageCodec;
 
 import org.spout.vanilla.protocol.ChannelBufferUtils;
-import org.spout.vanilla.protocol.msg.HandshakeMessage;
+import org.spout.vanilla.protocol.msg.login.HandshakeMessage;
 
 public final class HandshakeCodec extends MessageCodec<HandshakeMessage> {
 	public HandshakeCodec() {
@@ -41,14 +41,20 @@ public final class HandshakeCodec extends MessageCodec<HandshakeMessage> {
 
 	@Override
 	public HandshakeMessage decode(ChannelBuffer buffer) {
-		String identifier = ChannelBufferUtils.readString(buffer);
-		return new HandshakeMessage(identifier);
+		byte protoVersion = buffer.readByte();
+		String username = ChannelBufferUtils.readString(buffer);
+		String hostname = ChannelBufferUtils.readString(buffer);
+		int port = buffer.readInt();
+		return new HandshakeMessage(protoVersion, username, hostname, port);
 	}
 
 	@Override
 	public ChannelBuffer encode(HandshakeMessage message) {
 		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-		ChannelBufferUtils.writeString(buffer, message.getIdentifier());
+		buffer.writeByte(message.getProtocolVersion());
+		ChannelBufferUtils.writeString(buffer, message.getUsername());
+		ChannelBufferUtils.writeString(buffer, message.getHostname());
+		buffer.writeInt(message.getPort());
 		return buffer;
 	}
 }

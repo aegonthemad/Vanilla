@@ -26,16 +26,24 @@
  */
 package org.spout.vanilla.protocol.controller.living;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import net.royawesome.jlibnoise.MathHelper;
+
 import org.spout.api.entity.Entity;
 import org.spout.api.entity.component.Controller;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.protocol.Message;
+import org.spout.api.util.Parameter;
 
 import org.spout.vanilla.controller.living.Human;
 import org.spout.vanilla.protocol.controller.VanillaEntityProtocol;
-import org.spout.vanilla.protocol.msg.SpawnPlayerMessage;
+import org.spout.vanilla.protocol.msg.entity.EntitySpawnPlayerMessage;
 
 public class HumanEntityProtocol extends VanillaEntityProtocol {
+	private static final int MC_FULL_AIR = 300;
+
 	@Override
 	public Message[] getSpawnMessage(Entity entity) {
 		Controller c = entity.getController();
@@ -56,7 +64,14 @@ public class HumanEntityProtocol extends VanillaEntityProtocol {
 			if (hand != null) {
 				item = hand.getMaterial().getId();
 			}
-			return new Message[]{new SpawnPlayerMessage(id, mcp.getTitle(), x, y, z, r, p, item)};
+
+			int percentAirLeft = 100 - (mcp.getAirTicks() * 100 / mcp.getMaxAirTicks());
+			int airLeft = MathHelper.clamp(percentAirLeft * MC_FULL_AIR, 0, MC_FULL_AIR);
+
+			List<Parameter<?>> parameters = new ArrayList<Parameter<?>>();
+			parameters.add(new Parameter<Short>(Parameter.TYPE_SHORT, 1, (short) airLeft));
+
+			return new Message[]{new EntitySpawnPlayerMessage(id, mcp.getTitle(), x, y, z, r, p, item, parameters)};
 		}
 
 		return null;

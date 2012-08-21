@@ -35,12 +35,12 @@ import org.spout.api.geo.World;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.math.MathHelper;
 import org.spout.api.player.Player;
-import org.spout.api.tickable.ITickable;
+import org.spout.api.tickable.BasicTickable;
 
 import org.spout.vanilla.controller.object.misc.Lightning;
 import org.spout.vanilla.data.Weather;
 
-public class LightningSimulator implements ITickable {
+public class LightningSimulator extends BasicTickable {
 	private static final int MAX_LIGHTNING_BRANCHES = 5;
 	private static Random ra = new Random();
 	final WeatherSimulator weather;
@@ -58,7 +58,6 @@ public class LightningSimulator implements ITickable {
 
 	/**
 	 * Gets the strength of the thunder storm, which is affected by the duration
-	 * 
 	 * @param factor to apply to the changing states
 	 * @return the strength
 	 */
@@ -73,7 +72,7 @@ public class LightningSimulator implements ITickable {
 			this.currentThunderStrength = Math.min(1.0f, this.currentThunderStrength + 0.01f);
 		} else {
 			this.currentThunderStrength = Math.max(0.0f, this.currentThunderStrength - 0.01f);
-		}		
+		}
 		try {
 			updatePlayerTimers();
 		} catch (Exception e) {
@@ -112,7 +111,7 @@ public class LightningSimulator implements ITickable {
 
 	public void strikePlayers(List<Player> toStrike) {
 		for (Player player : toStrike) {
-			Point playerPos = player.getEntity().getPosition();
+			Point playerPos = player.getPosition();
 			final int posX = MathHelper.floor(playerPos.getX());
 			final int posY = MathHelper.floor(playerPos.getY());
 			final int posZ = MathHelper.floor(playerPos.getZ());

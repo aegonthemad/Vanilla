@@ -67,7 +67,7 @@ public class FlowerDecorator extends Decorator {
 				final int zz = z - 7 + random.nextInt(15);
 				final int yy = getHighestWorkableBlock(world, xx, zz);
 				if (yy != -1 && world.getBlockMaterial(xx, yy, zz) == VanillaMaterials.AIR
-						&& canFlowerStay(world.getBlock(xx, yy, zz))) {
+						&& canFlowerStay(world.getBlock(xx, yy, zz, world))) {
 					world.setBlockMaterial(xx, yy, zz, flower, (short) 0, world);
 				}
 			}
@@ -81,12 +81,12 @@ public class FlowerDecorator extends Decorator {
 	//TODO: add this to flower material
 	private boolean canFlowerStay(Block block) {
 		return (block.getLight() > 7 || block.isAtSurface())
-				&& block.translate(BlockFace.BOTTOM).getMaterial().equals(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FARMLAND);
+				&& block.translate(BlockFace.BOTTOM).getMaterial().isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FARMLAND);
 	}
 
 	private int getHighestWorkableBlock(World world, int x, int z) {
 		int y = world.getHeight();
-		while (world.getBlockMaterial(x, y, z).equals(VanillaMaterials.AIR, VanillaMaterials.LEAVES)) {
+		while (world.getBlockMaterial(x, y, z).isMaterial(VanillaMaterials.AIR, VanillaMaterials.LEAVES)) {
 			y--;
 			if (y == 0) {
 				return -1;

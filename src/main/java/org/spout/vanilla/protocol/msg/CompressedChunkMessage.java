@@ -35,21 +35,25 @@ public final class CompressedChunkMessage extends Message {
 	private final int x, z;
 	private final boolean contiguous;
 	private final boolean[] hasAdditionalData;
-	private final int unused;
 	private final byte[][] data;
 	private final byte[] biomeData;
+	private final boolean unload;
 
-	public CompressedChunkMessage(int x, int z, boolean contiguous, boolean[] hasAdditionalData, int unused, byte[][] data, byte[] biomeData) {
-		if (hasAdditionalData.length != data.length || data.length != 16) {
-			throw new IllegalArgumentException("Data and hasAdditionalDta must have a length of 16");
+	public CompressedChunkMessage(int x, int z, boolean contiguous, boolean[] hasAdditionalData, byte[][] data, byte[] biomeData) {
+		this(x, z, contiguous, hasAdditionalData, data, biomeData, false);
+	}
+
+	public CompressedChunkMessage(int x, int z, boolean contiguous, boolean[] hasAdditionalData, byte[][] data, byte[] biomeData, boolean unload) {
+		if (!unload && (hasAdditionalData.length != data.length || data.length != 16)) {
+			throw new IllegalArgumentException("Data and hasAdditionalData must have a length of 16");
 		}
 		this.x = x;
 		this.z = z;
 		this.contiguous = contiguous;
 		this.hasAdditionalData = hasAdditionalData;
-		this.unused = unused;
 		this.data = data;
 		this.biomeData = biomeData;
+		this.unload = unload;
 	}
 
 	public int getX() {
@@ -68,16 +72,16 @@ public final class CompressedChunkMessage extends Message {
 		return contiguous;
 	}
 
-	public int getUnused() {
-		return unused;
-	}
-
 	public byte[][] getData() {
 		return data;
 	}
 
 	public byte[] getBiomeData() {
 		return biomeData;
+	}
+
+	public boolean shouldUnload() {
+		return unload;
 	}
 
 	@Override
@@ -87,9 +91,9 @@ public final class CompressedChunkMessage extends Message {
 				.append("z", z)
 				.append("hasAdditionalData", hasAdditionalData)
 				.append("contiguous", contiguous)
-				.append("unusedValue", unused)
 				.append("data", data, false)
 				.append("biomeData", data, false)
+				.append("unload", unload, false)
 				.toString();
 	}
 
@@ -107,9 +111,9 @@ public final class CompressedChunkMessage extends Message {
 				.append(this.z, other.z)
 				.append(this.contiguous, other.contiguous)
 				.append(this.hasAdditionalData, other.hasAdditionalData)
-				.append(this.unused, other.unused)
 				.append(this.data, other.data)
 				.append(this.biomeData, other.biomeData)
+				.append(this.unload, other.unload)
 				.isEquals();
 	}
 }

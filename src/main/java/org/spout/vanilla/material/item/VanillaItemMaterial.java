@@ -54,6 +54,11 @@ public class VanillaItemMaterial extends Material implements VanillaMaterial {
 		return minecraftId;
 	}
 
+	@Override
+	public short getMinecraftData(short data) {
+		return data;
+	}
+
 	public boolean hasNBTData() {
 		return false;
 	}
@@ -68,5 +73,4 @@ public class VanillaItemMaterial extends Material implements VanillaMaterial {
 		this.meleeDamage = damage;
 		return this;
 	}
-
 }

@@ -32,7 +32,6 @@ import org.spout.api.generator.biome.Decorator;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Chunk;
-import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.material.VanillaMaterials;
@@ -66,7 +65,7 @@ public class TallGrassDecorator extends Decorator {
 				final int zz = z - 7 + random.nextInt(15);
 				final int yy = getHighestWorkableBlock(world, xx, zz);
 				if (yy != -1 && world.getBlockMaterial(xx, yy, zz) == VanillaMaterials.AIR
-						&& canTallGrassStay(world.getBlock(xx, yy, zz))) {
+						&& canTallGrassStay(world.getBlock(xx, yy, zz, world))) {
 					final TallGrass grass = factory.make(random);
 					world.setBlockMaterial(xx, yy, zz, grass, grass.getData(), world);
 				}
@@ -77,12 +76,12 @@ public class TallGrassDecorator extends Decorator {
 	// TODO: this needs to be added to tall grass itself (valid for flowers too)
 	private boolean canTallGrassStay(Block block) {
 		return (block.getLight() > 7 || block.isAtSurface())
-				&& block.translate(BlockFace.BOTTOM).getMaterial().equals(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FARMLAND);
+				&& block.translate(BlockFace.BOTTOM).getMaterial().isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FARMLAND);
 	}
 
 	private int getHighestWorkableBlock(World world, int x, int z) {
 		int y = world.getHeight();
-		while (world.getBlockMaterial(x, y, z).equals(VanillaMaterials.AIR, VanillaMaterials.LEAVES)) {
+		while (world.getBlockMaterial(x, y, z).isMaterial(VanillaMaterials.AIR, VanillaMaterials.LEAVES)) {
 			y--;
 			if (y == 0) {
 				return -1;

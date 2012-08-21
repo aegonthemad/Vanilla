@@ -29,15 +29,16 @@ package org.spout.vanilla.world;
 import java.util.Random;
 
 import org.spout.api.geo.World;
-import org.spout.api.tickable.ITickable;
+import org.spout.api.tickable.BasicTickable;
+
 import org.spout.vanilla.controller.world.VanillaSky;
 import org.spout.vanilla.data.Weather;
 
-public class WeatherSimulator implements ITickable {
+public class WeatherSimulator extends BasicTickable {
 	private final VanillaSky sky;
 	protected final Random random = new Random();
 	protected Weather weather = Weather.CLEAR, forecast = Weather.CLEAR;
-	protected float ticksUntilWeatherChange = random.nextFloat() * 5 * 60;
+	protected float secondsUntilWeatherChange = 120F + random.nextFloat() * 5 * 60;
 	protected boolean forceWeatherUpdate = false;
 	protected LightningSimulator lightning;
 	protected float previousRainStrength, currentRainStrength;
@@ -73,7 +74,6 @@ public class WeatherSimulator implements ITickable {
 
 	/**
 	 * Gets if this Weather simulator supports Lightning storms
-	 * 
 	 * @return True if it has lightning, False if not
 	 */
 	public boolean hasLightning() {
@@ -82,7 +82,6 @@ public class WeatherSimulator implements ITickable {
 
 	/**
 	 * Sets if this Weather simulator supports Lightning storms
-	 * 
 	 * @param hasLightning state to set to
 	 */
 	public void setLightning(boolean hasLightning) {
@@ -103,7 +102,6 @@ public class WeatherSimulator implements ITickable {
 
 	/**
 	 * Gets the strength of the rain, which is affected by the duration
-	 * 
 	 * @param factor to apply to the changing states
 	 * @return the strength
 	 */
@@ -113,7 +111,6 @@ public class WeatherSimulator implements ITickable {
 
 	/**
 	 * Gets the strength of the thunder storm, which is affected by the duration
-	 * 
 	 * @param factor to apply to the changing states
 	 * @return the strength
 	 */
@@ -123,12 +120,12 @@ public class WeatherSimulator implements ITickable {
 
 	@Override
 	public void onTick(float dt) {
-		ticksUntilWeatherChange -= dt;
-		if (forceWeatherUpdate || ticksUntilWeatherChange <= 0) {
+		secondsUntilWeatherChange -= dt;
+		if (forceWeatherUpdate || secondsUntilWeatherChange <= 0) {
 			this.sky.updateWeather(weather, forecast);
 			weather = forecast;
 			forecast = Weather.get(random.nextInt(3));
-			ticksUntilWeatherChange = random.nextFloat() * 5 * 60;
+			secondsUntilWeatherChange = 120F + random.nextFloat() * 5 * 60;
 			forceWeatherUpdate = false;
 		}
 		this.previousRainStrength = this.currentRainStrength;

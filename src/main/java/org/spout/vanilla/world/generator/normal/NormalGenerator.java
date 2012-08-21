@@ -28,6 +28,7 @@ package org.spout.vanilla.world.generator.normal;
 
 import java.util.Random;
 
+import org.spout.api.generator.biome.BiomePopulator;
 import org.spout.api.generator.biome.BiomeSelector;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
@@ -38,27 +39,30 @@ import org.spout.vanilla.material.block.Liquid;
 import org.spout.vanilla.world.generator.VanillaBiomeGenerator;
 import org.spout.vanilla.world.generator.VanillaBiomes;
 import org.spout.vanilla.world.generator.VanillaGenerator;
-import org.spout.vanilla.world.populator.DungeonPopulator;
-import org.spout.vanilla.world.populator.PondPopulator;
-import org.spout.vanilla.world.populator.SmoothPopulator;
+import org.spout.vanilla.world.generator.normal.populator.CavePopulator;
+import org.spout.vanilla.world.generator.normal.populator.DungeonPopulator;
+import org.spout.vanilla.world.generator.normal.populator.FallingLiquidPopulator;
+import org.spout.vanilla.world.generator.normal.populator.OrePopulator;
+import org.spout.vanilla.world.generator.normal.populator.PondPopulator;
+import org.spout.vanilla.world.generator.normal.populator.RavinePopulator;
+import org.spout.vanilla.world.generator.normal.populator.SmoothPopulator;
+import org.spout.vanilla.world.generator.normal.populator.SnowPopulator;
 import org.spout.vanilla.world.selector.VanillaBiomeSelector;
 
 public class NormalGenerator extends VanillaBiomeGenerator implements VanillaGenerator {
-	private BiomeSelector selector;
 	public final static int SEA_LEVEL = 63;
 
 	@Override
 	public void registerBiomes() {
 		// if you want to check out a particular biome, use this!
-		//selector = new PerBlockBiomeSelector(VanillaBiomes.MUSHROOM_SHORE);
-		selector = new VanillaBiomeSelector(5f);
-		setSelector(selector);
-		addPopulator(new SmoothPopulator());
-		addPopulator(new PondPopulator());
-		addPopulator(new DungeonPopulator());
+		//setSelector(new PerBlockBiomeSelector(VanillaBiomes.MOUNTAINS));
+		setSelector(new VanillaBiomeSelector());
+		addPopulators(new SmoothPopulator(), new CavePopulator(), new RavinePopulator(),
+				new PondPopulator(), new DungeonPopulator(), new OrePopulator(),
+				new BiomePopulator(getBiomeMap()), new FallingLiquidPopulator(), new SnowPopulator());
 		register(VanillaBiomes.OCEAN);
 		register(VanillaBiomes.FROZEN_OCEAN);
-		register(VanillaBiomes.PLAIN);
+		register(VanillaBiomes.PLAINS);
 		register(VanillaBiomes.DESERT);
 		register(VanillaBiomes.DESERT_HILLS);
 		register(VanillaBiomes.SMALL_MOUNTAINS);
@@ -90,6 +94,7 @@ public class NormalGenerator extends VanillaBiomeGenerator implements VanillaGen
 
 		//Moves the spawn out of the ocean (and likely on to a beach, as in MC).
 		int shift = 0;
+		final BiomeSelector selector = getSelector();
 		while (selector.pickBiome(shift, 0, world.getSeed()) == VanillaBiomes.OCEAN && shift < 16000) {
 			shift += 16;
 		}

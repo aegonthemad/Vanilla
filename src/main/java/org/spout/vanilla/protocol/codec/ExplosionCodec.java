@@ -49,6 +49,9 @@ public final class ExplosionCodec extends MessageCodec<ExplosionMessage> {
 		int records = buffer.readInt();
 		byte[] coordinates = new byte[records * 3];
 		buffer.readBytes(coordinates);
+		buffer.readFloat(); // unknown (x?)
+		buffer.readFloat(); // unknown (y?)
+		buffer.readFloat(); // unknown (z?)
 		return new ExplosionMessage(x, y, z, radius, coordinates);
 	}
 
@@ -61,6 +64,9 @@ public final class ExplosionCodec extends MessageCodec<ExplosionMessage> {
 		buffer.writeFloat(message.getRadius());
 		buffer.writeInt(message.getRecords());
 		buffer.writeBytes(message.getCoordinates());
+		buffer.writeFloat(0.0f); // unknown (x?)
+		buffer.writeFloat(0.0f); // unknown (y?)
+		buffer.writeFloat(0.0f); // unknown (z?)
 		return buffer;
 	}
 }

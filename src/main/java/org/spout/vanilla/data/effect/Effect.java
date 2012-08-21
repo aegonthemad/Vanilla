@@ -26,83 +26,67 @@
  */
 package org.spout.vanilla.data.effect;
 
-import org.spout.api.protocol.Message;
-import org.spout.api.tickable.TimedLogicRunnable;
+import java.util.Set;
 
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.api.entity.Entity;
+import org.spout.api.geo.discrete.Point;
+import org.spout.api.player.Player;
 
-/**
- * Represents an entity effect that is applied to an entity.
- */
-public abstract class Effect extends TimedLogicRunnable<VanillaPlayer> {
-	protected int strength, id;
+public abstract class Effect {
+	private final int range;
 
-	public Effect(VanillaPlayer effected, int id, float duration, int strength) {
-		super(effected, duration);
-		this.id = id;
-		this.strength = strength;
+	public Effect(int range) {
+		this.range = range;
 	}
 
 	/**
-	 * Whether or not to send a message to the client when the effect starts.
-	 * @return true if has appliance message
+	 * Gets the Block range within this Effect is shown to players
+	 * @return range
 	 */
-	public abstract boolean hasApplianceMessage();
-
-	/**
-	 * Whether or not the send a message to the client when the effects ends.
-	 * @return true if has removal message
-	 */
-	public abstract boolean hasRemovalMessage();
-
-	/**
-	 * Gets the message sent to the client when the effect activates.
-	 * @return message to send
-	 */
-	public abstract Message getApplianceMessage();
-
-	/**
-	 * Gets the message sent to the client when the effect is removed.
-	 * @return message to send
-	 */
-	public abstract Message getRemovalMessage();
-
-	/**
-	 * Gets the id of the effect.
-	 * @return id of effect
-	 */
-	public int getId() {
-		return id;
+	public int getRange() {
+		return this.range;
 	}
 
 	/**
-	 * Gets the strength of the effect.
-	 * @return strength of effect.
+	 * Gets all the Players nearby a certain Point that can receive this Effect
+	 * @param position of this Effect
+	 * @param ignore Entity to ignore
+	 * @return a Set of nearby Players
 	 */
-	public int getStrength() {
-		return strength;
+	public Set<Player> getNearbyPlayers(Point position, Entity ignore) {
+		return position.getWorld().getNearbyPlayers(position, ignore, this.getRange());
+	}
+
+	protected static int getMaxRange(Effect[] effects) {
+		int range = 0;
+		for (Effect effect : effects) {
+			range = Math.max(range, effect.getRange());
+		}
+		return range;
+	}
+
+	public abstract void play(Player player, Point position);
+
+	public void play(Set<Player> players, Point position) {
+		for (Player player : players) {
+			this.play(player, position);
+		}
 	}
 
 	/**
-	 * Sets the strength of the effect.
-	 * @param strength of effect
+	 * Plays the sound globally to everyone
+	 * @param position to play at
 	 */
-	public void setStrength(int strength) {
-		this.strength = strength;
+	public void playGlobal(Point position) {
+		this.playGlobal(position, null);
 	}
 
-	@Override
-	public void onRegistration() {
-		getParent().getPlayer().getSession().send(getApplianceMessage());
-	}
-
-	@Override
-	public boolean shouldRun(float dt) {
-		return super.shouldRun(dt);
-	}
-
-	@Override
-	public void run() {
-		getParent().getPlayer().getSession().send(getRemovalMessage());
+	/**
+	 * Plays the sound globally to everyone near except the Player Entity specified
+	 * @param position to play at
+	 * @param ignore Entity to ignore
+	 */
+	public void playGlobal(Point position, Entity ignore) {
+		this.play(getNearbyPlayers(position, ignore), position);
 	}
 }

@@ -36,8 +36,8 @@ import org.spout.api.geo.discrete.Point;
 import org.spout.api.player.Player;
 import org.spout.api.protocol.Message;
 
+import org.spout.vanilla.protocol.VanillaProtocol;
 import org.spout.vanilla.protocol.msg.BlockActionMessage;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 
 public class VanillaNetworkUtil {
 	public static int BLOCK_EFFECT_RANGE = 16;
@@ -58,9 +58,7 @@ public class VanillaNetworkUtil {
 	 */
 	public static void sendPacket(Player[] players, Message... messages) {
 		for (Player player : players) {
-			for (Message message : messages) {
-				sendPacket(player, message);
-			}
+			sendPacket(player, messages);
 		}
 	}
 
@@ -89,63 +87,26 @@ public class VanillaNetworkUtil {
 	 * @param messages specific message to send.
 	 */
 	public static void sendPacket(Player player, Message... messages) {
+		if (!(player.getSession().getProtocol() instanceof VanillaProtocol)) {
+			return;
+		}
 		for (Message message : messages) {
 			player.getSession().send(message);
 		}
 	}
 
 	/**
-	 * This method sends an effect play message for a block to all nearby players in a 16-block radius
-	 * @param block The block that the effect comes from.
-	 * @param effect The effect to play
-	 */
-	public static void playBlockEffect(Block block, Entity ignore, PlayEffectMessage.Messages effect) {
-		playBlockEffect(block, ignore, BLOCK_EFFECT_RANGE, effect, 0);
-	}
-
-	/**
-	 * This method sends an effect play message for a block to all nearby players in a 16-block radius
-	 * @param block The block that the effect comes from.
-	 * @param effect The effect to play
-	 * @param data The data to use for the effect
-	 */
-	public static void playBlockEffect(Block block, Entity ignore, PlayEffectMessage.Messages effect, int data) {
-		sendPacketsToNearbyPlayers(block.getPosition(), ignore, BLOCK_EFFECT_RANGE, new PlayEffectMessage(effect.getId(), block, data));
-	}
-
-	/**
-	 * This method sends an effect play message for a block to all nearby players
-	 * @param block The block that the effect comes from.
-	 * @param range The range (circular) from the entity in-which the nearest player should be searched for.
-	 * @param effect The effect to play
-	 */
-	public static void playBlockEffect(Block block, Entity ignore, int range, PlayEffectMessage.Messages effect) {
-		playBlockEffect(block, ignore, range, effect, 0);
-	}
-
-	/**
-	 * This method sends an effect play message for a block to all nearby players
-	 * @param block The block that the effect comes from.
-	 * @param range The range (circular) from the entity in-which the nearest player should be searched for.
-	 * @param effect The effect to play
-	 * @param data The data to use for the effect
-	 */
-	public static void playBlockEffect(Block block, Entity ignore, int range, PlayEffectMessage.Messages effect, int data) {
-		sendPacketsToNearbyPlayers(block.getPosition(), ignore, range, new PlayEffectMessage(effect.getId(), block, data));
-	}
-
-	/**
 	 * Sends a block action message to all nearby players in a 48-block radius
 	 */
 	public static void playBlockAction(Block block, byte arg1, byte arg2) {
-		sendPacketsToNearbyPlayers(block.getPosition(), 48, new BlockActionMessage(block, arg1, arg2));
+		sendPacketsToNearbyPlayers(block.getPosition(), 48, new BlockActionMessage(block, arg1, arg2, (byte) block.getMaterial().getId()));
 	}
 
 	/**
 	 * Sends a block action message to all nearby players
 	 */
 	public static void playBlockAction(Block block, int range, byte arg1, byte arg2) {
-		sendPacketsToNearbyPlayers(block.getPosition(), range, new BlockActionMessage(block, arg1, arg2));
+		sendPacketsToNearbyPlayers(block.getPosition(), range, new BlockActionMessage(block, arg1, arg2, (byte) block.getMaterial().getId()));
 	}
 
 	/**
@@ -186,24 +147,6 @@ public class VanillaNetworkUtil {
 		}
 		Set<Player> players = entity.getWorld().getNearbyPlayers(entity, range);
 		for (Player plr : players) {
-			plr.getSession().sendAll(messages);
-		}
-	}
-
-	/**
-	 * This method sends any amount of packets and sends them to the nearest player from the entity specified.
-	 * @param entity The entity that the packet relates to. It will be used as the central point to send packets in a range from.
-	 * @param range The range (circular) from the entity in-which the nearest player should be searched for.
-	 * @param messages The messages that should be sent to the discovered nearest player.
-	 */
-	public static void sendPacketsToNearestPlayer(Entity entity, int range, Message... messages) {
-		if (entity == null || entity.getRegion() == null) {
-			return;
-		}
-
-		Player plr = entity.getWorld().getNearestPlayer(entity, range);
-		//Only send if we have a player nearby.
-		if (plr != null) {
 			plr.getSession().sendAll(messages);
 		}
 	}

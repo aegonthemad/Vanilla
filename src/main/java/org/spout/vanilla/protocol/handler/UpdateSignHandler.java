@@ -27,27 +27,22 @@
 package org.spout.vanilla.protocol.handler;
 
 import org.spout.api.entity.component.controller.BlockController;
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.player.Player;
-import org.spout.api.protocol.MessageHandler;
+import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-
 import org.spout.vanilla.controller.block.Sign;
 import org.spout.vanilla.protocol.msg.UpdateSignMessage;
 
-public class UpdateSignHandler extends MessageHandler<UpdateSignMessage> {
+public class UpdateSignHandler implements ServerMessageHandler<UpdateSignMessage> {
 	@Override
-	public void handleServer(Session session, Player player, UpdateSignMessage message) {
-		if (session == null || player == null || message == null) {
+	public void handle(Session session, UpdateSignMessage message) {
+		if (!session.hasPlayer()) {
 			return;
 		}
 
-		Block block = player.getEntity().getWorld().getBlock(message.getX(), message.getY(), message.getZ());
-		if (block == null) {
-			return;
-		}
+		Player player = session.getPlayer();
 
-		BlockController controller = block.getController();
+		BlockController controller = player.getWorld().getBlockController(message.getX(), message.getY(), message.getZ());
 		if (controller == null || !(controller instanceof Sign)) {
 			return;
 		}
@@ -58,6 +53,6 @@ public class UpdateSignHandler extends MessageHandler<UpdateSignMessage> {
 		}
 
 		Sign sign = (Sign) controller;
-		sign.setText(text);
+		sign.setText(player, text);
 	}
 }

@@ -27,27 +27,34 @@
 package org.spout.vanilla.protocol.handler;
 
 import org.spout.api.player.Player;
-import org.spout.api.protocol.MessageHandler;
+import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
+import org.spout.vanilla.protocol.msg.entity.EntityActionMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityAnimationMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityStatusMessage;
 
-import org.spout.vanilla.protocol.msg.AnimationMessage;
-import org.spout.vanilla.protocol.msg.EntityActionMessage;
-
-public final class AnimationMessageHandler extends MessageHandler<AnimationMessage> {
+public final class AnimationMessageHandler implements ServerMessageHandler<EntityAnimationMessage> {
 	@Override
-	public void handleServer(Session session, Player player, AnimationMessage message) {
-		if (player == null || player.getEntity() == null) {
+	public void handle(Session session, EntityAnimationMessage message) {
+		if (!session.hasPlayer()) {
 			return;
 		}
 
+		Player player = session.getPlayer();
+
 		switch (message.getAnimation()) {
-			case AnimationMessage.ANIMATION_CROUCH:
-				session.send(new EntityActionMessage(player.getEntity().getId(), EntityActionMessage.ACTION_CROUCH));
-				//TODO Set this in VanillaActionController as apparently any entity can crouch?
+			case EntityAnimationMessage.ANIMATION_EAT_FOOD:
+				//TODO: Allow or deny event?
+				session.send(false, new EntityStatusMessage(player.getId(), EntityStatusMessage.EATING_ACCEPTED));
+				//TODO: Set the eating state in the VanillaEntityController
 				break;
-			case AnimationMessage.ANIMATION_UNCROUCH:
-				session.send(new EntityActionMessage(player.getEntity().getId(), EntityActionMessage.ACTION_UNCROUCH));
-				//TODO Set this in VanillaActionController as apparently any entity can crouch?
+			case EntityAnimationMessage.ANIMATION_CROUCH:
+				session.send(false, new EntityActionMessage(player.getId(), EntityActionMessage.ACTION_CROUCH));
+				//TODO Set this in VanillaEntityController as apparently any entity can crouch?
+				break;
+			case EntityAnimationMessage.ANIMATION_UNCROUCH:
+				session.send(false, new EntityActionMessage(player.getId(), EntityActionMessage.ACTION_UNCROUCH));
+				//TODO Set this in VanillaEntityController as apparently any entity can crouch?
 				break;
 			default:
 		}

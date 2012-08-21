@@ -30,6 +30,7 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
@@ -101,7 +102,6 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable, Initiali
 
 	/**
 	 * Creates a bed using the parameters specified
-	 * 
 	 * @param footBlock of the bed
 	 * @param facing of the bed
 	 */
@@ -114,8 +114,8 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable, Initiali
 	}
 
 	@Override
-	public boolean canPlace(Block block, short data, BlockFace against, boolean isClickedBlock) {
-		if (against == BlockFace.BOTTOM && super.canPlace(block, data, against, isClickedBlock)) {
+	public boolean canPlace(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
+		if (against == BlockFace.BOTTOM && super.canPlace(block, data, against, clickedPos, isClickedBlock)) {
 			Block below = block.translate(BlockFace.BOTTOM);
 			BlockMaterial material = below.getMaterial();
 			if (material instanceof VanillaBlockMaterial) {
@@ -126,12 +126,12 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable, Initiali
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace face, boolean isClicked) {
+	public boolean onPlacement(Block block, short data, BlockFace face, Vector3 clickedPos, boolean isClicked) {
 		if (face == BlockFace.BOTTOM) {
 			BlockFace facing = VanillaPlayerUtil.getFacing(block.getSource());
 			Block head = block.translate(facing);
 			// Check if the head block can be placed
-			if (this.canPlace(head, data, face, false)) {
+			if (this.canPlace(head, data, face, clickedPos, false)) {
 				create(block, facing);
 				return true;
 			}
@@ -178,6 +178,4 @@ public class BedBlock extends VanillaBlockMaterial implements Mineable, Initiali
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
-
-
 }

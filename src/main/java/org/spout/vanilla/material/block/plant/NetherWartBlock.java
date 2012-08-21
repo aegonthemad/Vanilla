@@ -31,31 +31,26 @@ import java.util.Random;
 
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.RandomBlockMaterial;
 import org.spout.api.material.block.BlockFace;
-import org.spout.api.material.source.DataSource;
 
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
+import org.spout.vanilla.world.generator.VanillaBiomes;
 
-public class NetherWartBlock extends GroundAttachable implements Plant {
-	private GrowthStage stage = GrowthStage.SEEDLING;
-
+public class NetherWartBlock extends GroundAttachable implements Plant, Growing, RandomBlockMaterial {
 	public NetherWartBlock(String name, int id) {
 		super(name, id);
+		this.setLiquidObstacle(false);
 		this.setResistance(0.0F).setHardness(0.0F).setOpacity((byte) 0);
 	}
 
 	@Override
-	public boolean hasGrowthStages() {
-		return true;
-	}
-
-	@Override
-	public int getNumGrowthStages() {
+	public int getGrowthStageCount() {
 		return 3;
 	}
 
@@ -65,39 +60,53 @@ public class NetherWartBlock extends GroundAttachable implements Plant {
 	}
 
 	@Override
-	public boolean canAttachTo(BlockMaterial material, BlockFace face) {
-		return material.equals(VanillaMaterials.SOUL_SAND) && super.canAttachTo(material, face);
+	public int getGrowthStage(Block block) {
+		return block.getDataField(0x3);
+	}
+
+	@Override
+	public void setGrowthStage(Block block, int stage) {
+		block.setData(stage & 0x3);
+	}
+
+	@Override
+	public boolean isFullyGrown(Block block) {
+		return block.getData() == 0x3;
+	}
+
+	@Override
+	public boolean canAttachTo(Block block, BlockFace face) {
+		if (face == BlockFace.TOP) {
+			return block.isMaterial(VanillaMaterials.SOUL_SAND);
+		}
+		return false;
 	}
 
 	@Override
 	public ArrayList<ItemStack> getDrops(Block block, ItemStack holding) {
 		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(VanillaMaterials.NETHER_WART, stage == GrowthStage.LAST ? new Random().nextInt(4) + 2 : 1));
+		drops.add(new ItemStack(VanillaMaterials.NETHER_WART, this.isFullyGrown(block) ? new Random().nextInt(4) + 2 : 1));
 		return drops;
-	}
-
-	public GrowthStage getGrowthStage() {
-		return stage;
-	}
-
-	public enum GrowthStage implements DataSource {
-		SEEDLING(1),
-		MIDDLE(2),
-		LAST(3);
-		private final short data;
-
-		GrowthStage(int data) {
-			this.data = (short) data;
-		}
-
-		@Override
-		public short getData() {
-			return data;
-		}
 	}
 
 	@Override
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
+	}
+
+	@Override
+	public void onRandomTick(Block block) {
+		if (this.isFullyGrown(block) || block.getBiomeType() != VanillaBiomes.NETHERRACK) {
+			return;
+		}
+		Random rand = new Random(block.getWorld().getAge());
+		if (rand.nextInt(10) != 0) {
+			return;
+		}
+		int minLight = this.getMinimumLightToGrow();
+		if (minLight > 0 && block.translate(BlockFace.TOP).getLight() < minLight) {
+			return;
+		}
+		this.setGrowthStage(block, this.getGrowthStage(block) + 1);
 	}
 }

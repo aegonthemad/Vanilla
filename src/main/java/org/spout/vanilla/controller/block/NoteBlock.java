@@ -26,15 +26,18 @@
  */
 package org.spout.vanilla.controller.block;
 
+import org.spout.api.entity.Entity;
+import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.controller.VanillaBlockController;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.VanillaNetworkUtil;
+import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class NoteBlock extends VanillaBlockController {
 	private int note = 0;
@@ -49,9 +52,19 @@ public class NoteBlock extends VanillaBlockController {
 		return below instanceof VanillaBlockMaterial ? ((VanillaBlockMaterial) below).getInstrument() : Instrument.PIANO;
 	}
 
+	@Override
+	public void onInteract(Entity entity, Action type) {
+		super.onInteract(entity, type);
+		if (type == Action.RIGHT_CLICK) {
+			this.setNote(this.getNote() + 1);
+			this.play();
+		} else if (type == Action.LEFT_CLICK && VanillaPlayerUtil.isSurvival(entity)) {
+			this.play();
+		}
+	}
+
 	/**
 	 * Sets the powered state of this Note Block, possibly causing it to play the note
-	 * 
 	 * @param powered state to set to
 	 */
 	public void setPowered(boolean powered) {
@@ -65,7 +78,6 @@ public class NoteBlock extends VanillaBlockController {
 
 	/**
 	 * Gets whether this Note Block is powered by Redstone
-	 * 
 	 * @return True if it is powered, False if not
 	 */
 	public boolean isPowered() {
@@ -74,7 +86,6 @@ public class NoteBlock extends VanillaBlockController {
 
 	/**
 	 * Gets the note value of this Note Block
-	 * 
 	 * @return the note value
 	 */
 	public int getNote() {
@@ -83,7 +94,6 @@ public class NoteBlock extends VanillaBlockController {
 
 	/**
 	 * Sets the note value of this Note Block
-	 * 
 	 * @param note value to set to
 	 */
 	public void setNote(int note) {
@@ -94,7 +104,8 @@ public class NoteBlock extends VanillaBlockController {
 	 * Plays the note of this Note Block
 	 */
 	public void play() {
-		VanillaNetworkUtil.playBlockAction(this.getBlock(), this.getInstrument().getId(), (byte) this.getNote());
+		this.getInstrument().getEffect().playGlobal(getParent().getPosition(), getNote());
+		GeneralEffects.NOTE_PARTICLE.playGlobal(getParent().getPosition(), getNote());
 	}
 
 	@Override

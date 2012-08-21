@@ -32,8 +32,8 @@ import java.util.Set;
 import org.spout.api.Source;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.controller.VanillaActionController;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.living.Creature;
 import org.spout.vanilla.controller.living.creature.Hostile;
 import org.spout.vanilla.controller.source.HealthChangeReason;
@@ -46,13 +46,14 @@ public class Ghast extends Creature implements Hostile {
 
 	@Override
 	public void onAttached() {
-		setHealth(10, HealthChangeReason.SPAWN);
-		setMaxHealth(10);
 		super.onAttached();
+		setMaxHealth(10);
+		setHealth(10, HealthChangeReason.SPAWN);
+		setDeathAnimation(true);
 	}
 
 	@Override
-	public Set<ItemStack> getDrops(Source source, VanillaActionController lastDamager) {
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
 		Set<ItemStack> drops = new HashSet<ItemStack>();
 
 		int count = getRandom().nextInt(3);

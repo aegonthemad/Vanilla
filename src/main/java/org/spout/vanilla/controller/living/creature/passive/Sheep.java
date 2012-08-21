@@ -32,8 +32,9 @@ import java.util.Set;
 import org.spout.api.Source;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.controller.VanillaActionController;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.controller.VanillaEntityController;
+import org.spout.vanilla.controller.component.ai.other.SheepEatGrassComponent;
 import org.spout.vanilla.controller.living.Creature;
 import org.spout.vanilla.controller.living.creature.Passive;
 import org.spout.vanilla.controller.source.DamageCause;
@@ -51,11 +52,14 @@ public class Sheep extends Creature implements Passive {
 
 	@Override
 	public void onAttached() {
-		setHealth(8, HealthChangeReason.SPAWN);
-		setMaxHealth(8);
 		super.onAttached();
+		setMaxHealth(8);
+		setHealth(8, HealthChangeReason.SPAWN);
+		final SheepEatGrassComponent eatGrassComponent = new SheepEatGrassComponent(this);
+		registerProcess(eatGrassComponent);
 		isSheared = data().get("sheep_sheared", false);
 		sheepColor = data().get("sheep_color", (short) 0);
+		setDeathAnimation(true);
 	}
 
 	@Override
@@ -98,7 +102,7 @@ public class Sheep extends Creature implements Passive {
 	}
 
 	@Override
-	public Set<ItemStack> getDrops(Source source, VanillaActionController lastDamager) {
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
 		Set<ItemStack> drops = new HashSet<ItemStack>();
 		if (!isSheared()) {
 			if (source == DamageCause.BURN) {

@@ -26,25 +26,30 @@
  */
 package org.spout.vanilla.controller.block;
 
+import org.spout.api.Spout;
+import org.spout.api.event.EventManager;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.controller.TransactionWindowOwner;
+import org.spout.vanilla.controller.InventoryOwner;
 import org.spout.vanilla.controller.VanillaControllerTypes;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.event.block.FurnaceBurnEvent;
+import org.spout.vanilla.event.entity.CraftingResultEvent;
 import org.spout.vanilla.inventory.block.FurnaceInventory;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.protocol.msg.ProgressBarMessage;
 import org.spout.vanilla.window.Window;
 import org.spout.vanilla.window.block.FurnaceWindow;
 
-import static org.spout.vanilla.util.VanillaNetworkUtil.sendPacket;
-
-public class Furnace extends VanillaWindowBlockController implements TransactionWindowOwner {
+public class Furnace extends VanillaWindowBlockController implements InventoryOwner {
 	private final FurnaceInventory inventory;
-	private float burnTime = 0, burnIncrement = 0, burnStartTime = 0;
-	private float progress = 0, progressIncrement = 0, craftTime = 0;
+	private float burnTimeRemaining = 0, burnTimeTotal = 0;
+	private float craftTimeRemaining = 0, craftTimeTotal = 0;
+	//private float progress = 0, progressIncrement = 0, craftTime = 0;
+	private EventManager eventManager = Spout.getEngine().getEventManager();
+	private boolean isBurningState = false;
 
 	public Furnace() {
 		super(VanillaControllerTypes.FURNACE, VanillaMaterials.FURNACE);
@@ -53,78 +58,93 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 
 	@Override
 	public void onAttached() {
+		if (data().containsKey(VanillaData.ITEMS)) {
+			this.inventory.setContents(data().get(VanillaData.ITEMS));
+		}
+		this.isBurningState = getBlock().getMaterial() == VanillaMaterials.FURNACE_BURNING;
+	}
+
+	@Override
+	public void onSave() {
+		super.onSave();
+		data().put(VanillaData.ITEMS, this.inventory.getContents());
 	}
 
 	@Override
 	public void onTick(float dt) {
+		// the tick time is not accurate enough - results in 7/8 crafted when using coal as fuel
+		// another solution is to give fuel/craft time bonuses to fix the accuracy
+		// but for now, this will do just fine.
+		dt = 0.05f;
+
 		ItemStack input = inventory.getIngredient().getItem(), output = inventory.getOutput().getItem();
-		if (burnTime <= 0 && inventory.hasIngredient() && inventory.hasFuel()) {
-			// Start burning
-			ItemStack fuelStack = inventory.getFuel().getItem();
-			Fuel fuel = (Fuel) fuelStack.getMaterial();
-			burnTime = fuel.getFuelTime();
-			burnStartTime = burnTime;
-			burnIncrement = 250;
 
-			TimedCraftable ingredient = (TimedCraftable) input.getMaterial();
-			progress = 0;
-			progressIncrement = 0;
-			craftTime = ingredient.getCraftTime();
-
-			int amount = fuelStack.getAmount();
-			inventory.getFuel().setItem(fuelStack.setAmount(amount - 1));
-		}
-
-		if (burnTime > 0) {
-
-			// Decrement the burn
-			burnTime -= dt;
-			burnIncrement -= 250 / (burnStartTime * 20);
-
+		if (craftTimeRemaining > 0f) {
 			if (inventory.hasIngredient()) {
-				// Check for new ingredients
-				if (progress <= 0) {
-					progress += dt;
-					progressIncrement = 0;
-					craftTime = ((TimedCraftable) inventory.getIngredient().getItem().getMaterial()).getCraftTime();
-				} else {
-					progress += dt;
-					progressIncrement += 180 / (craftTime * 20);
+				// Decrement crafting time
+				craftTimeRemaining -= dt;
+				if (craftTimeRemaining <= 0f) {
+					// finished crafting the item
+					ItemStack result = ((TimedCraftable) input.getMaterial()).getResult();
+					CraftingResultEvent craftingResultEvent = eventManager.callEvent(new CraftingResultEvent(this.getBlock().getController(), result));
+					if (!craftingResultEvent.isCancelled()) {
+						if (output == null) {
+							output = result;
+						} else {
+							output.setAmount(output.getAmount() + result.getAmount());
+						}
+
+						inventory.getIngredient().addItemAmount(-1);
+						inventory.getOutput().setItem(output);
+						craftTimeRemaining = craftTimeTotal = 0.0f;
+					}
 				}
 			} else {
-				progress = 0;
-				progressIncrement = 0;
-				craftTime = 0;
+				craftTimeRemaining = craftTimeTotal = 0.0f;
 			}
+		}
 
-			// Reset the burn timer, this is necessary because of the floating points.
-			if (burnTime <= 0) {
-				burnIncrement = 0;
-				burnStartTime = 0;
-			}
+		// Take new fuel if needed
+		if (burnTimeRemaining <= 0) {
+			if (inventory.hasFuel() && inventory.hasIngredient()) {
+				ItemStack fuelStack = inventory.getFuel().getItem();
+				FurnaceBurnEvent furnaceBurnEvent = eventManager.callEvent(new FurnaceBurnEvent(this, fuelStack));
+				if (!furnaceBurnEvent.isCancelled()) {
+					// Start burning
+					Fuel fuel = (Fuel) fuelStack.getMaterial();
+					burnTimeRemaining = burnTimeTotal = fuel.getFuelTime();
 
-			if (progress >= craftTime && inventory.hasIngredient()) {
-				progress = 0;
-				progressIncrement = 0;
-				craftTime = 0;
-				ItemStack result = ((TimedCraftable) input.getMaterial()).getResult();
-				if (output == null) {
-					output = result;
-				} else {
-					output.setAmount(output.getAmount() + result.getAmount());
+					TimedCraftable ingredient = (TimedCraftable) input.getMaterial();
+					craftTimeRemaining = craftTimeTotal = ingredient.getCraftTime();
+
+					inventory.getFuel().addItemAmount(-1);
 				}
-
-				int inputAmount = input.getAmount();
-				int outputAmount = output.getAmount();
-				inventory.getIngredient().setItem(input.setAmount(inputAmount - 1));
-				inventory.getOutput().setItem(output.setAmount(outputAmount));
+			} else {
+				burnTimeRemaining = burnTimeTotal = 0.0f;
+				craftTimeRemaining = craftTimeTotal = 0.0f;
 			}
+		} else if (burnTimeRemaining > 0) {
+			// Decrement the burn
+			burnTimeRemaining -= dt;
+		}
 
-			// Update viewers
-			for (VanillaPlayer player : this.getViewers()) {
-				int window = player.getActiveWindow().getInstanceId();
-				sendPacket(player.getPlayer(), new ProgressBarMessage(window, org.spout.vanilla.material.block.controlled.Furnace.FIRE_ICON, (int) burnIncrement), new ProgressBarMessage(window, org.spout.vanilla.material.block.controlled.Furnace.PROGRESS_ARROW, (int) progressIncrement));
-			}
+		// Take new ingredient if needed
+		if (craftTimeRemaining <= 0 && inventory.hasIngredient()) {
+			TimedCraftable ingredient = (TimedCraftable) input.getMaterial();
+			craftTimeRemaining = craftTimeTotal = ingredient.getCraftTime();
+		}
+
+		// Update burning state
+		if (this.isBurning() != this.isBurningState) {
+			this.isBurningState = this.isBurning();
+			VanillaMaterials.FURNACE.setBurning(this.getBlock(), this.isBurningState);
+		}
+
+		// Update viewers
+		for (VanillaPlayer player : this.getViewers()) {
+			FurnaceWindow window = (FurnaceWindow) player.getActiveWindow();
+			window.updateBurnTime((int) (250f * burnTimeRemaining / burnTimeTotal));
+			window.updateProgress((int) (180f - 180f * craftTimeRemaining / craftTimeTotal));
 		}
 	}
 
@@ -135,47 +155,42 @@ public class Furnace extends VanillaWindowBlockController implements Transaction
 
 	/**
 	 * Sets the remaining burn time for the current Furnace recipe to complete
-	 * 
 	 * @param burnTime in seconds
 	 */
 	public void setBurnTime(float burnTime) {
-		this.burnTime = burnTime;
+		this.burnTimeRemaining = burnTime;
 	}
 
 	/**
 	 * Gets the remaining burn time for the current Furnace recipe to complete
-	 * 
 	 * @return burnTime in seconds
 	 */
 	public float getBurnTime() {
-		return burnTime;
+		return burnTimeRemaining;
 	}
 
 	/**
 	 * Sets the progress of burning
-	 * 
 	 * @param progress in seconds to set to
 	 */
 	public void setProgress(float progress) {
-		this.progress = progress;
+		this.craftTimeRemaining = this.craftTimeTotal - progress;
 	}
 
 	/**
 	 * Gets the progress of burning
-	 * 
 	 * @return progress in seconds
 	 */
 	public float getProgress() {
-		return progress;
+		return this.craftTimeTotal - this.craftTimeRemaining;
 	}
 
 	/**
 	 * Gets whether this Furnace is burning
-	 * 
 	 * @return True if it is burning, False if not
 	 */
 	public boolean isBurning() {
-		return burnTime > 0;
+		return burnTimeRemaining > 0;
 	}
 
 	@Override

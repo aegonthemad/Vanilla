@@ -45,16 +45,21 @@ public final class EncryptionKeyRequestCodec extends MessageCodec<EncryptionKeyR
 		int length = buffer.readShort() & 0xFFFF;
 		byte[] publicKey = new byte[length];
 		buffer.readBytes(publicKey);
-		return new EncryptionKeyRequestMessage(sessionId, publicKey, true);
+		int tokenLength = buffer.readShort() & 0xFFFF;
+		byte[] token = new byte[tokenLength];
+		buffer.readBytes(token);
+		return new EncryptionKeyRequestMessage(sessionId, false, publicKey, token);
 	}
 
 	@Override
 	public ChannelBuffer encode(EncryptionKeyRequestMessage message) {
 		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
 		ChannelBufferUtils.writeString(buffer, message.getSessionId());
-		byte[] publicKey = message.getEncodedArray();
+		byte[] publicKey = message.getSecretArray();
 		buffer.writeShort((short) publicKey.length);
 		buffer.writeBytes(publicKey);
+		buffer.writeShort((short) message.getVerifyTokenArray().length);
+		buffer.writeBytes(message.getVerifyTokenArray());
 		return buffer;
 	}
 }

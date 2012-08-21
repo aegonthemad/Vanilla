@@ -28,40 +28,41 @@ package org.spout.vanilla.controller.living.player;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import org.spout.api.Source;
-import org.spout.api.Spout;
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.component.controller.PlayerController;
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.geo.discrete.Transform;
 import org.spout.api.inventory.ItemStack;
+import org.spout.api.inventory.special.InventorySlot;
+import org.spout.api.material.BlockMaterial;
+import org.spout.api.math.MathHelper;
 import org.spout.api.math.Quaternion;
+import org.spout.api.math.Vector3;
 import org.spout.api.player.Player;
+import org.spout.api.tickable.LogicPriority;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
-import org.spout.vanilla.controller.VanillaActionController;
+import org.spout.vanilla.controller.VanillaEntityController;
+import org.spout.vanilla.controller.component.effect.PoisonEffectComponent;
+import org.spout.vanilla.controller.component.gamemode.CreativeComponent;
+import org.spout.vanilla.controller.component.gamemode.SurvivalComponent;
+import org.spout.vanilla.controller.component.physics.PlayerStepSoundComponent;
+import org.spout.vanilla.controller.component.player.PingComponent;
 import org.spout.vanilla.controller.living.Human;
-import org.spout.vanilla.controller.object.moving.Item;
 import org.spout.vanilla.controller.source.DamageCause;
-import org.spout.vanilla.controller.source.HealthChangeReason;
 import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.inventory.player.PlayerInventory;
-import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.Liquid;
 import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.material.item.armor.Armor;
 import org.spout.vanilla.protocol.msg.ChangeGameStateMessage;
-import org.spout.vanilla.protocol.msg.DestroyEntityMessage;
-import org.spout.vanilla.protocol.msg.KeepAliveMessage;
-import org.spout.vanilla.protocol.msg.PlayerListMessage;
-import org.spout.vanilla.protocol.msg.SpawnPlayerMessage;
 import org.spout.vanilla.protocol.msg.SpawnPositionMessage;
 import org.spout.vanilla.protocol.msg.UpdateHealthMessage;
 import org.spout.vanilla.util.EnchantmentUtil;
-import org.spout.vanilla.util.VanillaNetworkUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
+import org.spout.vanilla.util.ItemUtil;
 import org.spout.vanilla.window.DefaultWindow;
 import org.spout.vanilla.window.Window;
 
@@ -71,87 +72,75 @@ import static org.spout.vanilla.util.VanillaNetworkUtil.sendPacket;
  * Represents a player on a server with the VanillaPlugin; specific methods to Vanilla.
  */
 public class VanillaPlayer extends Human implements PlayerController {
-	protected final Player owner;
-	protected long unresponsiveTicks = VanillaConfiguration.PLAYER_TIMEOUT_TICKS.getInt(), lastPing = 0, lastUserList = 0, foodTimer = 0;
-	protected short count = 0, ping, hunger = 20;
-	protected float foodSaturation = 5.0f, exhaustion = 0.0f;
-	protected boolean poisoned;
+	private PingComponent pingComponent;
+	private PoisonEffectComponent poisonEffectComponent;
+	private SurvivalComponent survivalProcess;
+	private PlayerStepSoundComponent stepSoundProcess;
 	protected boolean flying;
+	protected boolean falling;
+	protected boolean jumping;
+	protected boolean healthDirty;
+	protected float initialYFalling = 0.0f;
 	protected final PlayerInventory playerInventory = new PlayerInventory(this);
 	protected Window activeWindow = new DefaultWindow(this);
 	protected String tabListName;
 	protected GameMode gameMode;
-	protected int distanceMoved;
-	protected final Set<Player> invisibleFor = new HashSet<Player>();
 	protected Point compassTarget;
-	protected boolean playerDead = false;
-
+	private short experience = 0;
 	/**
 	 * Constructs a new VanillaPlayer to use as a {@link PlayerController} for the given player.
-	 * @param p {@link Player} parent of the controller.
 	 * @param gameMode {@link GameMode} of the player.
 	 */
-	public VanillaPlayer(Player p, GameMode gameMode) {
-		super(p.getName());
-		setRenderedItemInHand(playerInventory.getQuickbar().getCurrentItem());
-		owner = p;
-		tabListName = owner.getName();
-		compassTarget = owner.getEntity().getWorld().getSpawnPoint().getPosition();
+	public VanillaPlayer(GameMode gameMode) {
 		this.gameMode = gameMode;
-		this.title = p.getName();
+		setRenderedItemInHand(playerInventory.getQuickbar().getCurrentItem());
 	}
 
 	/**
 	 * Constructs a new VanillaPlayer to use as a {@link PlayerController} for the given player.
-	 * @param p {@link Player} parent of the controller.
 	 */
-	public VanillaPlayer(Player p) {
-		this(p, GameMode.SURVIVAL);
+	public VanillaPlayer() {
+		this(GameMode.SURVIVAL);
 	}
 
 	@Override
 	public void onAttached() {
+		compassTarget = getParent().getWorld().getSpawnPoint().getPosition();
+		tabListName = getParent().getName();
 		Transform spawn = getParent().getWorld().getSpawnPoint();
 		Quaternion rotation = spawn.getRotation();
 		getParent().setPosition(spawn.getPosition());
 		getParent().setRotation(rotation);
 		getParent().setScale(spawn.getScale());
+
+		pingComponent = registerProcess(new PingComponent(this, LogicPriority.HIGHEST));
+		poisonEffectComponent = registerProcess(new PoisonEffectComponent(this, LogicPriority.HIGHEST));
+		stepSoundProcess = registerProcess(new PlayerStepSoundComponent(this, LogicPriority.NORMAL));
+		// Survival mode
+		survivalProcess = registerProcess(new SurvivalComponent(this, LogicPriority.HIGHEST));
+		// Creative mode
+		registerProcess(new CreativeComponent(this, LogicPriority.HIGHEST));
 		super.onAttached();
 	}
 
 	@Override
 	public void onTick(float dt) {
 		super.onTick(dt);
-		if (playerDead) {
+		if (isDead()) {
 			return;
 		}
 
-		Player player = getPlayer();
+		Player player = getParent();
 		if (player == null || player.getSession() == null) {
 			return;
 		}
 
-		if (lastPing++ > VanillaConfiguration.PLAYER_TIMEOUT_TICKS.getInt() / 2) {
-			VanillaNetworkUtil.sendPacket(player, new KeepAliveMessage(getRandom().nextInt()));
-			lastPing = 0;
-		}
+		// Update window
+		this.getActiveWindow().onTick(dt);
+	}
 
-		count++;
-		unresponsiveTicks--;
-		if (unresponsiveTicks == 0) {
-			player.kick("Connection Timeout!");
-		}
-
-		if (lastUserList++ > 20) {
-			VanillaNetworkUtil.broadcastPacket(new PlayerListMessage(tabListName, true, ping));
-			lastUserList = 0;
-		}
-
-		if (isSurvival()) {
-			survivalTick(dt);
-		} else {
-			creativeTick(dt);
-		}
+	public void kill() {
+		//Don't allow the game to kill the entity, allow the network sync to handle death
 	}
 
 	@Override
@@ -159,100 +148,14 @@ public class VanillaPlayer extends Human implements PlayerController {
 		return false;
 	}
 
-	private void survivalTick(float dt) {
-		if ((distanceMoved += getPreviousPosition().distanceSquared(getParent().getPosition())) >= 1) {
-			exhaustion += 0.01;
-			distanceMoved = 0;
-		}
-
-		if (sprinting) {
-			exhaustion += 0.1;
-		}
-
-		// TODO: Check for swimming, jumping, sprint jumping, block breaking, attacking, receiving damage for exhaustion level.
-		Block head = getParent().getWorld().getBlock(getHeadPosition());
-		if (head.getMaterial().equals(VanillaMaterials.GRAVEL, VanillaMaterials.SAND, VanillaMaterials.STATIONARY_WATER, VanillaMaterials.WATER)) {
-			airTicks++;
-			ItemStack helmet = getInventory().getArmor().getHelmet().getItem();
-			int level = 0;
-			if (helmet != null && EnchantmentUtil.hasEnchantment(helmet, Enchantments.RESPIRATION)) {
-				level = EnchantmentUtil.getEnchantmentLevel(helmet, Enchantments.RESPIRATION);
-			}
-			if (head.getMaterial().equals(VanillaMaterials.STATIONARY_WATER, VanillaMaterials.WATER)) {
-				// Drowning
-				int ticksBeforeDrowning = level == 0 ? 300 : level * 300; // Increase time before drowning by 15 seconds per enchantment level
-				if (airTicks >= ticksBeforeDrowning && airTicks % 20 == 0) {
-					damage(4, DamageCause.DROWN);
-				}
-			} else {
-				// Suffocation
-				int noDamageTicks /* TODO noDamageTicks should probably be made a global variable to account for other damage */ = level == 0 ? 10 : 10 + 20 * level; // Increase time between damage by 1 second per enchantment level
-				if (airTicks % noDamageTicks == 0) {
-					damage(1, DamageCause.SUFFOCATE);
-				}
-			}
-		} else {
-			// Reset air ticks if necessary
-			airTicks = 0;
-		}
-
-		if (poisoned) {
-			exhaustion += 15.0 / 30 * dt;
-		}
-
-		// Track hunger
-		foodTimer++;
-		if (foodTimer >= 80) {
-			updateHealthAndHunger();
-			foodTimer = 0;
-		}
-	}
-
-	private void updateHealthAndHunger() {
-		short health;
-		health = (short) getHealth();
-
-		if (exhaustion > 4.0) {
-			exhaustion -= 4.0;
-			if (foodSaturation > 0) {
-				foodSaturation = Math.max(foodSaturation - 0.1f, 0);
-			} else {
-				hunger = (short) Math.max(hunger - 1, 0);
-			}
-		}
-
-		boolean changed = false;
-		if (hunger <= 0 && health > 0) {
-			health = (short) Math.max(health - 1, 0);
-			setHealth(health, DamageCause.STARVE);
-			changed = true;
-		} else if (hunger >= 18 && health < 20) {
-			health = (short) Math.min(health + 1, 20);
-			setHealth(health, HealthChangeReason.REGENERATION);
-			changed = true;
-		}
-
-		if (changed && Spout.debugMode()) {
-			System.out.println("Performing health/hunger update...");
-			System.out.println("Food saturation: " + foodSaturation);
-			System.out.println("Hunger: " + hunger);
-			System.out.println("Health: " + health);
-			System.out.println("Exhaustion: " + exhaustion);
-		}
-	}
-
-	private void creativeTick(float dt) {
-	}
-
 	@Override
-	public void damage(int amount, DamageCause cause, VanillaActionController damager, boolean sendHurtMessage) {
+	public void damage(int amount, DamageCause cause, VanillaEntityController damager, boolean sendHurtMessage) {
 		double amt = amount;
 		// Calculate damage reduction based on armor and enchantments
 		for (ItemStack item : getInventory().getArmor().getContents()) {
 			if (item != null && item.getMaterial() instanceof Armor) { // Ignore pumpkins
 				Armor armor = (Armor) item.getMaterial();
 				amt -= .04 * (armor.getBaseProtection() + armor.getProtection(item, cause)); // Each protection point reduces damage by 4%
-
 				// Remove durability from each piece of armor
 				short penalty = cause.getDurabilityPenalty();
 				getInventory().getQuickbar().getCurrentSlotInventory().addItemData(0, penalty);
@@ -265,37 +168,33 @@ public class VanillaPlayer extends Human implements PlayerController {
 	@Override
 	public void setHealth(int health, Source source) {
 		super.setHealth(health, source);
-		playerDead = health <= 0;
-		sendPacket(owner, new UpdateHealthMessage((short) getHealth(), hunger, foodSaturation));
+		healthDirty = true;
+	}
+
+	public void updateHealth() {
+		sendPacket(getParent(), new UpdateHealthMessage((short) getHealth(), getSurvivalLogic().getHunger(), getSurvivalLogic().getFoodSaturation()));
+		healthDirty = false;
 	}
 
 	@Override
 	public void onDeath() {
-		// Don't count disconnects/unknown exceptions as dead (Yes that's a difference!)
-		if (owner.getSession() != null && owner.getSession().getPlayer() != null) {
+		// Don't count disconnects/unknown exceptions as dead
+		if (getParent().isOnline()) {
 			super.onDeath();
-			playerDead = true;
 		}
 	}
 
 	@Override
-	public Player getPlayer() {
-		return owner;
+	public Player getParent() {
+		return (Player) super.getParent();
 	}
 
-	@Override
 	public boolean hasInfiniteResources() {
 		return gameMode.equals(GameMode.CREATIVE);
 	}
 
-	public void resetTimeoutTicks() {
-		ping = count;
-		count = 0;
-		unresponsiveTicks = VanillaConfiguration.PLAYER_TIMEOUT_TICKS.getInt();
-	}
-
 	@Override
-	public Set<ItemStack> getDrops(Source source, VanillaActionController lastDamager) {
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
 		Set<ItemStack> drops = new HashSet<ItemStack>();
 		ItemStack[] contents = this.getInventory().getMain().getContents();
 		drops.addAll(Arrays.asList(contents));
@@ -308,7 +207,7 @@ public class VanillaPlayer extends Human implements PlayerController {
 	 */
 	public void setCompassTarget(Point compassTarget) {
 		this.compassTarget = compassTarget;
-		sendPacket(owner, new SpawnPositionMessage(compassTarget.getBlockX(), compassTarget.getBlockY(), compassTarget.getBlockZ()));
+		sendPacket(getParent(), new SpawnPositionMessage(compassTarget.getBlockX(), compassTarget.getBlockY(), compassTarget.getBlockZ()));
 	}
 
 	/**
@@ -320,62 +219,11 @@ public class VanillaPlayer extends Human implements PlayerController {
 	}
 
 	/**
-	 * Gets the amount of ticks it takes the client to respond to the server.
-	 * @return ping of player.
-	 */
-	public short getPing() {
-		return ping;
-	}
-
-	/**
-	 * Sets whether the player is visible for the collection of players given.
-	 * @param visible
-	 * @param players
-	 */
-	public void setVisibleFor(boolean visible, Player... players) {
-		Entity parent = getParent();
-		for (Player player : players) {
-			if (player.getEntity().getController() != this) {
-				if (visible) {
-					invisibleFor.remove(player);
-					ItemStack currentItem = VanillaPlayerUtil.getCurrentItem(player.getEntity());
-					int itemId = 0;
-					if (currentItem != null) {
-						itemId = currentItem.getMaterial().getId();
-					}
-
-					sendPacket(player, new SpawnPlayerMessage(parent.getId(), owner.getName(), parent.getPosition(), (int) parent.getYaw(), (int) parent.getPitch(), itemId));
-				} else {
-					invisibleFor.add(player);
-					sendPacket(player, new DestroyEntityMessage(parent.getId()));
-				}
-			}
-		}
-	}
-
-	/**
-	 * Sets whether the player is visible for everyone.
-	 * @param visible
-	 */
-	public void setVisible(boolean visible) {
-		setVisibleFor(visible, Spout.getEngine().getOnlinePlayers());
-	}
-
-	/**
-	 * Whether or not the player is visible for that player.
-	 * @param player
-	 * @return true if visible for that player
-	 */
-	public boolean isVisibleFor(Player player) {
-		return !invisibleFor.contains(player);
-	}
-
-	/**
 	 * Makes the player a server operator.
 	 * @param op
 	 */
 	public void setOp(boolean op) {
-		String playerName = getPlayer().getName();
+		String playerName = getParent().getName();
 		VanillaConfiguration.OPS.setOp(playerName, op);
 	}
 
@@ -384,8 +232,7 @@ public class VanillaPlayer extends Human implements PlayerController {
 	 * @return true if an operator.
 	 */
 	public boolean isOp() {
-		String playerName = getPlayer().getName();
-		return VanillaConfiguration.OPS.isOp(playerName);
+		return VanillaConfiguration.OPS.isOp(getParent().getName());
 	}
 
 	/**
@@ -418,7 +265,7 @@ public class VanillaPlayer extends Human implements PlayerController {
 	 */
 	public void setGameMode(GameMode gameMode) {
 		this.gameMode = gameMode;
-		sendPacket(owner, new ChangeGameStateMessage(ChangeGameStateMessage.CHANGE_GAME_MODE, gameMode));
+		sendPacket(getParent(), new ChangeGameStateMessage(ChangeGameStateMessage.CHANGE_GAME_MODE, gameMode));
 	}
 
 	/**
@@ -429,68 +276,38 @@ public class VanillaPlayer extends Human implements PlayerController {
 		return gameMode.equals(GameMode.SURVIVAL);
 	}
 
-	/**
-	 * Whether or not the controller is poisoned.
-	 * @return true if poisoned.
-	 */
-	public boolean isPoisoned() {
-		return poisoned;
+	public boolean isFalling() {
+		return falling;
 	}
 
-	/**
-	 * Sets whether or not the controller is poisoned.
-	 * @param poisoned
-	 */
-	public void setPoisoned(boolean poisoned) {
-		this.poisoned = poisoned;
+	public void setFalling(boolean newFalling) {
+		this.falling = newFalling;
+		if (this.falling) {
+			if (this.initialYFalling == 0.0f) {
+				this.initialYFalling = getParent().getPosition().getY();
+			}
+		} else {
+			int totalDmg = (int) ((this.initialYFalling - getParent().getPosition().getY()) - 3);
+			if (!isSwimming() && totalDmg > 0) {
+				setHealth(getHealth() - totalDmg, DamageCause.FALL);
+			}
+			this.initialYFalling = 0.0f;
+		}
 	}
 
-	/**
-	 * Returns the hunger of the player attached to the controller.
-	 * @return hunger
-	 */
-	public short getHunger() {
-		return hunger;
+	public boolean isSwimming() {
+		Point location = getParent().getPosition();
+		BlockMaterial first = location.getWorld().getBlockMaterial(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+		BlockMaterial second = location.getWorld().getBlockMaterial(location.getBlockX(), location.getBlockY() + 1, location.getBlockZ());
+		return first instanceof Liquid && second instanceof Liquid;
 	}
 
-	/**
-	 * Sets the hunger of the controller.
-	 * @param hunger
-	 */
-	public void setHunger(short hunger) {
-		this.hunger = hunger;
+	public boolean isJumping() {
+		return jumping;
 	}
 
-	/**
-	 * Returns the food saturation level of the player attached to the controller. The food bar "jitters" when the bar reaches 0.
-	 * @return food saturation level
-	 */
-	public float getFoodSaturation() {
-		return this.foodSaturation;
-	}
-
-	/**
-	 * Sets the food saturation of the controller. The food bar "jitters" when the bar reaches 0.
-	 * @param foodSaturation
-	 */
-	public void setFoodSaturation(float foodSaturation) {
-		this.foodSaturation = foodSaturation;
-	}
-
-	/**
-	 * Returns the exhaustion of the controller; affects hunger loss.
-	 * @return
-	 */
-	public float getExhaustion() {
-		return exhaustion;
-	}
-
-	/**
-	 * Sets the exhaustion of the controller; affects hunger loss.
-	 * @param exhaustion
-	 */
-	public void setExhaustion(float exhaustion) {
-		this.exhaustion = exhaustion;
+	public void setJumping(boolean jumping) {
+		this.jumping = jumping;
 	}
 
 	public boolean isFlying() {
@@ -508,8 +325,12 @@ public class VanillaPlayer extends Human implements PlayerController {
 	public void setWindow(Window activeWindow) {
 		Window old = this.activeWindow;
 		this.activeWindow = activeWindow;
-		old.close();
-		activeWindow.open();
+		if (old.isOpen()) {
+			old.close();
+		}
+		if (!activeWindow.isOpen()) {
+			activeWindow.open();
+		}
 	}
 
 	/**
@@ -535,30 +356,133 @@ public class VanillaPlayer extends Human implements PlayerController {
 		return playerInventory;
 	}
 
+	@Override
+	public Transform getHeadTransform() {
+		Transform trans = new Transform();
+		trans.setPosition(this.getHeadPosition());
+		Vector3 offset = this.getLookingAt();
+		trans.setRotation(MathHelper.rotation(getLookAtPitch(offset), getLookAtYaw(offset), 0.0f));
+		return trans;
+	}
+
+	// TODO: Get these two functions working in the API!
+	public static float getLookAtYaw(Vector3 offset) {
+		float yaw = 0;
+		// Set yaw
+		if (offset.getX() != 0) {
+			// Set yaw start value based on dx
+			if (offset.getX() < 0) {
+				yaw = 270;
+			} else {
+				yaw = 90;
+			}
+			yaw -= Math.toDegrees(Math.atan(offset.getZ() / offset.getX()));
+		} else if (offset.getZ() < 0) {
+			yaw = 180;
+		}
+		return yaw;
+	}
+
+	public static float getLookAtPitch(Vector3 offset) {
+		return (float) -Math.toDegrees(Math.atan(offset.getY() / MathHelper.length(offset.getX(), offset.getZ())));
+	}
+
+	private static Vector3 getRandomVelocity(Random rand, float force) {
+		return new Vector3(rand.nextFloat(), 0.0, rand.nextFloat()).normalize().multiply(force * rand.nextFloat());
+	}
+
+	/**
+	 * Drops the item specified into a random direction
+	 * @param item to drop
+	 */
+	public void dropItemRandom(ItemStack item) {
+		Random rand = new Random(getParent().getWorld().getAge());
+		Point position = this.getHeadPosition().subtract(0.0, 0.3, 0.0);
+		Vector3 velocity = getRandomVelocity(rand, 0.5f).add(0.0, 0.2, 0.0);
+		ItemUtil.dropItem(position, item, velocity);
+	}
+
+	/**
+	 * Drops the item specified into the direction the player looks
+	 * @param item to drop
+	 */
+	public void dropItem(ItemStack item) {
+		Random rand = new Random(getParent().getWorld().getAge());
+		Point position = this.getHeadPosition().subtract(0.0, 0.3, 0.0);
+		Vector3 velocity = getLookingAt().multiply(0.3).add(0.0, 0.1, 0.0);
+		velocity = velocity.add(getRandomVelocity(rand, 0.02f));
+		velocity = velocity.add(0.0f, (rand.nextFloat() - rand.nextFloat()) * 0.1f, 0.0f);
+		ItemUtil.dropItem(position, item, velocity);
+	}
+
 	/**
 	 * Drops the player's current item.
 	 */
 	public void dropItem() {
-		ItemStack current = this.getInventory().getQuickbar().getCurrentItem();
+		InventorySlot slot = this.getInventory().getQuickbar().getCurrentSlotInventory();
+		ItemStack current = slot.getItem();
 		if (current == null) {
 			return;
 		}
-		ItemStack drop = new ItemStack(current.getMaterial(), 1);
-		drop.setNBTData(current.getNBTData());
-		Item control = new Item(drop, getHeadPosition().subtract(getLookingAt()));
-		if (current.getAmount() > 1) {
-			current.setAmount(current.getAmount() - 1);
-		} else {
-			current = null;
-		}
-		this.getInventory().getQuickbar().setCurrentItem(current);
-		getParent().getWorld().createAndSpawnEntity(getHeadPosition().add(0.0, 0.4, 0.0), control);
+		ItemStack drop = current.clone().setAmount(1);
+		slot.addItemAmount(-1);
+		this.dropItem(drop);
 	}
 
 	/**
 	 * Rolls the credits located on the client.
 	 */
 	public void rollCredits() {
-		owner.getSession().send(new ChangeGameStateMessage(ChangeGameStateMessage.ENTER_CREDITS));
+		getParent().getSession().send(false, new ChangeGameStateMessage(ChangeGameStateMessage.ENTER_CREDITS));
+	}
+
+	@Override
+	public void updateAirTicks() {
+		if (this.isSurvival()) {
+			super.updateAirTicks();
+		}
+	}
+
+	@Override
+	public int getMaxAirTicks() {
+		ItemStack helmet = getInventory().getArmor().getHelmet().getItem();
+		int level = 0;
+		if (helmet != null && EnchantmentUtil.hasEnchantment(helmet, Enchantments.RESPIRATION)) {
+			level = EnchantmentUtil.getEnchantmentLevel(helmet, Enchantments.RESPIRATION);
+		}
+		return level == 0 ? 300 : level * 300;
+	}
+
+	//TODO Remove dirty stuff
+	public boolean isDirty() {
+		return healthDirty;
+	}
+
+	public void setDirty(boolean dirty) {
+		this.healthDirty = dirty;
+	}
+
+	public PingComponent getPingComponent() {
+		return pingComponent;
+	}
+
+	public PoisonEffectComponent getPoisonEffectComponent() {
+		return poisonEffectComponent;
+	}
+
+	public SurvivalComponent getSurvivalLogic() {
+		return survivalProcess;
+	}
+
+	public PlayerStepSoundComponent getStepSoundLogic() {
+		return stepSoundProcess;
+	}
+
+	public short getExperience() {
+		return experience;
+	}
+
+	public void setExperience(short experience) {
+		this.experience = experience;
 	}
 }

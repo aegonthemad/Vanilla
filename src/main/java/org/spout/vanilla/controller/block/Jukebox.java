@@ -26,22 +26,24 @@
  */
 package org.spout.vanilla.controller.block;
 
+import org.spout.api.entity.Entity;
+import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.ItemStack;
+import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.Material;
 import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.controller.VanillaBlockController;
 import org.spout.vanilla.controller.VanillaControllerTypes;
 import org.spout.vanilla.controller.object.moving.Item;
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.inventory.block.JukeboxInventory;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.item.misc.MusicDisc;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.util.Music;
-
-import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
+import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class Jukebox extends VanillaBlockController {
 	private final JukeboxInventory inventory;
@@ -55,6 +57,24 @@ public class Jukebox extends VanillaBlockController {
 	public void onAttached() {
 	}
 
+	@Override
+	public void onInteract(Entity entity, Action type) {
+		super.onInteract(entity, type);
+		if (type == Action.RIGHT_CLICK) {
+			this.eject();
+			InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
+			if (inv != null && this.canPlay(inv.getItem())) {
+				this.getInventory().addItem(inv.getItem().clone().setAmount(1));
+				this.update();
+				if (VanillaPlayerUtil.isSurvival(entity)) {
+					inv.addItemAmount(0, -1);
+				}
+			} else {
+				this.stopMusic();
+			}
+		}
+	}
+
 	/**
 	 * Gets the current music this Jukebox plays
 	 * @return
@@ -65,22 +85,20 @@ public class Jukebox extends VanillaBlockController {
 			return Music.NONE;
 		}
 
-		return ((MusicDisc) current.getSubMaterial()).getMusic();
+		return ((MusicDisc) current.getMaterial()).getMusic();
 	}
 
 	/**
 	 * Tests whether this Jukebox can play the item specified
-	 * 
 	 * @param item to play
 	 * @return True if it can play it, False if not
 	 */
 	public boolean canPlay(ItemStack item) {
-		return item != null && this.canPlay(item.getSubMaterial());
+		return item != null && this.canPlay(item.getMaterial());
 	}
 
 	/**
 	 * Tests whether this Jukebox can play the item material specified
-	 * 
 	 * @param material to play
 	 * @return True if it can play it, False if not
 	 */
@@ -116,7 +134,7 @@ public class Jukebox extends VanillaBlockController {
 		Block block = this.getBlock();
 		block.setData(playing ? 1 : 0); //TODO hmmm? doesn't seem useful at all, since you don't know when the music stops playing...
 		Music music = playing ? this.getMusic() : Music.NONE;
-		playBlockEffect(block, null, 48, PlayEffectMessage.Messages.MUSIC_DISC, music.getId());
+		GeneralEffects.MUSIC_DISC.playGlobal(block.getPosition(), music);
 	}
 
 	public JukeboxInventory getInventory() {
@@ -131,6 +149,6 @@ public class Jukebox extends VanillaBlockController {
 	 * Stops this Jukebox from playing music
 	 */
 	public void stopMusic() {
-		playBlockEffect(getBlock(), null, 48, PlayEffectMessage.Messages.MUSIC_DISC, Music.NONE.getId());
+		GeneralEffects.MUSIC_DISC.playGlobal(getBlock().getPosition(), Music.NONE);
 	}
 }

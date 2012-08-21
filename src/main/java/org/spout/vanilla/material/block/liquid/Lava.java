@@ -28,18 +28,20 @@ package org.spout.vanilla.material.block.liquid;
 
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.Material;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Liquid;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage.Messages;
-import org.spout.vanilla.util.VanillaNetworkUtil;
 
 public class Lava extends Liquid {
 	public Lava(String name, int id, boolean flowing) {
 		super(name, id, flowing);
+		this.setFlowDelay(1500);
+		//TODO: Allow this to get past the tests
+		//this.setFlowDelay(VanillaConfiguration.LAVA_DELAY.getInt());
 	}
 
 	@Override
@@ -54,7 +56,7 @@ public class Lava extends Liquid {
 						} else {
 							block.setMaterial(VanillaMaterials.COBBLESTONE);
 						}
-						this.onLavaFizz(block);
+						GeneralEffects.LAVA_FIZZ.playGlobal(block.getPosition());
 					}
 				}
 			}
@@ -68,28 +70,11 @@ public class Lava extends Liquid {
 		if (block.getMaterial() instanceof Water) {
 			if (from == BlockFace.TOP) {
 				block.setMaterial(VanillaMaterials.STONE);
-				this.onLavaFizz(block);
+				GeneralEffects.LAVA_FIZZ.playGlobal(block.getPosition());
 				return;
 			}
 		}
 		super.onSpread(block, newLevel, from);
-	}
-
-	/**
-	 * Is called after lava changed into a solid because of nearby water<br>
-	 * Plays the effect by default
-	 */
-	public void onLavaFizz(Block block) {
-		VanillaNetworkUtil.playBlockEffect(block, null, Messages.RANDOM_FIZZ);
-		block = block.translate(BlockFace.TOP);
-		for (int i = 0; i < 8; i++) {
-			VanillaNetworkUtil.playBlockEffect(block, null, Messages.PARTICLE_SMOKE, PlayEffectMessage.SMOKE_MIDDLE);
-		}
-	}
-
-	@Override
-	public int getFlowDelay() {
-		return 1500;
 	}
 
 	@Override
@@ -100,6 +85,16 @@ public class Lava extends Liquid {
 	@Override
 	public int getMaxLevel() {
 		return 3;
+	}
+
+	@Override
+	public boolean isMaterial(Material... materials) {
+		for (Material material : materials) {
+			if (material instanceof Lava) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

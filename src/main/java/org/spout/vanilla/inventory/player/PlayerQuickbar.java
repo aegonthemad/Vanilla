@@ -31,6 +31,7 @@ import org.spout.api.inventory.InventoryBase;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.inventory.special.InventoryRange;
 import org.spout.api.inventory.special.InventorySlot;
+
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.event.player.PlayerSlotChangeEvent;
 
@@ -65,7 +66,7 @@ public class PlayerQuickbar extends InventoryRange {
 	 */
 	public void setCurrentSlot(int slotIndex) {
 		this.checkSlotRange(slotIndex);
-		this.currentSlot = Spout.getEventManager().callEvent(new PlayerSlotChangeEvent(this.owner.getPlayer(), this.currentSlot, slotIndex)).getNewSlotIndex();
+		this.currentSlot = Spout.getEventManager().callEvent(new PlayerSlotChangeEvent(this.owner.getParent(), this.currentSlot, slotIndex)).getNewSlotIndex();
 	}
 
 	/**

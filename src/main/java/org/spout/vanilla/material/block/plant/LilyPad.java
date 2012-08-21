@@ -26,14 +26,20 @@
  */
 package org.spout.vanilla.material.block.plant;
 
+import org.spout.api.entity.Entity;
+import org.spout.api.event.player.PlayerInteractEvent.Action;
+import org.spout.api.geo.cuboid.Block;
+import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.controller.living.Living;
 import org.spout.vanilla.material.Mineable;
-import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
+import org.spout.vanilla.material.block.liquid.Water;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
+import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class LilyPad extends GroundAttachable implements Mineable {
 	public LilyPad(String name, int id) {
@@ -42,8 +48,39 @@ public class LilyPad extends GroundAttachable implements Mineable {
 	}
 
 	@Override
-	public boolean canAttachTo(BlockMaterial material, BlockFace face) {
-		return face == BlockFace.TOP && material.equals(VanillaMaterials.STATIONARY_WATER);
+	public boolean canAttachTo(Block block, BlockFace face) {
+		if (face != BlockFace.TOP) {
+			return false;
+		}
+		BlockMaterial material = block.getMaterial();
+		if (material instanceof Water) {
+			return ((Water) material).isSource(block);
+		}
+		return false;
+	}
+
+	@Override
+	public void onInteract(Entity entity, Action type) {
+		super.onInteract(entity, type);
+		if (type == Action.RIGHT_CLICK && entity.getController() instanceof Living) {
+			Block block = ((Living) entity.getController()).hitTest();
+			if (block == null) {
+				return;
+			}
+			block = block.translate(BlockFace.TOP);
+			if (this.canPlace(block, (short) 0)) {
+				this.onPlacement(block, (short) 0);
+
+				// Subtract item
+				if (!VanillaPlayerUtil.isSurvival(entity)) {
+					return;
+				}
+				InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
+				if (inv != null) {
+					inv.addItemAmount(-1);
+				}
+			}
+		}
 	}
 
 	@Override

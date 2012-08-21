@@ -42,6 +42,7 @@ import org.spout.vanilla.protocol.msg.CompressedChunkMessage;
 public final class CompressedChunkCodec extends MessageCodec<CompressedChunkMessage> {
 	private static final int COMPRESSION_LEVEL = Deflater.BEST_SPEED;
 	private static final int MAX_SECTIONS = 16;
+	private final byte[] UNLOAD_COMPRESSED = {0x78, (byte) 0x9C, 0x63, 0x64, 0x1C, (byte) 0xD9, 0x00, 0x00, (byte) 0x81, (byte) 0x80, 0x01, 0x01}; //Fake compressed data, client expects this when unloading
 
 	public CompressedChunkCodec() {
 		super(CompressedChunkMessage.class, 0x33);
@@ -56,7 +57,6 @@ public final class CompressedChunkCodec extends MessageCodec<CompressedChunkMess
 		short primaryBitMap = buffer.readShort();
 		short addBitMap = buffer.readShort();
 		int compressedSize = buffer.readInt();
-		int unused = buffer.readInt();
 		byte[] compressedData = new byte[compressedSize];
 		buffer.readBytes(compressedData);
 
@@ -119,7 +119,7 @@ public final class CompressedChunkCodec extends MessageCodec<CompressedChunkMess
 			size += biomeData.length;
 		}
 
-		return new CompressedChunkMessage(x, z, contiguous, hasAdditionalData, unused, data, biomeData);
+		return new CompressedChunkMessage(x, z, contiguous, hasAdditionalData, data, biomeData);
 	}
 
 	@Override
@@ -129,6 +129,13 @@ public final class CompressedChunkCodec extends MessageCodec<CompressedChunkMess
 		buffer.writeInt(message.getX());
 		buffer.writeInt(message.getZ());
 		buffer.writeByte(message.isContiguous() ? 1 : 0);
+		if (message.shouldUnload()) {
+			buffer.writeShort(0);
+			buffer.writeShort(0);
+			buffer.writeInt(UNLOAD_COMPRESSED.length);
+			buffer.writeBytes(UNLOAD_COMPRESSED);
+			return buffer;
+		}
 		short sectionsSentBitmap = 0;
 		short additionalDataBitMap = 0;
 
@@ -181,7 +188,6 @@ public final class CompressedChunkCodec extends MessageCodec<CompressedChunkMess
 		}
 
 		buffer.writeInt(compressed);
-		buffer.writeInt(message.getUnused());
 		buffer.writeBytes(compressedData, 0, compressed);
 
 		return buffer;

@@ -31,42 +31,57 @@ import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.Material;
 import org.spout.api.player.Player;
-import org.spout.api.protocol.MessageHandler;
+import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-
 import org.spout.vanilla.configuration.VanillaConfiguration;
-import org.spout.vanilla.controller.VanillaActionController;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.controller.source.DamageCause;
+import org.spout.vanilla.data.ExhaustionLevel;
 import org.spout.vanilla.material.VanillaMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.protocol.msg.EntityInteractionMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityInteractionMessage;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class EntityInteractionMessageHandler extends MessageHandler<EntityInteractionMessage> {
+public class EntityInteractionMessageHandler implements ServerMessageHandler<EntityInteractionMessage> {
 	@Override
-	public void handleServer(Session session, Player player, EntityInteractionMessage message) {
-		Entity clickedEntity = player.getEntity().getWorld().getEntity(message.getTarget());
+	public void handle(Session session, EntityInteractionMessage message) {
+		if (!session.hasPlayer()) {
+			return;
+		}
+
+		Player player = session.getPlayer();
+		Entity clickedEntity = player.getWorld().getEntity(message.getTarget());
 		if (clickedEntity == null) {
 			return;
 		}
 
-		ItemStack holding = VanillaPlayerUtil.getCurrentItem(player.getEntity());
+		ItemStack holding = VanillaPlayerUtil.getCurrentItem(player);
 		Material holdingMat = holding == null ? VanillaMaterials.AIR : holding.getMaterial();
 		if (holdingMat == null) {
 			holdingMat = VanillaMaterials.AIR;
 		}
 		if (message.isPunching()) {
-			VanillaPlayer vPlayer = (VanillaPlayer) player.getEntity().getController();
-			holdingMat.onInteract(player.getEntity(), clickedEntity, Action.LEFT_CLICK);
+			VanillaPlayer vPlayer = (VanillaPlayer) player.getController();
+			holdingMat.onInteract(player, clickedEntity, Action.LEFT_CLICK);
+			clickedEntity.getController().onInteract(player, Action.LEFT_CLICK);
 
 			if (clickedEntity.getController() instanceof VanillaPlayer && !VanillaConfiguration.PLAYER_PVP_ENABLED.getBoolean()) {
 				return;
 			}
 
-			if (clickedEntity.getController() instanceof VanillaActionController) {
-				VanillaActionController damaged = (VanillaActionController) clickedEntity.getController();
+			if (clickedEntity.getController() instanceof VanillaEntityController) {
+				VanillaEntityController damaged = (VanillaEntityController) clickedEntity.getController();
+				if (clickedEntity.getController() instanceof VanillaPlayer && (!vPlayer.isSurvival() || !VanillaPlayerUtil.isSurvival(damaged.getParent()))) {
+					return;
+				}
+				vPlayer.getSurvivalLogic().addExhaustion(ExhaustionLevel.ATTACK_ENEMY.getAmount());
+
+				if (clickedEntity.getController() instanceof VanillaPlayer) {
+					((VanillaPlayer) clickedEntity.getController()).getSurvivalLogic().addExhaustion(ExhaustionLevel.RECEIVE_DAMAGE.getAmount());
+				}
+
 				int damage = 1;
 				if (holding != null && holdingMat instanceof VanillaMaterial) {
 					damage = ((VanillaMaterial) holdingMat).getDamage();
@@ -83,7 +98,8 @@ public class EntityInteractionMessageHandler extends MessageHandler<EntityIntera
 				}
 			}
 		} else {
-			holdingMat.onInteract(player.getEntity(), clickedEntity, Action.RIGHT_CLICK);
+			holdingMat.onInteract(player, clickedEntity, Action.RIGHT_CLICK);
+			clickedEntity.getController().onInteract(player, Action.RIGHT_CLICK);
 		}
 	}
 }

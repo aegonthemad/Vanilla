@@ -28,7 +28,6 @@ package org.spout.vanilla;
 
 import java.util.HashSet;
 
-import org.spout.api.Source;
 import org.spout.api.entity.Entity;
 import org.spout.api.entity.component.Controller;
 import org.spout.api.event.EventHandler;
@@ -37,15 +36,10 @@ import org.spout.api.event.Order;
 import org.spout.api.event.Result;
 import org.spout.api.event.entity.EntityHealthChangeEvent;
 import org.spout.api.event.entity.EntitySpawnEvent;
-import org.spout.api.event.player.PlayerJoinEvent;
-import org.spout.api.event.player.PlayerLeaveEvent;
 import org.spout.api.event.server.permissions.PermissionNodeEvent;
 import org.spout.api.event.world.RegionLoadEvent;
 import org.spout.api.geo.cuboid.Region;
-import org.spout.api.inventory.InventoryBase;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.permissions.PermissionsSubject;
-import org.spout.api.player.Player;
 import org.spout.api.scheduler.TaskPriority;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
@@ -54,48 +48,15 @@ import org.spout.vanilla.controller.VanillaControllerTypes;
 import org.spout.vanilla.controller.living.creature.hostile.Ghast;
 import org.spout.vanilla.controller.living.creature.passive.Sheep;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.controller.source.ControllerChangeReason;
 import org.spout.vanilla.controller.source.HealthChangeReason;
 import org.spout.vanilla.controller.world.RegionSpawner;
-import org.spout.vanilla.data.Data;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.protocol.VanillaNetworkSynchronizer;
-import org.spout.vanilla.protocol.msg.UpdateHealthMessage;
-import org.spout.vanilla.util.VanillaNetworkUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class VanillaListener implements Listener {
 	private final VanillaPlugin plugin;
 
 	public VanillaListener(VanillaPlugin plugin) {
 		this.plugin = plugin;
-	}
-
-	@EventHandler(order = Order.EARLIEST)
-	public void onPlayerJoin(PlayerJoinEvent event) {
-		// Set their mode
-		Player player = event.getPlayer();
-		Entity playerEntity = player.getEntity();
-		player.getSession().setNetworkSynchronizer(new VanillaNetworkSynchronizer(player, playerEntity));
-		VanillaPlayer vanillaPlayer = new VanillaPlayer(player, playerEntity.getWorld().getDataMap().get(Data.GAMEMODE));
-
-		playerEntity.setController(vanillaPlayer, ControllerChangeReason.INITIALIZATION);
-
-		// Set protocol and send packets
-		if (vanillaPlayer.isSurvival()) {
-			VanillaNetworkUtil.sendPacket(vanillaPlayer.getPlayer(), new UpdateHealthMessage((short) vanillaPlayer.getHealth(), vanillaPlayer.getHunger(), vanillaPlayer.getFoodSaturation()));
-		}
-
-		// Make them visible to everyone by default
-		vanillaPlayer.setVisible(true);
-	}
-
-	@EventHandler(order = Order.LATEST)
-	public void onPlayerLeave(PlayerLeaveEvent event) {
-		InventoryBase inv = VanillaPlayerUtil.getInventory(event.getPlayer().getEntity());
-		if (inv != null) {
-			inv.removeViewer(event.getPlayer().getNetworkSynchronizer());
-		}
 	}
 
 	@EventHandler
@@ -145,25 +106,23 @@ public class VanillaListener implements Listener {
 
 	@EventHandler(order = Order.EARLIEST)
 	public void onPermissionNode(PermissionNodeEvent event) {
-		PermissionsSubject subject = event.getSubject();
-		if (VanillaConfiguration.OPS.isOp(subject.getName())) {
+		if (VanillaConfiguration.OPS.isOp(event.getSubject().getName())) {
 			event.setResult(Result.ALLOW);
 		}
 	}
 
 	@EventHandler
 	public void onHealthChange(EntityHealthChangeEvent event) {
-		Source source = event.getSource();
-		if (source == HealthChangeReason.SPAWN) {
+		if (event.getSource() == HealthChangeReason.SPAWN) {
 			return;
 		}
-
+		if (event.isCancelled()) {
+			return;
+		}
 		Controller c = event.getEntity().getController();
 		if (c instanceof VanillaPlayer && ((VanillaPlayer) c).isSurvival()) {
 			VanillaPlayer sp = (VanillaPlayer) c;
-			short health = (short) sp.getHealth();
-			health += (short) event.getChange();
-			VanillaNetworkUtil.sendPacket(sp.getPlayer(), new UpdateHealthMessage(health, sp.getHunger(), sp.getFoodSaturation()));
+			sp.updateHealth();
 		}
 	}
 }

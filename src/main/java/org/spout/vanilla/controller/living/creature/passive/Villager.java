@@ -26,20 +26,109 @@
  */
 package org.spout.vanilla.controller.living.creature.passive;
 
+import java.util.Collection;
+import java.util.HashMap;
+
+import org.spout.api.entity.Entity;
+import org.spout.api.event.player.PlayerInteractEvent.Action;
+
+import org.spout.vanilla.controller.InventoryOwner;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.controller.WindowController;
 import org.spout.vanilla.controller.living.Creature;
 import org.spout.vanilla.controller.living.creature.Passive;
+import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.controller.source.HealthChangeReason;
+import org.spout.vanilla.inventory.entity.VillagerInventory;
+import org.spout.vanilla.window.Window;
+import org.spout.vanilla.window.entity.VillagerWindow;
 
-public class Villager extends Creature implements Passive {
+public class Villager extends Creature implements Passive, WindowController, InventoryOwner {
+	protected final VillagerInventory inventory = new VillagerInventory();
+	private HashMap<VanillaPlayer, Window> viewers = new HashMap<VanillaPlayer, Window>();
+
 	public Villager() {
 		super(VanillaControllerTypes.VILLAGER);
 	}
 
 	@Override
 	public void onAttached() {
-		setHealth(20, HealthChangeReason.SPAWN);
-		setMaxHealth(20);
 		super.onAttached();
+		setMaxHealth(20);
+		setHealth(20, HealthChangeReason.SPAWN);
+		setDeathAnimation(true);
+	}
+
+	@Override
+	public void onInteract(Entity entity, Action type) {
+		super.onInteract(entity, type);
+		if (type == Action.RIGHT_CLICK && entity.getController() instanceof VanillaPlayer) {
+			this.open((VanillaPlayer) entity.getController());
+		}
+	}
+
+	@Override
+	public boolean open(VanillaPlayer player) {
+		if (!this.viewers.containsKey(player)) {
+			Window w = new VillagerWindow(player, this);
+			this.addViewer(player, w);
+			player.setWindow(w);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean close(VanillaPlayer player) {
+		Window w = this.removeViewer(player);
+		if (w != null) {
+			if (player.getActiveWindow() == w) {
+				player.closeWindow();
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public void closeAll() {
+		for (VanillaPlayer player : this.getViewerArray()) {
+			this.close(player);
+		}
+	}
+
+	@Override
+	public Window removeViewer(VanillaPlayer player) {
+		return this.viewers.remove(player);
+	}
+
+	@Override
+	public void addViewer(VanillaPlayer player, Window window) {
+		this.viewers.put(player, window);
+	}
+
+	@Override
+	public Collection<VanillaPlayer> getViewers() {
+		return this.viewers.keySet();
+	}
+
+	/**
+	 * Gets an array of viewers currently viewing this controller
+	 * @return an array of player viewers
+	 */
+	public VanillaPlayer[] getViewerArray() {
+		return this.viewers.keySet().toArray(new VanillaPlayer[0]);
+	}
+
+	@Override
+	public boolean hasViewers() {
+		return !this.viewers.isEmpty();
+	}
+
+	@Override
+	public VillagerInventory getInventory() {
+		return this.inventory;
 	}
 }

@@ -36,8 +36,9 @@ public class CaveSpider extends Spider {
 
 	@Override
 	public void onAttached() {
-		setHealth(20, HealthChangeReason.SPAWN);
-		setMaxHealth(20);
 		super.onAttached();
+		setMaxHealth(12);
+		setHealth(12, HealthChangeReason.SPAWN);
+		setDeathAnimation(true);
 	}
 }

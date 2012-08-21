@@ -27,27 +27,36 @@
 package org.spout.vanilla.window;
 
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.util.SlotIndexMap;
+import org.spout.vanilla.util.intmap.SlotIndexCollection;
+import org.spout.vanilla.util.intmap.SlotIndexGrid;
+import org.spout.vanilla.util.intmap.SlotIndexMap;
+import org.spout.vanilla.util.intmap.SlotIndexRow;
 
 /**
  * The default player window always displayed
  */
 public class DefaultWindow extends CraftingWindow {
-	private static final SlotIndexMap SLOTS = new SlotIndexMap("36-44, 27-35, 18-26, 9-17, 1, 2, 3, 4, 0, 6, 7, 8, 5");
+	private static final SlotIndexCollection MAIN_SLOTS = new SlotIndexGrid(9, 4, 9);
+	private static final SlotIndexCollection ARMOR_SLOTS = new SlotIndexRow(4, 5);
+	private static final SlotIndexCollection CRAFTING_SLOTS = new SlotIndexMap("1-4, 0");
 
 	public DefaultWindow(VanillaPlayer owner) {
-		super(-1, "Inventory", owner, owner.getInventory().getCraftingGrid());
-		this.setInventory(owner.getInventory().getMain(), owner.getInventory().getCraftingGrid(), owner.getInventory().getArmor());
-		this.setSlotIndexMap(SLOTS);
-	}
-
-	@Override
-	public boolean hasCloseMessage() {
-		return false;
+		super(WindowType.DEFAULT, "Inventory", owner, owner.getInventory().getCraftingGrid());
+		this.addInventory(owner.getInventory().getMain(), MAIN_SLOTS);
+		this.addInventory(owner.getInventory().getCraftingGrid(), CRAFTING_SLOTS);
+		this.addInventory(owner.getInventory().getArmor(), ARMOR_SLOTS);
 	}
 
 	@Override
 	public int getInstanceId() {
 		return 0;
+	}
+
+	@Override
+	public void close() {
+		super.close();
+		if (this.getOwner().isSurvival()) {
+			this.dropItemOnCursor();
+		}
 	}
 }

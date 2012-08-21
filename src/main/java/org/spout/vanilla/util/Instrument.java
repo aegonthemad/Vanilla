@@ -26,25 +26,22 @@
  */
 package org.spout.vanilla.util;
 
+import org.spout.vanilla.data.effect.store.SoundEffects;
+import org.spout.vanilla.data.effect.type.NoteSoundEffect;
+
 public enum Instrument {
-	PIANO(0, "harp"),
-	BASSDRUM(1, "bd"),
-	SNAREDRUM(2, "snare"),
-	CLICK(3, "hat"),
-	BASSGUITAR(4, "bassattack");
-	private byte id;
-	private String name;
+	PIANO(SoundEffects.NOTE_HARP),
+	BASSDRUM(SoundEffects.NOTE_BD),
+	SNAREDRUM(SoundEffects.NOTE_SNARE),
+	CLICK(SoundEffects.NOTE_HAT),
+	BASSGUITAR(SoundEffects.NOTE_BASSATTACK);
+	private NoteSoundEffect sound;
 
-	private Instrument(int id, String name) {
-		this.id = (byte) id;
-		this.name = name;
+	private Instrument(NoteSoundEffect effect) {
+		this.sound = effect;
 	}
 
-	public String getName() {
-		return this.name;
-	}
-
-	public byte getId() {
-		return this.id;
+	public NoteSoundEffect getEffect() {
+		return this.sound;
 	}
 }

@@ -39,6 +39,8 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.EffectRange;
 import org.spout.api.material.range.ListEffectRange;
+import org.spout.api.math.Vector3;
+
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -52,6 +54,7 @@ import org.spout.vanilla.util.VanillaPlayerUtil;
 public class RedstoneRepeater extends GroundAttachable implements Directional, Mineable, RedstoneSource, RedstoneTarget, DynamicMaterial, InitializableMaterial {
 	private static final EffectRange[] physicsRanges;
 	private final boolean powered;
+
 	static {
 		physicsRanges = new EffectRange[4];
 		BlockFaces base = BlockFaces.NESWBT.append(BlockFace.THIS);
@@ -70,7 +73,7 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 	public RedstoneRepeater(String name, int id, boolean powered) {
 		super(name, id);
 		this.powered = powered;
-		this.setHardness(0.0F).setResistance(0.0F).setOpacity(0).setOcclusion(BlockFaces.NONE).getOcclusion().set(BlockFace.BOTTOM, true);
+		this.setHardness(0.0F).setResistance(0.0F).setOpacity(0).setOcclusion((short) 0, BlockFace.BOTTOM);
 	}
 
 	@Override
@@ -96,7 +99,7 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, boolean isClickedBlock) {
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
 		block.setMaterial(this);
 		this.setFacing(block, VanillaPlayerUtil.getFacing(block.getSource()));
 		return true;
@@ -121,7 +124,7 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 		boolean receiving = this.isReceivingPower(block);
 		System.out.println("RECEIVING: " + receiving);
 		if (this.isPowered() != receiving) {
-			block.dynamicUpdate(block.getWorld().getAge() + this.getTickDelay(block), receiving ? 1 : 0, null);
+			block.dynamicUpdate(block.getWorld().getAge() + this.getTickDelay(block), receiving ? 1 : 0);
 		}
 	}
 
@@ -186,7 +189,7 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 	}
 
 	@Override
-	public void onDynamicUpdate(Block block, Region r, long updateTime, long lastUpdateTime, int data, Object hint) {
+	public void onDynamicUpdate(Block block, Region r, long updateTime, int data) {
 		boolean receiving = this.isReceivingPower(block);
 		if ((data & 1) == 1) {
 			// Was receiving and should power up

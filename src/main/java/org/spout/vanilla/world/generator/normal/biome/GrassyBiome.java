@@ -30,12 +30,13 @@ import org.spout.api.generator.biome.Decorator;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.math.MathHelper;
 import org.spout.api.util.cuboid.CuboidShortBuffer;
+
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.normal.NormalGenerator;
 
 public abstract class GrassyBiome extends NormalBiome {
 	protected BlockMaterial topCover = VanillaMaterials.GRASS;
-	
+
 	public GrassyBiome(int biomeId, Decorator... decorators) {
 		super(biomeId, decorators);
 	}
@@ -52,7 +53,7 @@ public abstract class GrassyBiome extends NormalBiome {
 		final int endY = chunkY * 16;
 		final int startY = endY + size - 1;
 
-		final byte maxGroudCoverDepth = (byte) MathHelper.clamp(BLOCK_REPLACER.GetValue(x, 0, z) * 2 + 4, 2D, 5D);
+		final byte maxGroudCoverDepth = (byte) MathHelper.clamp(BLOCK_REPLACER.GetValue(x, 0, z) * 2 + 4, 2, 5);
 		final byte sampleSize = (byte) (maxGroudCoverDepth + 1);
 
 		boolean hasSurface = false;

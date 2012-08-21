@@ -62,6 +62,18 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 	}
 
 	@Override
+	public short getMinecraftData(short data) {
+		switch (VanillaBlockMaterial.REDSTONE_POWER_MAX) {
+			case 15:
+				return data;
+			case 0:
+				return (short) 0;
+			default:
+				return (short) ((15 * data / VanillaBlockMaterial.REDSTONE_POWER_MAX) & 0xF);
+		}
+	}
+
+	@Override
 	public boolean hasPhysics() {
 		return true;
 	}
@@ -86,7 +98,7 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 			return;
 		}
 
-		if (block.getMaterial().equals(this)) {
+		if (block.isMaterial(this)) {
 			short receiving = this.getReceivingPower(block);
 			short current = this.getRedstonePower(block);
 			if (current == receiving) {
@@ -96,7 +108,7 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 				block.setMaterial(this, receiving);
 			} else {
 				//Power became less, disable all attached wires and recalculate
-				block = block.setSource(this);
+				block = block.getWorld().getBlock(block.getX(), block.getY(), block.getZ(), this);
 				this.disableRedstone(block);
 				for (BlockFace face : BlockFaces.NESWB) {
 					this.disableRedstone(block.translate(face));
@@ -137,11 +149,6 @@ public class RedstoneWire extends GroundAttachable implements Mineable, Redstone
 	@Override
 	public boolean hasRedstonePower(Block block, RedstonePowerMode powerMode) {
 		return powerMode == RedstonePowerMode.ALLEXCEPTWIRE ? false : block.getData() > 0;
-	}
-
-	@Override
-	public byte getLightLevel(short data) {
-		return (byte) data;
 	}
 
 	@Override

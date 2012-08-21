@@ -29,20 +29,21 @@ package org.spout.vanilla.protocol.handler;
 import org.spout.api.player.Player;
 import org.spout.api.protocol.MessageHandler;
 import org.spout.api.protocol.Session;
-
-import org.spout.vanilla.controller.VanillaActionController;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.protocol.msg.PlayerAbilityMessage;
 
-public final class PlayerAbilityMessageHandler extends MessageHandler<PlayerAbilityMessage> {
+public final class PlayerAbilityMessageHandler implements MessageHandler<PlayerAbilityMessage> {
 	@Override
-	public void handleServer(Session session, Player player, PlayerAbilityMessage message) {
-		if (player.getEntity().getController() == null) {
+	public void handle(Session session, PlayerAbilityMessage message) {
+		if (!session.hasPlayer()) {
 			return;
 		}
-		if (!(player.getEntity().getController() instanceof VanillaActionController)) {
+
+		Player player = session.getPlayer();
+		if (!(player.getController() instanceof VanillaEntityController)) {
 			return;
 		}
-		((VanillaPlayer) player.getEntity().getController()).setFlying(message.isFlying());
+		((VanillaPlayer) player.getController()).setFlying(message.isFlying());
 	}
 }

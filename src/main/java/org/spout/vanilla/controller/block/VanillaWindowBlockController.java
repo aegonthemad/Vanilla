@@ -29,15 +29,17 @@ package org.spout.vanilla.controller.block;
 import java.util.Collection;
 import java.util.HashMap;
 
+import org.spout.api.entity.Entity;
+import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.controller.VanillaBlockController;
 import org.spout.vanilla.controller.VanillaControllerType;
-import org.spout.vanilla.controller.WindowOwner;
+import org.spout.vanilla.controller.WindowController;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.window.Window;
 
-public abstract class VanillaWindowBlockController extends VanillaBlockController implements WindowOwner {
+public abstract class VanillaWindowBlockController extends VanillaBlockController implements WindowController {
 	private HashMap<VanillaPlayer, Window> viewers = new HashMap<VanillaPlayer, Window>();
 
 	protected VanillaWindowBlockController(VanillaControllerType type, BlockMaterial blockMaterial) {
@@ -45,6 +47,14 @@ public abstract class VanillaWindowBlockController extends VanillaBlockControlle
 	}
 
 	public abstract Window createWindow(VanillaPlayer player);
+
+	@Override
+	public void onInteract(Entity entity, Action type) {
+		super.onInteract(entity, type);
+		if (type == Action.RIGHT_CLICK && entity.getController() instanceof VanillaPlayer) {
+			this.open((VanillaPlayer) entity.getController());
+		}
+	}
 
 	@Override
 	public boolean open(VanillaPlayer player) {
@@ -80,12 +90,23 @@ public abstract class VanillaWindowBlockController extends VanillaBlockControlle
 
 	@Override
 	public Window removeViewer(VanillaPlayer player) {
-		return this.viewers.remove(player);
+		try {
+			return this.viewers.remove(player);
+		} finally {
+			onViewersChanged();
+		}
 	}
 
 	@Override
 	public void addViewer(VanillaPlayer player, Window window) {
 		this.viewers.put(player, window);
+		this.onViewersChanged();
+	}
+
+	/**
+	 * Is called when a viewer got removed or added
+	 */
+	public void onViewersChanged() {
 	}
 
 	@Override
@@ -95,7 +116,6 @@ public abstract class VanillaWindowBlockController extends VanillaBlockControlle
 
 	/**
 	 * Gets an array of viewers currently viewing this controller
-	 * 
 	 * @return an array of player viewers
 	 */
 	public VanillaPlayer[] getViewerArray() {

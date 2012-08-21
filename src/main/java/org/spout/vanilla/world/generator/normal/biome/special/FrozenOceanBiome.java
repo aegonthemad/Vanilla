@@ -26,13 +26,13 @@
  */
 package org.spout.vanilla.world.generator.normal.biome.special;
 
-import org.spout.vanilla.world.generator.normal.biome.IcyBiome;
-import org.spout.vanilla.world.generator.normal.decorator.OreDecorator;
+import org.spout.vanilla.world.generator.normal.biome.SnowyBiome;
+import org.spout.vanilla.world.generator.normal.decorator.SandAndClayDecorator;
 
-public class FrozenOceanBiome extends IcyBiome {
+public class FrozenOceanBiome extends SnowyBiome {
 	public FrozenOceanBiome(int biomeId) {
-		super(biomeId, new OreDecorator());
-		setMinMax((byte) 44, (byte) 53);
+		super(biomeId, new SandAndClayDecorator());
+		setMinMax((byte) 44, (byte) 50);
 	}
 
 	@Override

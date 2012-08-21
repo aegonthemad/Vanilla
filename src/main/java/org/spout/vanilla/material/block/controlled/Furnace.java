@@ -26,17 +26,15 @@
  */
 package org.spout.vanilla.material.block.controlled;
 
-import org.spout.api.entity.Entity;
-import org.spout.api.entity.component.Controller;
-import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.controller.VanillaControllerTypes;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Directional;
 import org.spout.vanilla.material.item.tool.Pickaxe;
 import org.spout.vanilla.material.item.tool.Tool;
@@ -44,7 +42,6 @@ import org.spout.vanilla.util.MoveReaction;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class Furnace extends ControlledMaterial implements Directional, Mineable {
-	public static final byte PROGRESS_ARROW = 0, FIRE_ICON = 1;
 	public static final float SMELT_TIME = 10.f;
 	private final boolean burning;
 
@@ -67,6 +64,15 @@ public class Furnace extends ControlledMaterial implements Directional, Mineable
 		return this.burning;
 	}
 
+	/**
+	 * Sets the burning state of a Furnace block
+	 * @param block of the Furnace
+	 * @param burning state to set to
+	 */
+	public void setBurning(Block block, boolean burning) {
+		block.setMaterial(burning ? VanillaMaterials.FURNACE_BURNING : VanillaMaterials.FURNACE, block.getData());
+	}
+
 	@Override
 	public BlockFace getFacing(Block block) {
 		return BlockFaces.EWNS.get(block.getData() - 2);
@@ -78,26 +84,13 @@ public class Furnace extends ControlledMaterial implements Directional, Mineable
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, boolean isClickedBlock) {
-		if (super.onPlacement(block, data, against, isClickedBlock)) {
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
+		if (super.onPlacement(block, data, against, clickedPos, isClickedBlock)) {
 			this.setFacing(block, VanillaPlayerUtil.getFacing(block.getSource()).getOpposite());
 			return true;
 		}
 
 		return false;
-	}
-
-	@Override
-	public void onInteractBy(Entity entity, Block block, Action action, BlockFace face) {
-		if (action == Action.RIGHT_CLICK) {
-			Controller controller = entity.getController();
-			if (!(controller instanceof VanillaPlayer)) {
-				return;
-			}
-
-			// Open the furnace
-			((org.spout.vanilla.controller.block.Furnace) block.getController()).open((VanillaPlayer) controller);
-		}
 	}
 
 	@Override
@@ -117,7 +110,7 @@ public class Furnace extends ControlledMaterial implements Directional, Mineable
 
 	@Override
 	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.getMaterial().getMaterial() instanceof Pickaxe) {
+		if (holding != null && holding.getMaterial() instanceof Pickaxe) {
 			return super.canDrop(block, holding);
 		} else {
 			return false;

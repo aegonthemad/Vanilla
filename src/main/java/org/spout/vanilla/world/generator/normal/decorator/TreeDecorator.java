@@ -27,12 +27,11 @@
 package org.spout.vanilla.world.generator.normal.decorator;
 
 import java.util.Random;
-import org.spout.api.generator.biome.Biome;
 
+import org.spout.api.generator.biome.Biome;
 import org.spout.api.generator.biome.Decorator;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
-import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
@@ -49,7 +48,7 @@ public class TreeDecorator extends Decorator {
 		if (chunk.getY() != 4) {
 			return;
 		}
-		final Biome decorating = chunk.getBiomeType(0, 0, 0);
+		final Biome decorating = chunk.getBiomeType(7, 7, 7);
 		final byte amount = factory.amount(random);
 		for (byte count = 0; count < amount; count++) {
 			final TreeObject tree = factory.make(random);
@@ -69,9 +68,7 @@ public class TreeDecorator extends Decorator {
 
 	private int getHighestWorkableBlock(World w, int x, int z) {
 		int y = w.getHeight();
-		BlockMaterial material;
-		while ((material = w.getBlockMaterial(x, y, z)) != VanillaMaterials.DIRT
-				&& material != VanillaMaterials.GRASS) {
+		while (!w.getBlockMaterial(x, y, z).isMaterial(VanillaMaterials.DIRT, VanillaMaterials.GRASS)) {
 			y--;
 			if (y == 0) {
 				return -1;

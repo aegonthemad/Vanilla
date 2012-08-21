@@ -26,20 +26,25 @@
  */
 package org.spout.vanilla.controller.living;
 
+import org.spout.api.geo.LoadOption;
+import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.geo.discrete.Transform;
 import org.spout.api.util.BlockIterator;
 
-import org.spout.vanilla.controller.VanillaActionController;
 import org.spout.vanilla.controller.VanillaControllerType;
+import org.spout.vanilla.controller.VanillaEntityController;
+import org.spout.vanilla.controller.source.DamageCause;
+import org.spout.vanilla.material.VanillaMaterials;
 
-public abstract class Living extends VanillaActionController {
+public abstract class Living extends VanillaEntityController {
 	private Point headPos = null;
 	private int headYaw = 0;
 	private int lastHeadYaw = 0;
 	private int nextHeadYaw = 0;
 	private boolean headYawChanged;
 	private float headHeight = 1.0f;
+	private int reach = 5;
 	protected boolean crouching;
 
 	protected Living(VanillaControllerType type) {
@@ -49,8 +54,6 @@ public abstract class Living extends VanillaActionController {
 	@Override
 	public void onAttached() {
 		super.onAttached();
-		//registerAction(new GravityAction());
-		//registerAction(new WanderAction());
 	}
 
 	@Override
@@ -65,6 +68,16 @@ public abstract class Living extends VanillaActionController {
 		}
 	}
 
+	@Override
+	public void updateAirTicks() {
+
+	}
+
+	@Override
+	public int getMaxAirTicks() {
+		return 300;
+	}
+
 	private int calculateHeadYaw() {
 		if (nextHeadYaw == 0) {
 			nextHeadYaw = (int) (getParent().getYaw());
@@ -72,6 +85,22 @@ public abstract class Living extends VanillaActionController {
 		int tmp = nextHeadYaw;
 		nextHeadYaw = 0;
 		return tmp;
+	}
+
+	/**
+	 * Sets the maximum distance this Living Entity can interact at
+	 * @param reach distance
+	 */
+	public void setReach(int reach) {
+		this.reach = reach;
+	}
+
+	/**
+	 * Gets the maximum distance this Living Entity can interact at
+	 * @return reach distance
+	 */
+	public int getReach() {
+		return this.reach;
 	}
 
 	/**
@@ -113,13 +142,11 @@ public abstract class Living extends VanillaActionController {
 		Transform trans = new Transform();
 		trans.setPosition(this.getHeadPosition());
 		trans.setRotation(this.getParent().getRotation());
-		//TODO: Should the head yaw int (?!) be used during this calculation???
-		//trans.setRotation(Quaternion.rotation(parent.getPitch(), this.headYaw, getParent().getRoll()));
 		return trans;
 	}
 
 	public BlockIterator getHeadBlockView() {
-		return getHeadBlockView(8); //assume a max block radius of 8
+		return getHeadBlockView(this.getReach());
 	}
 
 	public BlockIterator getHeadBlockView(int maxDistance) {
@@ -141,4 +168,22 @@ public abstract class Living extends VanillaActionController {
 	public void setCrouching(boolean crouching) {
 		this.crouching = crouching;
 	}
+
+	//TODO Need to remove this or do this better...
+	/**
+	 * Performs a collision test
+	 * @return the first block this Living entity collides with
+	 */
+	public Block hitTest() {
+		Block block;
+		for (BlockIterator iter = this.getHeadBlockView(); iter.hasNext(); ) {
+			block = iter.next();
+			//TODO: Hit box check
+			if (!block.getMaterial().isTransparent()) {
+				return block;
+			}
+		}
+		return null;
+	}
+
 }

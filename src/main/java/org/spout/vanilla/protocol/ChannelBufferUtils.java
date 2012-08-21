@@ -57,7 +57,7 @@ public final class ChannelBufferUtils {
 	/**
 	 * The UTF-8 character set.
 	 */
-	private static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+	public static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
 
 	/**
 	 * Writes a list of parameters (e.g. mob metadata) to the buffer.
@@ -148,15 +148,13 @@ public final class ChannelBufferUtils {
 	 * Writes a string to the buffer.
 	 * @param buf The buffer.
 	 * @param str The string.
-	 * @throws IllegalArgumentException if the string is too long <em>after</em>
-	 * it is encoded.
+	 * @throws IllegalArgumentException if the string is too long <em>after</em> it is encoded.
 	 */
 	public static void writeString(ChannelBuffer buf, String str) {
 		int len = str.length();
 		if (len >= 65536) {
 			throw new IllegalArgumentException("String too long.");
 		}
-
 		buf.writeShort(len);
 		for (int i = 0; i < len; ++i) {
 			buf.writeChar(str.charAt(i));
@@ -168,8 +166,7 @@ public final class ChannelBufferUtils {
 	 * @param buf The buffer.
 	 * @param str The string.
 	 * @throws UnsupportedEncodingException if the encoding isn't supported.
-	 * @throws IllegalArgumentException if the string is too long <em>after</em>
-	 * it is encoded.
+	 * @throws IllegalArgumentException if the string is too long <em>after</em> it is encoded.
 	 */
 	public static void writeUtf8String(ChannelBuffer buf, String str) throws UnsupportedEncodingException {
 		byte[] bytes = str.getBytes(CHARSET_UTF8.name());
@@ -214,7 +211,7 @@ public final class ChannelBufferUtils {
 
 	public static CompoundMap readCompound(ChannelBuffer buf) {
 		int len = buf.readShort();
-		if (len >= 0) {
+		if (len > 0) {
 			byte[] bytes = new byte[len];
 			buf.readBytes(bytes);
 			NBTInputStream str = null;
@@ -258,6 +255,32 @@ public final class ChannelBufferUtils {
 					str.close();
 				} catch (IOException e) {
 				}
+			}
+		}
+	}
+
+	public static ItemStack readItemStack(ChannelBuffer buffer) {
+		Material material = VanillaMaterials.getMaterial(buffer.readShort());
+		if (material == null) {
+			return null;
+		} else {
+			int count = buffer.readUnsignedByte();
+			int damage = buffer.readUnsignedShort();
+			CompoundMap nbtData = readCompound(buffer);
+			return new ItemStack(material, damage, count).setNBTData(nbtData);
+		}
+	}
+
+	public static void writeItemStack(ChannelBuffer buffer, ItemStack item) {
+		short id = item == null ? (short) -1 : VanillaMaterials.getMinecraftId(item.getMaterial());
+		buffer.writeShort(id);
+		if (id != -1) {
+			buffer.writeByte(item.getAmount());
+			buffer.writeShort(item.getData());
+			if (hasNbtData(id)) {
+				writeCompound(buffer, item.getNBTData());
+			} else {
+				buffer.writeShort(-1);
 			}
 		}
 	}
@@ -318,7 +341,7 @@ public final class ChannelBufferUtils {
 	}
 
 	public static boolean hasNbtData(int id) {
-		//VanillaMaterials.
+		// VanillaMaterials.
 		Material mat = VanillaMaterials.getMaterial((short) id);
 		if (!(mat instanceof VanillaMaterial)) {
 			return false;
@@ -342,6 +365,11 @@ public final class ChannelBufferUtils {
 		return (rot / 256f) * 360;
 	}
 
+	/**
+	 * Create a SlotData stucture
+	 * @param buf The buffer to decode the Slot field
+	 * @return The according SlotData
+	 */
 	/**
 	 * Default private constructor to prevent instantiation.
 	 */

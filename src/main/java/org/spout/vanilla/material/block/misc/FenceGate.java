@@ -26,30 +26,31 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import org.spout.api.collision.CollisionStrategy;
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.block.Openable;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
 import org.spout.vanilla.material.item.tool.Axe;
 import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.util.Instrument;
 import org.spout.vanilla.util.RedstoneUtil;
 import org.spout.vanilla.util.VanillaPlayerUtil;
-
-import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
 
 public class FenceGate extends VanillaBlockMaterial implements Mineable, Openable, RedstoneTarget {
 	public FenceGate(String name, int id) {
 		super(name, id);
 		this.setHardness(2.0F).setResistance(3.0F).setTransparent();
+		this.setCollision(CollisionStrategy.SOLID);
 	}
 
 	@Override
@@ -64,7 +65,7 @@ public class FenceGate extends VanillaBlockMaterial implements Mineable, Openabl
 			return;
 		}
 		this.toggleOpen(block);
-		playBlockEffect(block, entity, PlayEffectMessage.Messages.RANDOM_DOOR);
+		GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block), entity);
 	}
 
 	@Override
@@ -84,7 +85,7 @@ public class FenceGate extends VanillaBlockMaterial implements Mineable, Openabl
 			boolean powered = this.isReceivingPower(block);
 			if (powered != this.isOpen(block)) {
 				this.setOpen(block, powered);
-				playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_DOOR);
+				GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block));
 			}
 		}
 	}
@@ -110,7 +111,7 @@ public class FenceGate extends VanillaBlockMaterial implements Mineable, Openabl
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, boolean isClickedBlock) {
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
 		block.setMaterial(this);
 		this.setFacing(block, VanillaPlayerUtil.getFacing(block.getSource()));
 		return true;

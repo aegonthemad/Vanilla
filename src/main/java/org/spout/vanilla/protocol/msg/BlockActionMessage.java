@@ -34,18 +34,20 @@ import org.spout.api.util.SpoutToStringStyle;
 
 public final class BlockActionMessage extends Message {
 	private final int x, y, z;
-	byte firstByte, secondByte;
+	private final byte firstByte, secondByte;
+	private short blockId;
 
-	public BlockActionMessage(Block block, byte firstByte, byte secondByte) {
-		this(block.getX(), block.getY(), block.getZ(), firstByte, secondByte);
+	public BlockActionMessage(Block block, short blockId, byte firstByte, byte secondByte) {
+		this(block.getX(), block.getY(), block.getZ(), blockId, firstByte, secondByte);
 	}
 
-	public BlockActionMessage(int x, int y, int z, byte firstByte, byte secondByte) {
+	public BlockActionMessage(int x, int y, int z, short blockId, byte firstByte, byte secondByte) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.firstByte = firstByte;
 		this.secondByte = secondByte;
+		this.blockId = blockId;
 	}
 
 	public int getX() {
@@ -68,6 +70,10 @@ public final class BlockActionMessage extends Message {
 		return secondByte;
 	}
 
+	public short getBlockId() {
+		return blockId;
+	}
+
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
@@ -76,6 +82,7 @@ public final class BlockActionMessage extends Message {
 				.append("z", z)
 				.append("firstByte", firstByte)
 				.append("secondByte", secondByte)
+				.append("blockId", blockId)
 				.toString();
 	}
 
@@ -94,6 +101,7 @@ public final class BlockActionMessage extends Message {
 				.append(this.z, other.z)
 				.append(this.firstByte, other.firstByte)
 				.append(this.secondByte, other.secondByte)
+				.append(this.blockId, other.blockId)
 				.isEquals();
 	}
 }

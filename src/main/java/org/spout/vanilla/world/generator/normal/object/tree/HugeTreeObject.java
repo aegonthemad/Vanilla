@@ -30,6 +30,8 @@ import java.util.Random;
 
 import org.spout.api.geo.World;
 import org.spout.api.material.BlockMaterial;
+import org.spout.api.math.SinusHelper;
+import org.spout.api.math.Vector2;
 
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Liquid;
@@ -86,14 +88,12 @@ public class HugeTreeObject extends TreeObject {
 		generateLeaves(w, x, y + totalHeight, z, (byte) 2);
 		final byte leavesEnd = (byte) (totalHeight - 2 - random.nextInt(4));
 		for (byte yy = (byte) (totalHeight / 2); yy < leavesEnd; yy += random.nextInt(4) + 2) {
-			final float randAngleInRads = (float) (2f * Math.PI * random.nextFloat());
-			final float xx = (float) Math.cos(randAngleInRads);
-			final float zz = (float) Math.sin(randAngleInRads);
-			generateLeaves(w, (int) (x + (xx * 4f + 0.5f)), y + yy, (int) (z + (zz * 4f + 0.5f)), (byte) 0);
+			Vector2 randomOffset = SinusHelper.getRandom2DAxis(random);
+			generateLeaves(w, (int) (x + (randomOffset.getX() * 4f + 0.5f)), y + yy, (int) (z + (randomOffset.getY() * 4f + 0.5f)), (byte) 0);
 			for (byte branchLengthCount = 0; branchLengthCount < branchLength; branchLengthCount++) {
-				w.setBlockMaterial(((int) (xx * branchLengthCount + 1.5f) + x),
+				w.setBlockMaterial(((int) (randomOffset.getX() * branchLengthCount + 1.5f) + x),
 						y + yy - 3 + branchLengthCount / 2,
-						((int) (zz * branchLengthCount + 1.5f) + z),
+						((int) (randomOffset.getY() * branchLengthCount + 1.5f) + z),
 						VanillaMaterials.LOG, logMetadata, w);
 			}
 		}
@@ -123,8 +123,8 @@ public class HugeTreeObject extends TreeObject {
 					final BlockMaterial material = world.getBlockMaterial(x + xx, y + yy, z + zz);
 					if (!(material instanceof Solid || material instanceof Liquid)
 							&& (xx > -1 || zz > -1 || circle < radius * radius)
-							&& ((xx < 1 && zz < 1) || circle < Math.pow(radius + 1, 2))
-							&& (random.nextInt(4) != 0 || circle < Math.pow(radius - 1, 2))) {
+							&& ((xx < 1 && zz < 1) || circle < (radius + 1) * (radius + 1))
+							&& (random.nextInt(4) != 0 || circle < (radius - 1) * (radius - 1))) {
 						world.setBlockMaterial(x + xx, y + yy, z + zz, VanillaMaterials.LEAVES, leavesMetadata, world);
 					}
 				}

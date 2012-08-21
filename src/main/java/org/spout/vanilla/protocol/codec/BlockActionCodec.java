@@ -47,17 +47,19 @@ public final class BlockActionCodec extends MessageCodec<BlockActionMessage> {
 		int z = buffer.readInt();
 		byte firstByte = buffer.readByte();
 		byte secondByte = buffer.readByte();
-		return new BlockActionMessage(x, y, z, firstByte, secondByte);
+		short blockId = buffer.readShort();
+		return new BlockActionMessage(x, y, z, blockId, firstByte, secondByte);
 	}
 
 	@Override
 	public ChannelBuffer encode(BlockActionMessage message) throws IOException {
-		ChannelBuffer buffer = ChannelBuffers.buffer(12);
+		ChannelBuffer buffer = ChannelBuffers.buffer(14);
 		buffer.writeInt(message.getX());
 		buffer.writeShort(message.getY());
 		buffer.writeInt(message.getZ());
 		buffer.writeByte(message.getFirstByte());
 		buffer.writeByte(message.getSecondByte());
+		buffer.writeShort(message.getBlockId());
 		return buffer;
 	}
 }

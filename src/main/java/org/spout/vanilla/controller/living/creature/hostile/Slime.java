@@ -33,13 +33,13 @@ import org.spout.api.Source;
 import org.spout.api.entity.Entity;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.controller.VanillaActionController;
 import org.spout.vanilla.controller.VanillaControllerType;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.living.Creature;
 import org.spout.vanilla.controller.living.creature.Hostile;
 import org.spout.vanilla.controller.source.HealthChangeReason;
-import org.spout.vanilla.data.Data;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.material.VanillaMaterials;
 
 public class Slime extends Creature implements Hostile {
@@ -52,7 +52,7 @@ public class Slime extends Creature implements Hostile {
 
 	public Slime() {
 		super(VanillaControllerTypes.SLIME);
-		this.size = data().get(Data.SLIME_SIZE);
+		this.size = data().get(VanillaData.SLIME_SIZE);
 	}
 
 	public Slime(VanillaControllerType type, byte size) {
@@ -62,21 +62,22 @@ public class Slime extends Creature implements Hostile {
 
 	public Slime(VanillaControllerType type) {
 		super(type);
-		this.size = data().get(Data.SLIME_SIZE);
+		this.size = data().get(VanillaData.SLIME_SIZE);
 	}
 
 	@Override
 	public void onAttached() {
-		int health = size > 0 ? size * 4 : 1;
-		setHealth(health, HealthChangeReason.SPAWN);
-		setMaxHealth(health);
 		super.onAttached();
+		int health = size > 0 ? size * 4 : 1;
+		setMaxHealth(health);
+		setHealth(health, HealthChangeReason.SPAWN);
+		setDeathAnimation(true);
 	}
 
 	@Override
 	public void onSave() {
 		super.onSave();
-		data().put(Data.SLIME_SIZE, size);
+		data().put(VanillaData.SLIME_SIZE, size);
 	}
 
 	@Override
@@ -92,7 +93,7 @@ public class Slime extends Creature implements Hostile {
 	}
 
 	@Override
-	public Set<ItemStack> getDrops(Source source, VanillaActionController lastDamager) {
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
 		Set<ItemStack> drops = new HashSet<ItemStack>();
 		if (getSize() == 0) {
 			return drops;

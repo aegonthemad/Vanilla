@@ -26,13 +26,13 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.RandomBlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -41,10 +41,12 @@ import org.spout.vanilla.material.item.tool.Spade;
 import org.spout.vanilla.material.item.tool.Tool;
 
 public class Snow extends GroundAttachable implements Mineable, RandomBlockMaterial, InitializableMaterial {
+	private static final byte MIN_MELT_LIGHT = 11;
+
 	public Snow(String name, int id) {
 		super(name, id);
-		this.setLiquidObstacle(false).setHardness(0.1F).setResistance(0.2F).setTransparent();
-		this.getOcclusion().set(BlockFace.BOTTOM);
+		this.setLiquidObstacle(false).setStepSound(SoundEffects.STEP_CLOTH).setHardness(0.1F).setResistance(0.2F).setTransparent();
+		this.setOcclusion((short) 0, BlockFace.BOTTOM);
 	}
 
 	@Override
@@ -78,16 +80,20 @@ public class Snow extends GroundAttachable implements Mineable, RandomBlockMater
 
 	@Override
 	public void onUpdate(BlockMaterial oldMaterial, Block block) {
-		BlockMaterial below = block.translate(BlockFace.BOTTOM).getMaterial();
-		if (below.getMaterial() == VanillaMaterials.AIR) {
+		if (block.translate(BlockFace.BOTTOM).isMaterial(VanillaMaterials.AIR)) {
 			block.setMaterial(VanillaMaterials.AIR);
 		}
 	}
 
 	@Override
-	public void onRandomTick(World world, int x, int y, int z) {
-		if (world.getBlockLight(x, y, z) > 11) {
-			world.setBlockMaterial(x, y, z, VanillaMaterials.AIR, (short) 0, world);
+	public void onRandomTick(Block block) {
+		if (block.getBlockLight() > MIN_MELT_LIGHT) {
+			short data = block.getData();
+			if (data > 0) {
+				block.setData(data - 1);
+			} else {
+				block.setMaterial(VanillaMaterials.AIR);
+			}
 		}
 	}
 }

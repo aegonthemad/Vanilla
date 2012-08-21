@@ -26,27 +26,27 @@
  */
 package org.spout.vanilla.window;
 
-import org.spout.api.inventory.InventoryBase;
-
-import org.spout.vanilla.controller.TransactionWindowOwner;
+import org.spout.vanilla.controller.WindowController;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.util.intmap.SlotIndexGrid;
 
 /**
  * This window contains the player inventory items with additional slots above
  */
 public class TransactionWindow extends Window {
-	public TransactionWindow(int id, String title, VanillaPlayer owner, TransactionWindowOwner... windowOwners) {
-		super(id, title, owner, windowOwners);
-		InventoryBase[] all = new InventoryBase[windowOwners.length + 1];
-		all[0] = owner.getInventory().getMain();
-		for (int i = 0; i < windowOwners.length; i++) {
-			all[i + 1] = windowOwners[i].getInventory();
-		}
-		this.setInventory(all);
+	public TransactionWindow(WindowType type, String title, VanillaPlayer owner, int transactionSize, WindowController... windowOwners) {
+		super(type, title, owner, windowOwners);
+		this.addInventory(owner.getInventory().getMain(), new SlotIndexGrid(9, 4, transactionSize));
 	}
 
 	@Override
-	public int getInventorySize() {
-		return this.getInventory().getSize() - this.getOwner().getInventory().getMain().getSize();
+	public void open() {
+		super.open();
+	}
+
+	@Override
+	public void close() {
+		super.close();
+		this.dropItemOnCursor();
 	}
 }

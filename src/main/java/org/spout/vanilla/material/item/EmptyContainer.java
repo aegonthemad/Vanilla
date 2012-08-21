@@ -37,7 +37,7 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.GenericMaterialSource;
 import org.spout.api.material.source.MaterialSource;
-import org.spout.api.util.BlockIterator;
+import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.controller.living.Living;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -48,15 +48,16 @@ public class EmptyContainer extends BlockItem {
 
 	public EmptyContainer(String name, int id) {
 		super(name, id, VanillaMaterials.AIR);
+		this.setMaxStackSize(16);
 	}
 
 	@Override
-	public boolean canPlace(Block block, short data, BlockFace against, boolean isClickedBlock) {
+	public boolean canPlace(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
 		return false;
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, boolean isClickedBlock) {
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
 		return false;
 	}
 
@@ -64,30 +65,24 @@ public class EmptyContainer extends BlockItem {
 	public void onInteract(Entity entity, Action type) {
 		super.onInteract(entity, type);
 		if (type == Action.RIGHT_CLICK && entity.getController() instanceof Living) {
-			//TODO: Possibly use hitboxes?
-			BlockIterator iter = ((Living) entity.getController()).getHeadBlockView();
-			Block block;
-			while (iter.hasNext()) {
-				block = iter.next();
-				if (block.getMaterial().equals(VanillaMaterials.AIR)) {
-					continue;
-				}
-
-				FullContainer cont = this.getFullItem(block.getMaterial(), block.getData());
-				if (cont == null) {
-					return;
-				}
-
-				block.setMaterial(VanillaMaterials.AIR);
-				if (!VanillaPlayerUtil.isSurvival(entity)) {
-					return;
-				}
-
-				InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
-				if (inv != null) {
-					inv.setItem(new ItemStack(cont, 1));
-				}
+			Block block = ((Living) entity.getController()).hitTest();
+			if (block == null) {
 				return;
+			}
+			FullContainer cont = this.getFullItem(block.getMaterial(), block.getData());
+			if (cont == null) {
+				return;
+			}
+			block.setMaterial(VanillaMaterials.AIR);
+
+			// Subtract item
+			if (!VanillaPlayerUtil.isSurvival(entity)) {
+				return;
+			}
+			InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
+			if (inv != null) {
+				inv.addItemAmount(-1);
+				VanillaPlayerUtil.getInventory(entity).addItem(new ItemStack(cont, 1));
 			}
 		}
 	}

@@ -38,13 +38,11 @@ import org.spout.api.entity.Entity;
 import org.spout.api.exception.CommandException;
 import org.spout.api.generator.biome.Biome;
 import org.spout.api.generator.biome.BiomeGenerator;
-import org.spout.api.geo.LoadOption;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.Material;
-import org.spout.api.material.block.BlockFace;
 import org.spout.api.player.Player;
 import org.spout.api.protocol.NetworkSynchronizer;
 
@@ -56,6 +54,7 @@ import org.spout.vanilla.controller.world.VanillaSky;
 import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.Weather;
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.util.VanillaBlockUtil;
 
 public class AdministrationCommands {
 	private final VanillaPlugin plugin;
@@ -77,7 +76,7 @@ public class AdministrationCommands {
 			player = (Player) source;
 			Player to = Spout.getEngine().getPlayer(args.getString(0), true);
 			if (to != null) {
-				point = to.getEntity().getPosition();
+				point = to.getPosition();
 			} else {
 				throw new CommandException(args.getString(0) + " is not online!");
 			}
@@ -91,7 +90,7 @@ public class AdministrationCommands {
 
 			Player to = Spout.getEngine().getPlayer(args.getString(1), true);
 			if (to != null) {
-				point = to.getEntity().getPosition();
+				point = to.getPosition();
 			} else {
 				throw new CommandException(args.getString(1) + " is not online!");
 			}
@@ -103,7 +102,7 @@ public class AdministrationCommands {
 			}
 
 			player = (Player) source;
-			Entity playerEntity = player.getEntity();
+			Entity playerEntity = player;
 			point = new Point(playerEntity.getWorld(), args.getInteger(0), args.getInteger(1), args.getInteger(2));
 		}
 
@@ -116,7 +115,7 @@ public class AdministrationCommands {
 		}
 
 		point.getWorld().getChunkFromBlock(point);
-		player.getEntity().setPosition(point);
+		player.setPosition(point);
 		player.getNetworkSynchronizer().setPositionDirty();
 	}
 
@@ -139,7 +138,7 @@ public class AdministrationCommands {
 				throw new CommandException(args.getString(0) + " is not online.");
 			}
 		}
-		VanillaPlayer vplayer = (VanillaPlayer) player.getEntity().getController();
+		VanillaPlayer vplayer = (VanillaPlayer) player.getController();
 
 		short data = 0;
 		if (args.isInteger(index)) {
@@ -167,14 +166,14 @@ public class AdministrationCommands {
 
 		vplayer.getInventory().getMain().addItem(new ItemStack(material, data, count), false);
 
-		source.sendMessage("Gave ", vplayer.getPlayer().getName(), " ", count, " ", material.getSubMaterial(data).getDisplayName());
+		source.sendMessage("Gave ", vplayer.getParent().getName(), " ", count, " ", material.getSubMaterial(data).getDisplayName());
 	}
 
 	@Command(aliases = {"deop"}, usage = "<player>", desc = "Revoke a players operator status", min = 1, max = 1)
 	@CommandPermissions("vanilla.command.deop")
 	public void deop(CommandContext args, CommandSource source) throws CommandException {
 		if (args.length() != 1) {
-			throw new CommandException("Please only provide a player to OP!");
+			throw new CommandException("Please provide a player to remove operator status!");
 		}
 
 		String playerName = args.getString(0);
@@ -183,7 +182,7 @@ public class AdministrationCommands {
 		source.sendMessage(ChatStyle.YELLOW, playerName, " had their operator status revoked!");
 		Player player = Spout.getEngine().getPlayer(playerName, true);
 		if (player != null && !source.equals(player)) {
-			player.sendMessage(ChatStyle.YELLOW, "You have your operator status revoked!");
+			player.sendMessage(ChatStyle.YELLOW, "You had your operator status revoked!");
 		}
 	}
 
@@ -191,7 +190,7 @@ public class AdministrationCommands {
 	@CommandPermissions("vanilla.command.op")
 	public void op(CommandContext args, CommandSource source) throws CommandException {
 		if (args.length() != 1) {
-			throw new CommandException("Please only provide a player to OP!");
+			throw new CommandException("Please player to OP!");
 		}
 
 		String playerName = args.getString(0);
@@ -232,7 +231,7 @@ public class AdministrationCommands {
 			}
 		}
 
-		World world = null;
+		World world;
 		if (args.length() == 3) {
 			world = plugin.getEngine().getWorld(args.getString(2));
 			if (world == null) {
@@ -240,7 +239,7 @@ public class AdministrationCommands {
 			}
 		} else if (source instanceof Player) {
 			Player player = (Player) source;
-			world = player.getEntity().getWorld();
+			world = player.getWorld();
 		} else {
 			throw new CommandException("You must specify a world.");
 		}
@@ -272,7 +271,7 @@ public class AdministrationCommands {
 			player = (Player) source;
 		}
 
-		if (!(player.getEntity().getController() instanceof VanillaPlayer)) {
+		if (!(player.getController() instanceof VanillaPlayer)) {
 			throw new CommandException("Invalid player!");
 		}
 
@@ -288,7 +287,7 @@ public class AdministrationCommands {
 		}
 
 		String message;
-		VanillaPlayer p = (VanillaPlayer) player.getEntity().getController();
+		VanillaPlayer p = (VanillaPlayer) player.getController();
 		switch (mode) {
 			case 0:
 				p.setGameMode(GameMode.SURVIVAL);
@@ -302,7 +301,7 @@ public class AdministrationCommands {
 				throw new CommandException("A game mode must be either a number between 1 and 2, 'CREATIVE' or 'SURVIVAL'");
 		}
 		if (!player.equals(source)) {
-			source.sendMessage(p.getPlayer().getName(), "'s game mode has been changed to ", message, ".");
+			source.sendMessage(p.getParent().getName(), "'s game mode has been changed to ", message, ".");
 		}
 	}
 
@@ -341,15 +340,14 @@ public class AdministrationCommands {
 		World world = null;
 		if (source instanceof Player && args.length() == 1) {
 			Player player = (Player) source;
-			world = player.getEntity().getWorld();
+			world = player.getWorld();
 		} else if (args.length() == 2) {
 			world = plugin.getEngine().getWorld(args.getString(1));
+			if (world == null) {
+				throw new CommandException("Invalid world '" + args.getString(1) + "'.");
+			}
 		} else {
 			throw new CommandException("You need to specify a world.");
-		}
-
-		if (world == null) {
-			throw new CommandException("Invalid world '" + args.getString(1) + "'.");
 		}
 
 		Weather weather;
@@ -386,7 +384,7 @@ public class AdministrationCommands {
 
 		VanillaSky sky = VanillaSky.getSky(world);
 		if (sky == null) {
-			throw new CommandException("The world '" + args.getString(1) + "' is not availible.");
+			throw new CommandException("The sky of world '" + world.getName() + "' is not availible.");
 		}
 
 		sky.setWeather(weather);
@@ -415,23 +413,11 @@ public class AdministrationCommands {
 
 			source.sendMessage("All chunks resent");
 		} else if (args.getString(0, "").contains("resend")) {
-			player.getNetworkSynchronizer().sendChunk(player.getEntity().getChunk());
+			player.getNetworkSynchronizer().sendChunk(player.getChunk());
 			source.sendMessage("Chunk resent");
 		} else if (args.getString(0, "").contains("relight")) {
-			Chunk middle = player.getEntity().getChunk();
-			Chunk top = middle;
-			Chunk tmp;
-			while (true) {
-				tmp = top.getRelative(BlockFace.TOP, LoadOption.NO_LOAD);
-				if (tmp != null && tmp.isLoaded()) {
-					top = tmp;
-				} else {
-					break;
-				}
-			}
-			while (top != null && top.isLoaded()) {
-				top.initLighting();
-				top = top.getRelative(BlockFace.BOTTOM, LoadOption.NO_LOAD);
+			for (Chunk chunk : VanillaBlockUtil.getChunkColumn(player.getChunk())) {
+				chunk.initLighting();
 			}
 			source.sendMessage("Chunk lighting is being initialized");
 		}
@@ -444,11 +430,11 @@ public class AdministrationCommands {
 			if (!(source instanceof Player)) {
 				throw new CommandException("Don't be silly...you cannot kill yourself as the console.");
 			}
-			((Player) source).getEntity().kill();
+			((VanillaPlayer) ((Player) source).getController()).setHealth(0, source);
 		} else {
-			Player victim = Spout.getEngine().getPlayer(args.getString(0), true);
+			VanillaPlayer victim = (VanillaPlayer) Spout.getEngine().getPlayer(args.getString(0), true).getController();
 			if (victim != null) {
-				victim.getEntity().kill();
+				victim.setHealth(0, source);
 			}
 		}
 	}
@@ -467,10 +453,10 @@ public class AdministrationCommands {
 			throw new CommandException("Only a player may call this command.");
 		}
 		Player player = (Player) source;
-		if (!(player.getEntity().getPosition().getWorld().getGenerator() instanceof BiomeGenerator)) {
+		if (!(player.getPosition().getWorld().getGenerator() instanceof BiomeGenerator)) {
 			throw new CommandException("This map does not appear to have any biome data.");
 		}
-		Point pos = player.getEntity().getPosition();
+		Point pos = player.getPosition();
 		Biome biome = pos.getWorld().getBiomeType(pos.getBlockX(), pos.getBlockY(), pos.getBlockZ());
 		source.sendMessage("Current biome: ", (biome != null ? biome.getName() : "none"));
 	}

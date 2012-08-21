@@ -26,38 +26,42 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import java.util.EnumMap;
+
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
+import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.EffectRange;
+import org.spout.api.material.range.ListEffectRange;
 
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.block.attachable.AbstractAttachable;
 import org.spout.vanilla.material.block.attachable.PointAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.util.RedstonePowerMode;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
-
 public class StoneButton extends AbstractAttachable implements Mineable, PointAttachable, RedstoneSource, DynamicMaterial {
 	public static final int TICK_DELAY = 1000;
+	private static EnumMap<BlockFace, EffectRange> physicsRanges = new EnumMap<BlockFace, EffectRange>(BlockFace.class);
+
+	static {
+		for (BlockFace face : BlockFaces.NESW) {
+			physicsRanges.put(face, new ListEffectRange(EffectRange.THIS_AND_NEIGHBORS, EffectRange.THIS_AND_NEIGHBORS.translate(face)));
+		}
+	}
 
 	public StoneButton(String name, int id) {
 		super(name, id);
 		this.setAttachable(BlockFaces.NESW).setLiquidObstacle(false).setHardness(0.5F).setResistance(0.8F).setTransparent();
-	}
-
-	public void onDelayedUpdate(Block block) {
-		this.setPressed(block, false);
-		playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_CLICK_2);
 	}
 
 	@Override
@@ -86,13 +90,20 @@ public class StoneButton extends AbstractAttachable implements Mineable, PointAt
 	}
 
 	@Override
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
+		if (oldMaterial == this && this.isPressed(block)) {
+			block.dynamicUpdate(block.getWorld().getAge() + TICK_DELAY);
+		}
+	}
+
+	@Override
 	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, type, clickedFace);
 		if (type != Action.LEFT_CLICK || !VanillaPlayerUtil.isCreative(entity)) {
 			if (!this.isPressed(block)) {
 				this.setPressed(block, true);
-				block.dynamicUpdate(block.getWorld().getAge() + TICK_DELAY);
-				playBlockEffect(block, entity, PlayEffectMessage.Messages.RANDOM_CLICK_1);
+				GeneralEffects.RANDOM_CLICK2.playGlobal(block.getPosition(), entity);
 			}
 		}
 	}
@@ -103,8 +114,8 @@ public class StoneButton extends AbstractAttachable implements Mineable, PointAt
 	}
 
 	@Override
-	public BlockFace getAttachedFace(Block block) {
-		return BlockFaces.NSEW.get((block.getData() & ~0x8) - 1);
+	public BlockFace getAttachedFace(short data) {
+		return BlockFaces.NSEW.get((data & 0x7) - 1);
 	}
 
 	public boolean isPressed(Block block) {
@@ -130,13 +141,21 @@ public class StoneButton extends AbstractAttachable implements Mineable, PointAt
 	}
 
 	@Override
-	public void onDynamicUpdate(Block block, Region r, long updateTime, long lastUpdateTime, int data, Object hint) {
+	public void onDynamicUpdate(Block block, Region r, long updateTime, int data) {
+		if (!this.isPressed(block)) {
+			return;
+		}
 		this.setPressed(block, false);
-		playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_CLICK_2);
+		GeneralEffects.RANDOM_CLICK2.playGlobal(block.getPosition());
 	}
 
 	@Override
 	public EffectRange getDynamicRange() {
 		return EffectRange.THIS;
+	}
+
+	@Override
+	public EffectRange getPhysicsRange(short data) {
+		return physicsRanges.get(getAttachedFace(data));
 	}
 }

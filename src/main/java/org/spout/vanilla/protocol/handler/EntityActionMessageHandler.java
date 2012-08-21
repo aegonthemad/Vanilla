@@ -30,52 +30,50 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spout.api.player.Player;
-import org.spout.api.protocol.MessageHandler;
+import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
 import org.spout.api.util.Parameter;
-
 import org.spout.vanilla.controller.living.Living;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.protocol.msg.EntityActionMessage;
-import org.spout.vanilla.protocol.msg.EntityMetadataMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityActionMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityMetadataMessage;
 
-public final class EntityActionMessageHandler extends MessageHandler<EntityActionMessage> {
+public final class EntityActionMessageHandler implements ServerMessageHandler<EntityActionMessage> {
 	@Override
-	public void handleServer(Session session, Player player, EntityActionMessage message) {
-		if (player == null) {
+	public void handle(Session session, EntityActionMessage message) {
+		if (!session.hasPlayer()) {
 			return;
 		}
 
-		if (player.getEntity() == null) {
-			return;
-		}
-		if (!(player.getEntity().getController() instanceof Living)) {
+		Player player = session.getPlayer();
+
+		if (!(player.getController() instanceof Living)) {
 			return;
 		}
 
-		VanillaPlayer ve = (VanillaPlayer) player.getEntity().getController();
+		VanillaPlayer ve = (VanillaPlayer) player.getController();
 		List<Parameter<?>> parameters = new ArrayList<Parameter<?>>();
 
 		switch (message.getAction()) {
 			case EntityActionMessage.ACTION_CROUCH:
 				parameters.add(EntityMetadataMessage.Parameters.META_CROUCHED.get());
-				session.send(new EntityMetadataMessage(player.getEntity().getId(), parameters));
+				session.send(false, new EntityMetadataMessage(player.getId(), parameters));
 				break;
 			case EntityActionMessage.ACTION_UNCROUCH:
 				parameters.add(EntityMetadataMessage.Parameters.META_CROUCHED.get());
-				session.send(new EntityMetadataMessage(player.getEntity().getId(), parameters));
+				session.send(false, new EntityMetadataMessage(player.getId(), parameters));
 				break;
 			case EntityActionMessage.ACTION_LEAVE_BED:
-				session.send(new EntityActionMessage(player.getEntity().getId(), EntityActionMessage.ACTION_LEAVE_BED));
+				session.send(false, new EntityActionMessage(player.getId(), EntityActionMessage.ACTION_LEAVE_BED));
 				break;
 			case EntityActionMessage.ACTION_START_SPRINTING:
 				parameters.add(EntityMetadataMessage.Parameters.META_SPRINTING.get());
-				session.send(new EntityMetadataMessage(player.getEntity().getId(), parameters));
+				session.send(false, new EntityMetadataMessage(player.getId(), parameters));
 				ve.setSprinting(true);
 				break;
 			case EntityActionMessage.ACTION_STOP_SPRINTING:
 				parameters.add(EntityMetadataMessage.Parameters.META_SPRINTING.get());
-				session.send(new EntityMetadataMessage(player.getEntity().getId(), parameters));
+				session.send(false, new EntityMetadataMessage(player.getId(), parameters));
 				ve.setSprinting(false);
 				break;
 			default:

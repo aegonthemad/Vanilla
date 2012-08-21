@@ -26,8 +26,13 @@
  */
 package org.spout.vanilla.controller.object.vehicle;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.spout.api.Source;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
+import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.Material;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.math.MathHelper;
@@ -35,6 +40,7 @@ import org.spout.api.math.Vector2;
 import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.controller.VanillaControllerType;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.object.Substance;
 import org.spout.vanilla.controller.source.HealthChangeReason;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -47,6 +53,7 @@ public abstract class Minecart extends Substance implements Vehicle {
 	private Material blockType = VanillaMaterials.AIR;
 	private RailBase railMaterial;
 	private RailsState railState;
+	private int regentick = 0;
 	private Vector3 groundFrictionModifier = new Vector3(0.5, 0.5, 0.5);
 	private Vector3 airFrictionModifier = new Vector3(0.95, 0.95, 0.95);
 	private Vector2[] railMovement = new Vector2[]{Vector2.ZERO, Vector2.ZERO};
@@ -83,7 +90,8 @@ public abstract class Minecart extends Substance implements Vehicle {
 		this.getBounds().set(-0.35f, 0.0f, -0.49f, 0.35f, 0.49f, 0.49f);
 		this.setVelocity(new Vector3(0, 0, 0.2)); //temporary!
 		this.setMaxSpeed(new Vector3(0.4, 0.4, 0.4)); //first two 0.4 need to be 0 - TODO: Use yaw instead?
-		setHealth(40, HealthChangeReason.SPAWN);
+		setMaxHealth(6);
+		setHealth(6, HealthChangeReason.SPAWN);
 	}
 
 	@Override
@@ -93,7 +101,7 @@ public abstract class Minecart extends Substance implements Vehicle {
 	}
 
 	public void generateRailData(Point position) {
-		this.railsBlock = position.getWorld().getBlock(position);
+		this.railsBlock = position.getWorld().getBlock(position, getParent());
 		this.blockType = this.railsBlock.getMaterial();
 		if (!(this.blockType instanceof RailBase)) {
 			this.railsBlock = this.railsBlock.translate(BlockFace.BOTTOM);
@@ -116,7 +124,7 @@ public abstract class Minecart extends Substance implements Vehicle {
 			VanillaMaterials.RAIL_DETECTOR.setPowering(this.railsBlock, false);
 		}
 	}
-	
+
 	@Override
 	public void onTick(float dt) {
 		super.onTick(dt);
@@ -129,10 +137,14 @@ public abstract class Minecart extends Substance implements Vehicle {
 
 		//update health to regenerate
 		int health = getHealth();
-		if (health < 40) {
-			setHealth(health + 1, HealthChangeReason.REGENERATION);
+		if (health < 6) {
+			if (regentick >= 7) {
+				setHealth(health + 1, HealthChangeReason.REGENERATION);
+				regentick = 0;
+			} else {
+				regentick++;
+			}
 		}
-
 		//get current rail below minecart
 		Point position = getParent().getPosition();
 		if (position.getWorld() == null) {
@@ -151,8 +163,7 @@ public abstract class Minecart extends Substance implements Vehicle {
 			if (this.railMaterial == VanillaMaterials.RAIL_DETECTOR) {
 				VanillaMaterials.RAIL_DETECTOR.setPowering(this.railsBlock, true);
 			}
-			
-			
+
 			//on tracks
 			this.previousPosY = position.getY();
 
@@ -221,7 +232,7 @@ public abstract class Minecart extends Substance implements Vehicle {
 		} else {
 			//on the ground
 			velocity = velocity.multiply(this.groundFrictionModifier.toVector2());
-			velocityY *= this.groundFrictionModifier.getY();
+			velocityY *= 0;
 		}
 
 		//update velocity and move
@@ -238,7 +249,7 @@ public abstract class Minecart extends Substance implements Vehicle {
 		//post-move updates
 		if (this.railState != null) {
 			//snap to correct Y when changing sloped rail downwards
-			Block newBlock = position.getWorld().getBlock(position);
+			Block newBlock = position.getWorld().getBlock(position, getParent());
 
 			Vector2 blockChange = new Vector2(newBlock.getX() - this.railsBlock.getX(), newBlock.getZ() - this.railsBlock.getZ());
 
@@ -331,5 +342,12 @@ public abstract class Minecart extends Substance implements Vehicle {
 	 * @param dt
 	 */
 	public void onVelocityUpdated(float dt) {
+	}
+
+	@Override
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
+		Set<ItemStack> drops = new HashSet<ItemStack>();
+		drops.add(new ItemStack(VanillaMaterials.MINECART, 1));
+		return drops;
 	}
 }

@@ -26,13 +26,17 @@
  */
 package org.spout.vanilla.protocol;
 
-import static org.spout.vanilla.material.VanillaMaterials.getMinecraftId;
-import gnu.trove.iterator.TIntObjectIterator;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import gnu.trove.set.TIntSet;
 
+import org.spout.api.Spout;
 import org.spout.api.entity.Entity;
 import org.spout.api.entity.component.Controller;
+import org.spout.api.event.EventHandler;
 import org.spout.api.generator.biome.Biome;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
@@ -41,7 +45,6 @@ import org.spout.api.geo.cuboid.ChunkSnapshot.EntityType;
 import org.spout.api.geo.cuboid.ChunkSnapshot.ExtraData;
 import org.spout.api.geo.cuboid.ChunkSnapshot.SnapshotType;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.inventory.InventoryBase;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.math.Quaternion;
@@ -52,32 +55,56 @@ import org.spout.api.protocol.NetworkSynchronizer;
 import org.spout.api.protocol.Session;
 import org.spout.api.protocol.Session.State;
 import org.spout.api.protocol.event.ProtocolEventListener;
+import org.spout.api.util.hashing.IntPairHashed;
 import org.spout.api.util.map.concurrent.TSyncIntPairObjectHashMap;
 import org.spout.api.util.set.concurrent.TSyncIntHashSet;
 import org.spout.api.util.set.concurrent.TSyncIntPairHashSet;
 import org.spout.vanilla.VanillaPlugin;
+import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.data.Data;
 import org.spout.vanilla.data.Difficulty;
 import org.spout.vanilla.data.Dimension;
 import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.WorldType;
+import org.spout.vanilla.event.block.BlockActionEvent;
+import org.spout.vanilla.event.player.PlayerGameModeChangedEvent;
+import org.spout.vanilla.event.player.network.PlayerKeepAliveEvent;
+import org.spout.vanilla.event.player.network.PlayerUpdateUserListEvent;
+import org.spout.vanilla.event.window.WindowCloseEvent;
+import org.spout.vanilla.event.window.WindowOpenEvent;
+import org.spout.vanilla.event.window.WindowPropertyEvent;
+import org.spout.vanilla.event.window.WindowSetSlotEvent;
+import org.spout.vanilla.event.window.WindowSetSlotsEvent;
+import org.spout.vanilla.event.world.PlayExplosionEffectEvent;
+import org.spout.vanilla.event.world.PlayParticleEffectEvent;
+import org.spout.vanilla.event.world.PlaySoundEffectEvent;
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.protocol.msg.BlockActionMessage;
 import org.spout.vanilla.protocol.msg.BlockChangeMessage;
 import org.spout.vanilla.protocol.msg.CompressedChunkMessage;
-import org.spout.vanilla.protocol.msg.EntityEquipmentMessage;
-import org.spout.vanilla.protocol.msg.EntityTeleportMessage;
+import org.spout.vanilla.protocol.msg.ExplosionMessage;
 import org.spout.vanilla.protocol.msg.KeepAliveMessage;
-import org.spout.vanilla.protocol.msg.LoadChunkMessage;
-import org.spout.vanilla.protocol.msg.LoginRequestMessage;
+import org.spout.vanilla.protocol.msg.NamedSoundEffectMessage;
+import org.spout.vanilla.protocol.msg.PlayEffectMessage;
+import org.spout.vanilla.protocol.msg.PlayerListMessage;
 import org.spout.vanilla.protocol.msg.PlayerLookMessage;
 import org.spout.vanilla.protocol.msg.PlayerPositionLookMessage;
 import org.spout.vanilla.protocol.msg.RespawnMessage;
-import org.spout.vanilla.protocol.msg.SetWindowSlotMessage;
-import org.spout.vanilla.protocol.msg.SetWindowSlotsMessage;
 import org.spout.vanilla.protocol.msg.SpawnPositionMessage;
-import org.spout.vanilla.window.Window;
+import org.spout.vanilla.protocol.msg.entity.EntityEquipmentMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityTeleportMessage;
+import org.spout.vanilla.protocol.msg.login.LoginRequestMessage;
+import org.spout.vanilla.protocol.msg.window.WindowCloseMessage;
+import org.spout.vanilla.protocol.msg.window.WindowOpenMessage;
+import org.spout.vanilla.protocol.msg.window.WindowPropertyMessage;
+import org.spout.vanilla.protocol.msg.window.WindowSetSlotMessage;
+import org.spout.vanilla.protocol.msg.window.WindowSetSlotsMessage;
+import org.spout.vanilla.window.DefaultWindow;
 import org.spout.vanilla.world.generator.VanillaBiome;
+
+import static org.spout.vanilla.material.VanillaMaterials.getMinecraftData;
+import static org.spout.vanilla.material.VanillaMaterials.getMinecraftId;
 
 public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements ProtocolEventListener {
 	private static final int SOLID_BLOCK_ID = 1; // Initializer block ID
@@ -86,12 +113,12 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	private static final double STANCE = 1.6D;
 	@SuppressWarnings("unused")
 	private static final int POSITION_UPDATE_TICKS = 20;
-	private static final int TIMEOUT = 15000;
-	private final TIntObjectHashMap<Message> queuedInventoryUpdates = new TIntObjectHashMap<Message>();
 	private boolean first = true;
-	private long lastKeepAlive = System.currentTimeMillis();
-	private TSyncIntPairObjectHashMap<TSyncIntHashSet> initializedChunks = new TSyncIntPairObjectHashMap<TSyncIntHashSet>();
+	private final TSyncIntPairObjectHashMap<TSyncIntHashSet> initializedChunks = new TSyncIntPairObjectHashMap<TSyncIntHashSet>();
+	private final ConcurrentLinkedQueue<Long> emptyColumns = new ConcurrentLinkedQueue<Long>();
 	private TSyncIntPairHashSet activeChunks = new TSyncIntPairHashSet();
+	private Object initChunkLock = new Object();
+	private final ChunkInit chunkInit;
 
 	static {
 		int i = 0;
@@ -116,11 +143,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	public VanillaNetworkSynchronizer(Player player, Entity entity) {
 		super(player, player.getSession(), entity, 3);
 		registerProtocolEvents(this);
-		Point p = player.getEntity().getPosition();
-		p.getWorld().getChunkFromBlock(p);
+		chunkInit = ChunkInit.getChunkInit(VanillaConfiguration.CHUNK_INIT.getString("client"));
 	}
-
-	private Object initChunkLock = new Object();
 
 	@Override
 	protected void freeChunk(Point p) {
@@ -136,16 +160,11 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (column != null) {
 			column.remove(y);
 			if (column.isEmpty()) {
-				if (initializedChunks.remove(x, z) != null) {
-					activeChunks.remove(x, z);
-					LoadChunkMessage unLoadChunk = new LoadChunkMessage(x, z, false);
-					owner.getSession().send(unLoadChunk);
-				}
-			}/* else {
-				byte[][] data = new byte[16][];
-				data[y] = AIR_CHUNK_DATA;
-				CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, false, new boolean[16], 0, data, null);
-				session.send(CCMsg);
+				emptyColumns.add(IntPairHashed.key(x, z));
+			} // TODO - is this required?
+			/*
+			else {
+				CCMsg = new CompressedChunkMessage(x, z, false, null, null, null, true);
 			}*/
 		}
 	}
@@ -153,9 +172,9 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	@Override
 	protected void initChunk(Point p) {
 
-		int x = (int) p.getChunkX();
-		int y = (int) p.getChunkY();// + SEALEVEL_CHUNK;
-		int z = (int) p.getChunkZ();
+		int x = p.getChunkX();
+		int y = p.getChunkY();// + SEALEVEL_CHUNK;
+		int z = p.getChunkZ();
 
 		if (y < 0 || y >= p.getWorld().getHeight() >> Chunk.BLOCKS.BITS) {
 			return;
@@ -166,10 +185,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			column = new TSyncIntHashSet();
 			synchronized (initChunkLock) {
 				TSyncIntHashSet oldColumn = initializedChunks.putIfAbsent(x, z, column);
-				if (oldColumn == null) {
-					LoadChunkMessage LCMsg = new LoadChunkMessage(x, z, true);
-					owner.getSession().send(LCMsg);
-				} else {
+				if (oldColumn != null) {
 					column = oldColumn;
 				}
 			}
@@ -203,57 +219,34 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		return heights;
 	}
 
-	private static byte[] getChunkHeightMap(int[][] heights, BlockMaterial[][] materials, int chunkY) {
-		byte[] packetChunkData = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
-		int baseY = chunkY << Chunk.BLOCKS.BITS;
+	private static byte[] emptySkyChunkData;
+	private static byte[] emptyGroundChunkData;
 
-		for (int xx = 0; xx < Chunk.BLOCKS.SIZE; xx++) {
-			for (int zz = 0; zz < Chunk.BLOCKS.SIZE; zz++) {
-				int dataOffset = xx | (zz << Chunk.BLOCKS.BITS);
-				int threshold = heights[xx][zz] - baseY;
-				if (chunkY == 0 && threshold < 0) {
-					threshold = 0;
-				}
-				int yy;
-				// Set blocks below height to the solid block
-				for (yy = 0; yy < Chunk.BLOCKS.SIZE && yy <= threshold; yy++) {
-					if (yy == threshold) {
-						BlockMaterial bm = materials[xx][zz];
-						if (bm == null) {
-							bm = VanillaMaterials.STONE;
-						}
-						int converted = getMinecraftId(bm.getId());
-						packetChunkData[dataOffset] = (byte) converted;
-					} else {
-						packetChunkData[dataOffset] = SOLID_BLOCK_ID;
-					}
-					dataOffset += Chunk.BLOCKS.AREA;
-				}
-				// Set sky light of blocks above height to 15
-				// Use half of start offset and add the block id and data length (2 volumes)
-				byte mask = (xx & 0x1) == 0 ? (byte) 0x0F : (byte) 0xF0;
-				dataOffset = Chunk.BLOCKS.DOUBLE_VOLUME + (dataOffset >> 1);
-				for (; yy < Chunk.BLOCKS.SIZE; yy++) {
-					packetChunkData[dataOffset] |= mask;
-					dataOffset += Chunk.BLOCKS.HALF_AREA;
-				}
-			}
+	static {
+		emptySkyChunkData = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
+		emptyGroundChunkData = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
+
+		int j = Chunk.BLOCKS.VOLUME << 1;
+		// Sky light = F
+		for (int i = 0; i < Chunk.BLOCKS.HALF_VOLUME; i++) {
+			emptySkyChunkData[j] = (byte) 0xFF;
 		}
-		return packetChunkData;
 	}
 
 	@Override
-	public void sendChunk(Chunk c) {
+	public Collection<Chunk> sendChunk(Chunk c) {
 
 		int x = c.getX();
 		int y = c.getY();// + SEALEVEL_CHUNK;
 		int z = c.getZ();
 
 		if (y < 0 || y >= c.getWorld().getHeight() >> Chunk.BLOCKS.BITS) {
-			return;
+			return null;
 		}
 
 		initChunk(c.getBase());
+
+		Collection<Chunk> chunks = null;
 
 		if (activeChunks.add(x, z)) {
 			Point p = c.getBase();
@@ -263,11 +256,9 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			byte[][] packetChunkData = new byte[16][];
 
 			for (int cube = 0; cube < 16; cube++) {
-				packetChunkData[cube] = getChunkHeightMap(heights, materials, cube);
+				Point pp = new Point(c.getWorld(), x << Chunk.BLOCKS.BITS, cube << Chunk.BLOCKS.BITS, z << Chunk.BLOCKS.BITS);
+				packetChunkData[cube] = chunkInit.getChunkData(heights, materials, pp);
 			}
-
-			LoadChunkMessage loadChunk = new LoadChunkMessage(x, z, true);
-			owner.getSession().send(loadChunk);
 
 			Chunk chunk = p.getWorld().getChunkFromBlock(p);
 			byte[] biomeData = new byte[Chunk.BLOCKS.AREA];
@@ -280,38 +271,20 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 				}
 			}
 
-			CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, true, new boolean[16], 0, packetChunkData, biomeData);
+			CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, true, new boolean[16], packetChunkData, biomeData);
 			owner.getSession().send(CCMsg);
+
+			chunks = chunkInit.getChunks(c);
 		}
 
-		ChunkSnapshot snapshot = c.getSnapshot(SnapshotType.BOTH, EntityType.NO_ENTITIES, ExtraData.NO_EXTRA_DATA);
-		short[] rawBlockIdArray = snapshot.getBlockIds();
-		short[] rawBlockData = snapshot.getBlockData();
-		byte[] rawBlockLight = snapshot.getBlockLight();
-		byte[] rawSkyLight = snapshot.getSkyLight();
-		byte[] fullChunkData = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
-
-		int arrIndex = 0;
-		for (int i = 0; i < rawBlockIdArray.length; i++) {
-			short convert = getMinecraftId(rawBlockIdArray[i]);
-			fullChunkData[arrIndex++] = (byte) (convert & 0xFF);
-		}
-
-		for (int i = 0; i < rawBlockData.length; i += 2) {
-			fullChunkData[arrIndex++] = (byte) ((rawBlockData[i + 1] << 4) | (rawBlockData[i] & 0xF));
-		}
-
-		System.arraycopy(rawBlockLight, 0, fullChunkData, arrIndex, rawBlockLight.length);
-		arrIndex += rawBlockLight.length;
-
-		System.arraycopy(rawSkyLight, 0, fullChunkData, arrIndex, rawSkyLight.length);
-
-		arrIndex += rawSkyLight.length;
+		byte[] fullChunkData = ChunkInit.getChunkFullData(c);
 
 		byte[][] packetChunkData = new byte[16][];
 		packetChunkData[y] = fullChunkData;
-		CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, false, new boolean[16], 0, packetChunkData, null);
+		CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, false, new boolean[16], packetChunkData, null);
 		owner.getSession().send(CCMsg);
+
+		return chunks;
 	}
 
 	@Override
@@ -330,29 +303,35 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@Override
 	protected void worldChanged(World world) {
-		//Grab world characteristics.
-		GameMode gamemode = world.getDataMap().get(Data.GAMEMODE);
-		Difficulty difficulty = world.getDataMap().get(Data.DIFFICULTY);
-		Dimension dimension = world.getDataMap().get(Data.DIMENSION);
-		WorldType worldType = world.getDataMap().get(Data.WORLD_TYPE);
+		VanillaPlayer vc = (VanillaPlayer) owner.getController();
+
+		GameMode gamemode = world.getDataMap().get(VanillaData.GAMEMODE);
+		//The world the player is entering has a different gamemode...
+		if (gamemode != null) {
+			if (gamemode != vc.getGameMode()) {
+				PlayerGameModeChangedEvent event = Spout.getEngine().getEventManager().callEvent(new PlayerGameModeChangedEvent(owner, gamemode));
+				if (!event.isCancelled()) {
+					gamemode = event.getMode();
+				}
+			}
+		} else {
+			//The world has no gamemode setting in its map so default to the Player's GameMode.
+			gamemode = vc.getGameMode();
+		}
+		Difficulty difficulty = world.getDataMap().get(VanillaData.DIFFICULTY);
+		Dimension dimension = world.getDataMap().get(VanillaData.DIMENSION);
+		WorldType worldType = world.getDataMap().get(VanillaData.WORLD_TYPE);
 
 		//TODO Handle infinite height
 		if (first) {
 			first = false;
-			int entityId = owner.getEntity().getId();
-			VanillaPlayer vc = (VanillaPlayer) owner.getEntity().getController();
-			LoginRequestMessage idMsg = new LoginRequestMessage(entityId, owner.getName(), gamemode.getId(), dimension.getId(), difficulty.getId(), 256, session.getEngine().getMaxPlayers(), worldType.toString());
+			int entityId = owner.getId();
+			LoginRequestMessage idMsg = new LoginRequestMessage(entityId, worldType.toString(), gamemode.getId(), (byte) dimension.getId(), difficulty.getId(), (byte) session.getEngine().getMaxPlayers());
 			owner.getSession().send(true, idMsg);
 			owner.getSession().setState(State.GAME);
 			for (int slot = 0; slot < 4; slot++) {
 				ItemStack slotItem = vc.getInventory().getArmor().getItem(slot);
-				EntityEquipmentMessage EEMsg;
-				if (slotItem == null) {
-					EEMsg = new EntityEquipmentMessage(entityId, slot, -1, 0);
-				} else {
-					EEMsg = new EntityEquipmentMessage(entityId, slot, getMinecraftId(slotItem.getMaterial().getId()), slotItem.getData());
-				}
-				owner.getSession().send(EEMsg);
+				owner.getSession().send(false, new EntityEquipmentMessage(entityId, slot, slotItem));
 			}
 		} else {
 			owner.getSession().send(new RespawnMessage(dimension.getId(), difficulty.getId(), gamemode.getId(), 256, worldType.toString()));
@@ -365,31 +344,29 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@Override
 	public void preSnapshot() {
-		long currentTime = System.currentTimeMillis();
-		if (currentTime > lastKeepAlive + TIMEOUT) {
-			KeepAliveMessage PingMsg = new KeepAliveMessage((int) currentTime);
-			lastKeepAlive = currentTime;
-			owner.getSession().send(true, PingMsg);
-		}
-
-		for (TIntObjectIterator<Message> i = queuedInventoryUpdates.iterator(); i.hasNext(); ) {
-			i.advance();
-			session.send(i.value());
-		}
 		super.preSnapshot();
+
+		Long key;
+		while ((key = this.emptyColumns.poll()) != null) {
+			int x = IntPairHashed.key1(key);
+			int z = IntPairHashed.key2(key);
+			TIntSet column = initializedChunks.get(x, z);
+			if (column.isEmpty()) {
+				column = initializedChunks.remove(x, z);
+				activeChunks.remove(x, z);
+				session.send(false, new CompressedChunkMessage(x, z, true, null, null, null, true));
+			}
+		}
 	}
 
 	@Override
 	public void updateBlock(Chunk chunk, int x, int y, int z, BlockMaterial material, short data) {
-		int id = getMinecraftId(material);
-		if ((data & 0xF) > 15) {
-			data = 0;
-		}
+		short id = getMinecraftId(material);
 		x += chunk.getBlockX();
 		y += chunk.getBlockY();
 		z += chunk.getBlockZ();
 		if (y >= 0 && y < chunk.getWorld().getHeight()) {
-			BlockChangeMessage BCM = new BlockChangeMessage(x, y, z, id & 0xFF, data & 0xF);
+			BlockChangeMessage BCM = new BlockChangeMessage(x, y, z, id, getMinecraftData(material, data));
 			session.send(BCM);
 		}
 	}
@@ -451,49 +428,250 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		super.syncEntity(e);
 	}
 
-	@Override
-	public void onSlotSet(InventoryBase inventory, int slot, ItemStack item) {
-		Controller c = owner.getEntity().getController();
-		if (!(c instanceof VanillaPlayer)) {
-			return;
+	@EventHandler
+	public Message onWindowOpen(WindowOpenEvent event) {
+		if (event.getWindow() instanceof DefaultWindow) {
+			return null; // no message for the default Window
 		}
-
-		VanillaPlayer controller = (VanillaPlayer) c;
-		Window window = controller.getActiveWindow();
-
-		if (window.getInventory() != inventory) {
-			return;
-		}
-
-		slot = window.getSlotIndexMap().getMinecraftSlot(slot);
-		if (slot == -1) {
-			return;
-		}
-
-		Message message;
-		if (item == null) {
-			message = new SetWindowSlotMessage(window.getInstanceId(), slot);
-		} else {
-			message = new SetWindowSlotMessage(window.getInstanceId(), slot, getMinecraftId(item.getMaterial()), item.getAmount(), item.getData(), item.getNBTData());
-		}
-		queuedInventoryUpdates.put(slot, message);
+		int size = event.getWindow().getInventorySize() - event.getWindow().getOwner().getInventory().getMain().getSize();
+		return new WindowOpenMessage(event.getWindow(), size);
 	}
 
-	@Override
-	public void updateAll(InventoryBase inventory, ItemStack[] slots) {
-		Controller c = owner.getEntity().getController();
-		if (!(c instanceof VanillaPlayer)) {
-			return;
+	@EventHandler
+	public Message onWindowClose(WindowCloseEvent event) {
+		if (event.getWindow() instanceof DefaultWindow) {
+			return null; // no message for the default Window
+		}
+		return new WindowCloseMessage(event.getWindow());
+	}
+
+	@EventHandler
+	public Message onWindowSetSlot(WindowSetSlotEvent event) {
+		return new WindowSetSlotMessage(event.getWindow(), event.getGlobalSlot(), event.getItem());
+	}
+
+	@EventHandler
+	public Message onWindowSetSlots(WindowSetSlotsEvent event) {
+		return new WindowSetSlotsMessage(event.getWindow(), event.getItems());
+	}
+
+	@EventHandler
+	public Message onWindowProperty(WindowPropertyEvent event) {
+		return new WindowPropertyMessage(event.getWindow(), event.getId(), event.getValue());
+	}
+
+	@EventHandler
+	public Message onSoundEffect(PlaySoundEffectEvent event) {
+		return new NamedSoundEffectMessage(event.getSound().getName(), event.getPosition(), event.getVolume(), event.getPitch());
+	}
+
+	@EventHandler
+	public Message onExplosionEffect(PlayExplosionEffectEvent event) {
+		return new ExplosionMessage(event.getPosition(), event.getSize(), new byte[0]);
+	}
+
+	@EventHandler
+	public Message onParticleEffect(PlayParticleEffectEvent event) {
+		int x = event.getPosition().getBlockX();
+		int y = event.getPosition().getBlockY();
+		int z = event.getPosition().getBlockZ();
+		if (y < 0 || y > 255) {
+			return null; // don't play effects outside the byte range
+		}
+		return new PlayEffectMessage(event.getEffect().getId(), x, y, z, event.getData());
+	}
+
+	@EventHandler
+	public Message onBlockAction(BlockActionEvent event) {
+		int id = VanillaMaterials.getMinecraftId(event.getMaterial());
+		if (id == -1) {
+			return null;
+		} else {
+			return new BlockActionMessage(event.getBlock(), (short) id, event.getData1(), event.getData2());
+		}
+	}
+
+	@EventHandler
+	public Message onPlayerKeepAlive(PlayerKeepAliveEvent event) {
+		return new KeepAliveMessage(event.getHash());
+	}
+
+	@EventHandler
+	public Message onPlayerUpdateUserList(PlayerUpdateUserListEvent event) {
+		Controller controller = event.getPlayer().getController();
+		String name;
+		if (controller instanceof VanillaPlayer) {
+			name = ((VanillaPlayer) controller).getTabListName();
+		} else {
+			name = event.getPlayer().getDisplayName();
+		}
+		return new PlayerListMessage(name, true, (short) event.getPingDelay());
+	}
+
+	public static enum ChunkInit {
+		CLIENT_SEL, FULL_COLUMN, HEIGHTMAP, EMPTY_COLUMN;
+
+		public static ChunkInit getChunkInit(String init) {
+			if (init == null) {
+				return CLIENT_SEL;
+			} else if (isEqual(init, "auto", "client", "client_sel")) {
+				return CLIENT_SEL;
+			} else if (isEqual(init, "full", "fullcol", "full_column")) {
+				return FULL_COLUMN;
+			} else if (isEqual(init, "empty", "emptycol", "empty_column")) {
+				return EMPTY_COLUMN;
+			} else if (isEqual(init, "heightmap", "height_map")) {
+				return HEIGHTMAP;
+			} else {
+				Spout.getLogger().info("Invalid chunk init setting, " + init + ", using default setting auto");
+				Spout.getLogger().info("Valid settings are:");
+				Spout.getLogger().info("client_sel Allows client selection, defaults to full columns");
+				Spout.getLogger().info("fullcol    Sends full columns");
+				Spout.getLogger().info("heightmap  Sends a heightmap including the topmost block");
+				Spout.getLogger().info("empty      Sends empty columns");
+
+				return CLIENT_SEL;
+			}
 		}
 
-		Window window = ((VanillaPlayer) c).getActiveWindow();
-
-		if (window.getInventory() != inventory) {
-			return;
+		public Collection<Chunk> getChunks(Chunk c) {
+			if (this.sendColumn()) {
+				int x = c.getX();
+				int z = c.getZ();
+				int height = c.getWorld().getHeight() >> Chunk.BLOCKS.BITS;
+				List<Chunk> chunks = new ArrayList<Chunk>(height);
+				for (int y = 0; y < height; y++) {
+					chunks.add(c.getWorld().getChunk(x, y, z));
+				}
+				return chunks;
+			} else {
+				List<Chunk> chunks = new ArrayList<Chunk>(1);
+				chunks.add(c);
+				return chunks;
+			}
 		}
 
-		session.send(new SetWindowSlotsMessage((byte) window.getInstanceId(), window.getSlotIndexMap().getMinecraftItems(slots)));
-		queuedInventoryUpdates.clear();
+		public boolean sendColumn() {
+			return this == CLIENT_SEL || this == FULL_COLUMN;
+		}
+
+		public byte[] getChunkData(int[][] heights, BlockMaterial[][] materials, Point p) {
+			switch (this) {
+				case CLIENT_SEL:
+					return getChunkFullColumn(heights, materials, p);
+				case FULL_COLUMN:
+					return getChunkFullColumn(heights, materials, p);
+				case HEIGHTMAP:
+					return getChunkHeightMap(heights, materials, p);
+				case EMPTY_COLUMN:
+					return getEmptyChunk(heights, materials, p);
+				default:
+					return getChunkFullColumn(heights, materials, p);
+			}
+		}
+
+		private static byte[] getChunkFullColumn(int[][] heights, BlockMaterial[][] materials, Point p) {
+			Chunk c = p.getWorld().getChunkFromBlock(p);
+			return getChunkFullData(c);
+		}
+
+		public static byte[] getChunkFullData(Chunk c) {
+			ChunkSnapshot snapshot = c.getSnapshot(SnapshotType.BOTH, EntityType.NO_ENTITIES, ExtraData.NO_EXTRA_DATA);
+			short[] rawBlockIdArray = snapshot.getBlockIds();
+			short[] rawBlockData = snapshot.getBlockData();
+			byte[] rawBlockLight = snapshot.getBlockLight();
+			byte[] rawSkyLight = snapshot.getSkyLight();
+			byte[] fullChunkData = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
+
+			int arrIndex = 0;
+			BlockMaterial material1, material2;
+			for (int i = 0; i < rawBlockIdArray.length; i += 2) {
+				material1 = BlockMaterial.get(rawBlockIdArray[i]);
+				material2 = BlockMaterial.get(rawBlockIdArray[i + 1]);
+				// data
+				fullChunkData[arrIndex + rawBlockIdArray.length] = (byte) ((getMinecraftData(material2, rawBlockData[i + 1]) << 4) | (getMinecraftData(material1, rawBlockData[i])));
+				// id
+				fullChunkData[i] = (byte) (getMinecraftId(material1) & 0xFF);
+				fullChunkData[i + 1] = (byte) (getMinecraftId(material2) & 0xFF);
+
+				arrIndex++;
+			}
+
+			arrIndex = rawBlockIdArray.length + (rawBlockData.length >> 1);
+
+			// The old method which doesn't use the Minecraft data conversion function
+			/*
+			for (int i = 0; i < rawBlockData.length; i += 2) {
+				fullChunkData[arrIndex++] = (byte) ((rawBlockData[i + 1] << 4) | (rawBlockData[i] & 0xF));
+			}
+			*/
+
+			System.arraycopy(rawBlockLight, 0, fullChunkData, arrIndex, rawBlockLight.length);
+			arrIndex += rawBlockLight.length;
+
+			System.arraycopy(rawSkyLight, 0, fullChunkData, arrIndex, rawSkyLight.length);
+
+			arrIndex += rawSkyLight.length;
+			return fullChunkData;
+		}
+
+		private static byte[] getEmptyChunk(int[][] heights, BlockMaterial[][] materials, Point p) {
+			int chunkY = p.getChunkY();
+			return chunkY <= 4 ? emptyGroundChunkData : emptySkyChunkData;
+		}
+
+		private static byte[] getChunkHeightMap(int[][] heights, BlockMaterial[][] materials, Point p) {
+			int chunkY = p.getChunkY();
+			byte[] packetChunkData = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
+			int baseY = chunkY << Chunk.BLOCKS.BITS;
+
+			for (int xx = 0; xx < Chunk.BLOCKS.SIZE; xx++) {
+				for (int zz = 0; zz < Chunk.BLOCKS.SIZE; zz++) {
+					int dataOffset = xx | (zz << Chunk.BLOCKS.BITS);
+					int threshold = heights[xx][zz] - baseY;
+					if (chunkY == 0 && threshold < 0) {
+						threshold = 0;
+					}
+					int yy;
+					// Set blocks below height to the solid block
+					for (yy = 0; yy < Chunk.BLOCKS.SIZE && yy <= threshold; yy++) {
+						if (yy == threshold) {
+							BlockMaterial bm = materials[xx][zz];
+							if (bm == null) {
+								bm = VanillaMaterials.STONE;
+							}
+							int converted = getMinecraftId(bm.getId());
+							packetChunkData[dataOffset] = (byte) converted;
+						} else {
+							packetChunkData[dataOffset] = SOLID_BLOCK_ID;
+						}
+						dataOffset += Chunk.BLOCKS.AREA;
+					}
+					// Set sky light of blocks above height to 15
+					// Use half of start offset and add the block id and data length (2 volumes)
+					byte mask = (xx & 0x1) == 0 ? (byte) 0x0F : (byte) 0xF0;
+					dataOffset = Chunk.BLOCKS.DOUBLE_VOLUME + (dataOffset >> 1);
+					for (; yy < Chunk.BLOCKS.SIZE; yy++) {
+						packetChunkData[dataOffset] |= mask;
+						dataOffset += Chunk.BLOCKS.HALF_AREA;
+					}
+				}
+			}
+			return packetChunkData;
+		}
+
+		private static boolean isEqual(String in, String... args) {
+
+			if (in == null) {
+				return false;
+			}
+			for (String arg : args) {
+				if (arg.toLowerCase().equals(in.toLowerCase())) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 }

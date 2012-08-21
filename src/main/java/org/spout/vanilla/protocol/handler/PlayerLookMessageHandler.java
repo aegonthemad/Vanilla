@@ -26,30 +26,24 @@
  */
 package org.spout.vanilla.protocol.handler;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.player.Player;
-import org.spout.api.protocol.MessageHandler;
+import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.protocol.msg.PlayerLookMessage;
 
-public final class PlayerLookMessageHandler extends MessageHandler<PlayerLookMessage> {
+public class PlayerLookMessageHandler implements ServerMessageHandler<PlayerLookMessage> {
 	@Override
-	public void handleServer(Session session, Player player, PlayerLookMessage message) {
-		if (player == null) {
+	public void handle(Session session, PlayerLookMessage message) {
+		if (!session.hasPlayer()) {
 			return;
 		}
 
-		Entity entity = player.getEntity();
+		Player player = session.getPlayer();
 
-		if (entity == null) {
-			return;
-		}
-
-		entity.setPitch(message.getPitch());
-		entity.setYaw(-message.getYaw()); //cardinal direction adjustment
-		entity.setRoll(message.getRoll());
-		((VanillaPlayer) entity.getController()).setLookingAtVector(message.getLookingAtVector());
+		player.setPitch(message.getPitch());
+		player.setYaw(-message.getYaw()); //cardinal direction adjustment
+		player.setRoll(message.getRoll());
+		((VanillaPlayer) player.getController()).setLookingAtVector(message.getLookingAtVector());
 	}
 }

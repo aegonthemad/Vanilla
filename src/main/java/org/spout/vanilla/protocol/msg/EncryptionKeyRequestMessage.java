@@ -27,20 +27,14 @@
 package org.spout.vanilla.protocol.msg;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.bouncycastle.crypto.CipherParameters;
 
-import org.spout.api.security.SecurityHandler;
 import org.spout.api.util.SpoutToStringStyle;
 
 public final class EncryptionKeyRequestMessage extends EncryptionKeyResponseMessage {
 	private final String sessionId;
 
-	public EncryptionKeyRequestMessage(String sessionId, CipherParameters publicKey, boolean locking) {
-		this(sessionId, SecurityHandler.getInstance().encodeKey(publicKey), locking);
-	}
-
-	public EncryptionKeyRequestMessage(String sessionId, byte[] encoded, boolean locking) {
-		super(encoded, locking);
+	public EncryptionKeyRequestMessage(String sessionId, boolean locking, byte[] secret, byte[] verifyToken) {
+		super(locking, secret, verifyToken);
 		this.sessionId = sessionId;
 	}
 
@@ -58,16 +52,20 @@ public final class EncryptionKeyRequestMessage extends EncryptionKeyResponseMess
 		}
 		final EncryptionKeyRequestMessage other = (EncryptionKeyRequestMessage) obj;
 		return new org.apache.commons.lang3.builder.EqualsBuilder()
-				.append(this.encoded, other.encoded)
 				.append(this.sessionId, other.sessionId)
+				.append(this.isChannelLocking(), other.isChannelLocking())
+				.append(this.getSecretArray(), other.getSecretArray())
+				.append(this.getVerifyTokenArray(), other.getVerifyTokenArray())
 				.isEquals();
 	}
 
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
-				.append("encoded", encoded)
-				.append("sessionId", sessionId)
+				.append("sessionId", this.sessionId)
+				.append("locking", this.isChannelLocking())
+				.append("secret", this.getSecretArray())
+				.append("verifyToken", this.getVerifyTokenArray())
 				.toString();
 	}
 }

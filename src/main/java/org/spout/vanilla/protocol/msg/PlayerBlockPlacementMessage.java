@@ -28,40 +28,33 @@ package org.spout.vanilla.protocol.msg;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import org.spout.api.inventory.ItemStack;
+import org.spout.api.material.block.BlockFace;
+import org.spout.api.math.Vector3;
 import org.spout.api.protocol.Message;
 import org.spout.api.util.SpoutToStringStyle;
 
-import org.spout.nbt.CompoundMap;
-
 public final class PlayerBlockPlacementMessage extends Message {
-	private final int id, x, y, z, direction, count, damage;
-	private CompoundMap nbtData;
+	private final int x, y, z;
+	private Vector3 face;
+	private BlockFace direction;
+	private ItemStack heldItem;
 
-	public PlayerBlockPlacementMessage(int x, int y, int z, int direction) {
-		this(x, y, z, direction, -1, 0, 0, null);
+	public PlayerBlockPlacementMessage(int x, int y, int z, BlockFace direction, Vector3 face) {
+		this(x, y, z, direction, face, null);
 	}
 
-	public PlayerBlockPlacementMessage(int x, int y, int z, int direction, int id, int count, int damage, CompoundMap nbtData) {
-		this.id = id;
+	public PlayerBlockPlacementMessage(int x, int y, int z, BlockFace direction, Vector3 face, ItemStack heldItem) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
+		this.face = face;
 		this.direction = direction;
-		this.count = count;
-		this.damage = damage;
-		this.nbtData = nbtData;
+		this.heldItem = heldItem;
 	}
 
-	public int getCount() {
-		return count;
-	}
-
-	public int getDamage() {
-		return damage;
-	}
-
-	public int getId() {
-		return id;
+	public ItemStack getHeldItem() {
+		return this.heldItem;
 	}
 
 	public int getX() {
@@ -76,25 +69,23 @@ public final class PlayerBlockPlacementMessage extends Message {
 		return z;
 	}
 
-	public int getDirection() {
+	public BlockFace getDirection() {
 		return direction;
 	}
 
-	public CompoundMap getNbtData() {
-		return nbtData;
+	public Vector3 getFace() {
+		return this.face;
 	}
 
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
-				.append("id", id)
 				.append("x", x)
 				.append("y", y)
 				.append("z", z)
 				.append("direction", direction)
-				.append("count", count)
-				.append("damage", damage)
-				.append("nbtData", nbtData)
+				.append("face", face)
+				.append("heldItem", heldItem)
 				.toString();
 	}
 
@@ -108,14 +99,12 @@ public final class PlayerBlockPlacementMessage extends Message {
 		}
 		final PlayerBlockPlacementMessage other = (PlayerBlockPlacementMessage) obj;
 		return new org.apache.commons.lang3.builder.EqualsBuilder()
-				.append(this.id, other.id)
 				.append(this.x, other.x)
 				.append(this.y, other.y)
 				.append(this.z, other.z)
 				.append(this.direction, other.direction)
-				.append(this.count, other.count)
-				.append(this.damage, other.damage)
-				.append(this.nbtData, other.nbtData)
+				.append(this.face, other.face)
+				.append(this.heldItem, other.heldItem)
 				.isEquals();
 	}
 }

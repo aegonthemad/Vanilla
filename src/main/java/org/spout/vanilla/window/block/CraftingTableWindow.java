@@ -29,24 +29,23 @@ package org.spout.vanilla.window.block;
 import org.spout.vanilla.controller.block.CraftingTable;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.inventory.block.CraftingTableInventory;
-import org.spout.vanilla.util.SlotIndexMap;
+import org.spout.vanilla.util.intmap.SlotIndexCollection;
+import org.spout.vanilla.util.intmap.SlotIndexGrid;
+import org.spout.vanilla.util.intmap.SlotIndexMap;
 import org.spout.vanilla.window.CraftingWindow;
+import org.spout.vanilla.window.WindowType;
 
 public class CraftingTableWindow extends CraftingWindow {
-	private static final SlotIndexMap SLOTS = new SlotIndexMap("37-45, 28-36, 19-27, 10-18, 1-3, 4-6, 7-9, 0");
+	private static final SlotIndexCollection MAIN_SLOTS = new SlotIndexGrid(9, 4, 10);
+	private static final SlotIndexCollection CRAFTING_SLOTS = new SlotIndexMap("1-3, 4-6, 7-9, 0");
 
 	public CraftingTableWindow(VanillaPlayer owner, CraftingTable craftingTable) {
 		this(owner, craftingTable, new CraftingTableInventory());
 	}
 
 	private CraftingTableWindow(VanillaPlayer owner, CraftingTable craftingTable, CraftingTableInventory inventory) {
-		super(1, "Crafting", owner, inventory, craftingTable);
-		this.setInventory(owner.getInventory().getMain(), inventory);
-		this.setSlotIndexMap(SLOTS);
-	}
-
-	@Override
-	public int getInventorySize() {
-		return this.getInventory().getSize() - this.getOwner().getInventory().getMain().getSize();
+		super(WindowType.CRAFTINGTABLE, "Crafting", owner, inventory, craftingTable);
+		this.addInventory(owner.getInventory().getMain(), MAIN_SLOTS);
+		this.addInventory(this.getCraftingGrid(), CRAFTING_SLOTS);
 	}
 }

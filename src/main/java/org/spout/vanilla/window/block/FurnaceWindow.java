@@ -27,27 +27,57 @@
 package org.spout.vanilla.window.block;
 
 import org.spout.api.inventory.InventoryBase;
+
 import org.spout.vanilla.controller.block.Furnace;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.event.window.WindowPropertyEvent;
 import org.spout.vanilla.inventory.block.FurnaceInventory;
-import org.spout.vanilla.util.SlotIndexMap;
+import org.spout.vanilla.util.intmap.SlotIndexCollection;
+import org.spout.vanilla.util.intmap.SlotIndexRow;
+import org.spout.vanilla.window.ClickArgs;
 import org.spout.vanilla.window.TransactionWindow;
+import org.spout.vanilla.window.WindowType;
 
 public class FurnaceWindow extends TransactionWindow {
-	private static final SlotIndexMap SLOTS = new SlotIndexMap("30-38, 21-29, 12-20, 3-11, 1, 2, 0");
+	private static final byte PROGRESS_ARROW = 0, FIRE_ICON = 1;
+	private static final SlotIndexCollection FURNACE_SLOTS = new SlotIndexRow(3);
 	protected final FurnaceInventory furnaceInv;
+	private int lastProgress = -1, lastBurnTime = -1;
+
 	public FurnaceWindow(VanillaPlayer owner, Furnace furnace) {
-		super(2, "Furnace", owner, furnace);
-		this.setSlotIndexMap(SLOTS);
+		super(WindowType.FURNACE, "Furnace", owner, 3, furnace);
 		this.furnaceInv = furnace.getInventory();
+		this.addInventory(this.furnaceInv, FURNACE_SLOTS);
 	}
 
 	@Override
-	public boolean onClick(InventoryBase inventory, int clickedSlot, boolean rightClick, boolean shift) {
-		if (inventory == this.furnaceInv && itemOnCursor != null && clickedSlot == this.furnaceInv.getOutput().getOffset()) {
+	public boolean onClick(InventoryBase inventory, int clickedSlot, ClickArgs args) {
+		if (inventory == this.furnaceInv && this.hasItemOnCursor() && clickedSlot == this.furnaceInv.getOutput().getOffset()) {
 			return false;
 		} else {
-			return super.onClick(inventory, clickedSlot, rightClick, shift);
+			return super.onClick(inventory, clickedSlot, args);
+		}
+	}
+
+	/**
+	 * Updates the Burn time of the Furnace
+	 * @param burnTime
+	 */
+	public void updateBurnTime(int burnTime) {
+		if (this.lastBurnTime != burnTime) {
+			this.lastBurnTime = burnTime;
+			this.sendEvent(new WindowPropertyEvent(this, FIRE_ICON, burnTime));
+		}
+	}
+
+	/**
+	 * Updates the Progress of the Furnace
+	 * @param progress
+	 */
+	public void updateProgress(int progress) {
+		if (this.lastProgress != progress) {
+			this.lastProgress = progress;
+			this.sendEvent(new WindowPropertyEvent(this, PROGRESS_ARROW, progress));
 		}
 	}
 }

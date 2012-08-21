@@ -30,12 +30,14 @@ import java.util.Random;
 
 import org.spout.api.geo.World;
 import org.spout.api.material.BlockMaterial;
+import org.spout.api.math.SinusHelper;
+import org.spout.api.math.Vector2;
 
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.object.RandomObject;
 
 public class OreObject extends RandomObject {
-	private byte count;
+	private byte amount;
 	private short maxHeight;
 	private byte clusterSize;
 	private BlockMaterial material;
@@ -46,7 +48,7 @@ public class OreObject extends RandomObject {
 
 	public OreObject(Random random, BlockMaterial material, byte count, byte clusterSize, short maxHeight) {
 		super(random);
-		this.count = count;
+		this.amount = count;
 		this.material = material;
 		this.maxHeight = maxHeight;
 		this.clusterSize = clusterSize;
@@ -72,8 +74,8 @@ public class OreObject extends RandomObject {
 	 * Gets the amount of this ore placed per chunk
 	 * @return placement count
 	 */
-	public byte getCount() {
-		return this.count;
+	public byte getAmount() {
+		return this.amount;
 	}
 
 	/**
@@ -96,8 +98,8 @@ public class OreObject extends RandomObject {
 		this.clusterSize = clusterSize;
 	}
 
-	public void setCount(byte count) {
-		this.count = count;
+	public void setAmount(byte amount) {
+		this.amount = amount;
 	}
 
 	public void setMaterial(BlockMaterial material) {
@@ -122,19 +124,20 @@ public class OreObject extends RandomObject {
 	 */
 	@Override
 	public void placeObject(World world, int originX, int originY, int originZ) {
-		final double angle = random.nextDouble() * Math.PI;
-		final double x1 = ((originX + 8) + Math.sin(angle) * this.clusterSize / 8);
-		final double x2 = ((originX + 8) - Math.sin(angle) * this.clusterSize / 8);
-		final double z1 = ((originZ + 8) + Math.cos(angle) * this.clusterSize / 8);
-		final double z2 = ((originZ + 8) - Math.cos(angle) * this.clusterSize / 8);
-		final double y1 = (originY + random.nextInt(3) + 2);
-		final double y2 = (originY + random.nextInt(3) + 2);
+		final float angle = random.nextFloat() * (float) Math.PI;
+		Vector2 offset = SinusHelper.get2DAxis(angle).multiply(clusterSize / 8);
+		final float x1 = ((originX + 8) + offset.getX());
+		final float x2 = ((originX + 8) - offset.getX());
+		final float z1 = ((originZ + 8) + offset.getY());
+		final float z2 = ((originZ + 8) - offset.getY());
+		final float y1 = (originY + random.nextInt(3) + 2);
+		final float y2 = (originY + random.nextInt(3) + 2);
 
-		for (int i = 0; i <= this.clusterSize; i++) {
-			final double seedX = x1 + (x2 - x1) * i / this.clusterSize;
-			final double seedY = y1 + (y2 - y1) * i / this.clusterSize;
-			final double seedZ = z1 + (z2 - z1) * i / this.clusterSize;
-			final double size = ((Math.sin(i * Math.PI / this.clusterSize) + 1) * random.nextDouble() * this.clusterSize / 16 + 1) / 2;
+		for (int count = 0; count <= clusterSize; count++) {
+			final float seedX = x1 + (x2 - x1) * count / clusterSize;
+			final float seedY = y1 + (y2 - y1) * count / clusterSize;
+			final float seedZ = z1 + (z2 - z1) * count / clusterSize;
+			final float size = ((SinusHelper.sin(count * (float) Math.PI / clusterSize) + 1) * random.nextFloat() * clusterSize / 16 + 1) / 2;
 
 			final int startX = (int) (seedX - size);
 			final int startY = (int) (seedY - size);
@@ -144,20 +147,20 @@ public class OreObject extends RandomObject {
 			final int endZ = (int) (seedZ + size);
 
 			for (int x = startX; x <= endX; x++) {
-				double sizeX = (x + 0.5 - seedX) / size;
+				float sizeX = (x + 0.5f - seedX) / size;
 				sizeX *= sizeX;
 
 				if (sizeX < 1) {
 					for (int y = startY; y <= endY; y++) {
-						double sizeY = (y + 0.5 - seedY) / size;
+						float sizeY = (y + 0.5f - seedY) / size;
 						sizeY *= sizeY;
 
 						if (sizeX + sizeY < 1) {
 							for (int z = startZ; z <= endZ; z++) {
-								double sizeZ = (z + 0.5 - seedZ) / size;
+								float sizeZ = (z + 0.5f - seedZ) / size;
 								sizeZ *= sizeZ;
 								if (sizeX + sizeY + sizeZ < 1 && world.getBlockMaterial(x, y, z) == VanillaMaterials.STONE) {
-									world.getBlock(x, y, z).setMaterial(this.material);
+									world.setBlockMaterial(x, y, z, material, (short) 0, world);
 								}
 							}
 						}

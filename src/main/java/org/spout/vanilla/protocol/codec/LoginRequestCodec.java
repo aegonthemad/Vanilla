@@ -32,7 +32,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.spout.api.protocol.MessageCodec;
 
 import org.spout.vanilla.protocol.ChannelBufferUtils;
-import org.spout.vanilla.protocol.msg.LoginRequestMessage;
+import org.spout.vanilla.protocol.msg.login.LoginRequestMessage;
 
 public final class LoginRequestCodec extends MessageCodec<LoginRequestMessage> {
 	public LoginRequestCodec() {
@@ -41,28 +41,27 @@ public final class LoginRequestCodec extends MessageCodec<LoginRequestMessage> {
 
 	@Override
 	public LoginRequestMessage decode(ChannelBuffer buffer) {
-		int version = buffer.readInt();
-		String name = ChannelBufferUtils.readString(buffer);
+		int id = buffer.readInt();
 		String worldType = ChannelBufferUtils.readString(buffer);
-		int mode = buffer.readInt();
-		int dimension = buffer.readInt();
-		int difficulty = buffer.readByte();
-		int worldHeight = ChannelBufferUtils.getExpandedHeight(buffer.readUnsignedByte());
-		int maxPlayers = buffer.readUnsignedByte();
-		return new LoginRequestMessage(version, name, mode, dimension, difficulty, worldHeight, maxPlayers, worldType);
+		byte mode = buffer.readByte();
+		byte dimension = buffer.readByte();
+		byte difficulty = buffer.readByte();
+		buffer.readUnsignedByte(); //not used?
+		short maxPlayers = buffer.readUnsignedByte();
+		return new LoginRequestMessage(id, worldType, mode, dimension, difficulty, maxPlayers);
 	}
 
 	@Override
 	public ChannelBuffer encode(LoginRequestMessage message) {
+		LoginRequestMessage server = message;
 		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-		buffer.writeInt(message.getId());
-		ChannelBufferUtils.writeString(buffer, message.getName());
-		ChannelBufferUtils.writeString(buffer, message.getWorldType());
-		buffer.writeInt(message.getGameMode());
-		buffer.writeInt(message.getDimension());
-		buffer.writeByte(message.getDifficulty());
-		buffer.writeByte(ChannelBufferUtils.getShifts(message.getWorldHeight()) - 1);
-		buffer.writeByte(message.getMaxPlayers());
+		buffer.writeInt(server.getId());
+		ChannelBufferUtils.writeString(buffer, server.getWorldType());
+		buffer.writeByte(server.getGameMode());
+		buffer.writeByte(server.getDimension());
+		buffer.writeByte(server.getDifficulty());
+		buffer.writeByte(0);
+		buffer.writeByte(server.getMaxPlayers());
 		return buffer;
 	}
 }

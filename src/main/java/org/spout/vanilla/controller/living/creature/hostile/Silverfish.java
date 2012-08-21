@@ -32,8 +32,8 @@ import java.util.Set;
 import org.spout.api.Source;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.controller.VanillaActionController;
 import org.spout.vanilla.controller.VanillaControllerTypes;
+import org.spout.vanilla.controller.VanillaEntityController;
 import org.spout.vanilla.controller.living.Creature;
 import org.spout.vanilla.controller.living.creature.Hostile;
 import org.spout.vanilla.controller.source.HealthChangeReason;
@@ -45,13 +45,14 @@ public class Silverfish extends Creature implements Hostile {
 
 	@Override
 	public void onAttached() {
-		setHealth(8, HealthChangeReason.SPAWN);
-		setMaxHealth(8);
 		super.onAttached();
+		setMaxHealth(8);
+		setHealth(8, HealthChangeReason.SPAWN);
+		setDeathAnimation(true);
 	}
 
 	@Override
-	public Set<ItemStack> getDrops(Source source, VanillaActionController lastDamager) {
+	public Set<ItemStack> getDrops(Source source, VanillaEntityController lastDamager) {
 		return Collections.emptySet();
 	}
 }

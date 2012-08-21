@@ -28,19 +28,19 @@ package org.spout.vanilla.controller.block;
 
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.math.Vector3;
 
-import org.spout.vanilla.controller.TransactionWindowOwner;
+import org.spout.vanilla.controller.InventoryOwner;
 import org.spout.vanilla.controller.VanillaControllerTypes;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.inventory.block.ChestInventory;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.util.VanillaNetworkUtil;
 import org.spout.vanilla.window.Window;
 import org.spout.vanilla.window.block.ChestWindow;
 
-public class Chest extends VanillaWindowBlockController implements TransactionWindowOwner {
+public class Chest extends VanillaWindowBlockController implements InventoryOwner {
 	private final ChestInventory inventory;
 	private boolean opened = false;
 
@@ -51,14 +51,15 @@ public class Chest extends VanillaWindowBlockController implements TransactionWi
 
 	@Override
 	public void onAttached() {
-		if (this.data().containsKey("items")) {
-			this.inventory.setContents((ItemStack[]) this.data().get("items"));
+		if (data().containsKey(VanillaData.ITEMS)) {
+			this.inventory.setContents(data().get(VanillaData.ITEMS));
 		}
 	}
 
 	@Override
 	public void onSave() {
-		this.data().put("items", this.inventory.getContents());
+		super.onSave();
+		data().put(VanillaData.ITEMS, this.inventory.getContents());
 	}
 
 	@Override
@@ -78,11 +79,15 @@ public class Chest extends VanillaWindowBlockController implements TransactionWi
 		return inventory;
 	}
 
+	@Override
+	public void onViewersChanged() {
+		this.setOpened(this.hasViewers());
+	}
+
 	public void setOpened(boolean opened) {
 		if (this.opened != opened) {
 			this.opened = opened;
-			byte data = opened ? (byte) 1 : 0;
-			VanillaNetworkUtil.playBlockAction(getBlock(), (byte) 1, data);
+			VanillaNetworkUtil.playBlockAction(getBlock(), (byte) 1, opened ? (byte) 1 : (byte) 0);
 		}
 	}
 
@@ -97,7 +102,6 @@ public class Chest extends VanillaWindowBlockController implements TransactionWi
 
 	/**
 	 * Checks if this Chest is a double chest
-	 * 
 	 * @return True if it is a double chest
 	 */
 	public boolean isDouble() {
@@ -106,7 +110,6 @@ public class Chest extends VanillaWindowBlockController implements TransactionWi
 
 	/**
 	 * Gets whether this Chest is opened
-	 * 
 	 * @return True if it is opened, False if not
 	 */
 	public boolean isOpened() {

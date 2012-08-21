@@ -26,23 +26,25 @@
  */
 package org.spout.vanilla.material.block;
 
+import org.spout.api.collision.CollisionStrategy;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.util.RedstoneUtil;
-import org.spout.vanilla.util.VanillaNetworkUtil;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public abstract class DoorBlock extends GroundAttachable implements Mineable, Openable, RedstoneTarget {
 	public DoorBlock(String name, int id) {
 		super(name, id);
+		this.setCollision(CollisionStrategy.SOLID);
 	}
 
 	@Override
@@ -57,7 +59,7 @@ public abstract class DoorBlock extends GroundAttachable implements Mineable, Op
 			boolean powered = this.isReceivingPower(block);
 			if (powered != this.isOpen(block)) {
 				this.setOpen(block, powered);
-				VanillaNetworkUtil.playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_DOOR);
+				GeneralEffects.DOOR.playGlobal(block.getPosition(), powered);
 			}
 		}
 	}
@@ -154,53 +156,6 @@ public abstract class DoorBlock extends GroundAttachable implements Mineable, Op
 		bottomHalf.setMaterial(this, bottomData);
 	}
 
-	//TODO: Place in SpoutAPI
-	public static BlockFace rotate(BlockFace from, int notchCount) {
-		while (notchCount > 0) {
-			switch (from) {
-				case NORTH:
-					from = BlockFace.EAST;
-					break;
-				case EAST:
-					from = BlockFace.SOUTH;
-					break;
-				case SOUTH:
-					from = BlockFace.WEST;
-					break;
-				case WEST:
-					from = BlockFace.NORTH;
-					break;
-				default:
-					return from;
-			}
-			if (notchCount-- == 0) {
-				return from;
-			}
-		}
-		while (notchCount < 0) {
-			switch (from) {
-				case NORTH:
-					from = BlockFace.WEST;
-					break;
-				case WEST:
-					from = BlockFace.SOUTH;
-					break;
-				case SOUTH:
-					from = BlockFace.EAST;
-					break;
-				case EAST:
-					from = BlockFace.NORTH;
-					break;
-				default:
-					return from;
-			}
-			if (notchCount++ == 0) {
-				return from;
-			}
-		}
-		return from;
-	}
-
 	private boolean isDoorBlock(Block bottomBlock) {
 		return bottomBlock.getMaterial().equals(this) || bottomBlock.translate(BlockFace.TOP).getMaterial().equals(this);
 	}
@@ -210,12 +165,12 @@ public abstract class DoorBlock extends GroundAttachable implements Mineable, Op
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace face, boolean isClicked) {
+	public boolean onPlacement(Block block, short data, BlockFace face, Vector3 clickedPos, boolean isClicked) {
 		BlockFace facing = VanillaPlayerUtil.getFacing(block.getSource()).getOpposite();
 		Block above = block.translate(BlockFace.TOP);
 		if (!above.getMaterial().isPlacementObstacle()) {
-			Block left = block.translate(rotate(facing, -1));
-			Block right = block.translate(rotate(facing, 1));
+			Block left = block.translate(BlockFaces.NESW.previous(facing, 1));
+			Block right = block.translate(BlockFaces.NESW.next(facing, 1));
 			boolean hingeLeft = isDoorBlock(right) || (!isDoorBlock(left) && !isHingeBlock(right) && isHingeBlock(left));
 			create(block, above, facing, hingeLeft, false);
 			return true;

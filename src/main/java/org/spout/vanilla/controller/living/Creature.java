@@ -29,16 +29,11 @@ package org.spout.vanilla.controller.living;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.spout.api.geo.LoadOption;
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.geo.discrete.Point;
 import org.spout.api.util.Parameter;
 
 import org.spout.vanilla.controller.VanillaControllerType;
-import org.spout.vanilla.controller.source.DamageCause;
-import org.spout.vanilla.data.Data;
-import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.protocol.msg.EntityMetadataMessage;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.protocol.msg.entity.EntityMetadataMessage;
 import org.spout.vanilla.util.VanillaNetworkUtil;
 
 public abstract class Creature extends Living {
@@ -52,8 +47,8 @@ public abstract class Creature extends Living {
 	@Override
 	public void onAttached() {
 		super.onAttached();
-		growthTicks = data().get(Data.GROWTH_TICKS);
-		lineOfSight = data().get(Data.LINE_OF_SIGHT);
+		growthTicks = data().get(VanillaData.GROWTH_TICKS);
+		lineOfSight = data().get(VanillaData.LINE_OF_SIGHT);
 	}
 
 	@Override
@@ -69,35 +64,13 @@ public abstract class Creature extends Living {
 				VanillaNetworkUtil.broadcastPacket(new EntityMetadataMessage(getParent().getId(), parameters));
 			}
 		}
-
-		// Handle drowning and suffocation damage
-		Point headPos = getHeadPosition();
-		if (getParent().isObserver() || headPos.getWorld().getChunkFromBlock(headPos, LoadOption.NO_LOAD) != null) {
-			Block head = getParent().getWorld().getBlock(headPos);
-			if (head.getMaterial().equals(VanillaMaterials.GRAVEL, VanillaMaterials.SAND, VanillaMaterials.STATIONARY_WATER, VanillaMaterials.WATER)) {
-				airTicks++;
-				if (head.getMaterial().equals(VanillaMaterials.STATIONARY_WATER, VanillaMaterials.WATER)) {
-					// Drowning
-					if (airTicks >= 300 && airTicks % 20 == 0) {
-						damage(4, DamageCause.DROWN);
-					}
-				} else {
-					// Suffocation
-					if (airTicks % 10 == 0) {
-						damage(1, DamageCause.SUFFOCATE);
-					}
-				}
-			} else {
-				airTicks = 0;
-			}
-		}
 	}
 
 	@Override
 	public void onSave() {
 		super.onSave();
-		data().put(Data.GROWTH_TICKS, growthTicks);
-		data().put(Data.LINE_OF_SIGHT, lineOfSight);
+		data().put(VanillaData.GROWTH_TICKS, growthTicks);
+		data().put(VanillaData.LINE_OF_SIGHT, lineOfSight);
 	}
 
 	/**

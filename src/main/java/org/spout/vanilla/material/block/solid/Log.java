@@ -36,11 +36,12 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.range.CuboidEffectRange;
 import org.spout.api.material.range.EffectRange;
 
+import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
+import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.Solid;
 import org.spout.vanilla.material.block.controlled.Furnace;
 import org.spout.vanilla.material.block.plant.Sapling;
@@ -49,7 +50,7 @@ import org.spout.vanilla.material.item.tool.Axe;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
 
-public class Log extends Solid implements DynamicMaterial, Fuel, Plant, TimedCraftable, Burnable {
+public class Log extends Solid implements DynamicMaterial, Fuel, TimedCraftable, Burnable, Mineable {
 	public static final Log DEFAULT = new Log("Wood", Sapling.DEFAULT);
 	public static final Log SPRUCE = new Log("Spruce Wood", 1, DEFAULT, Sapling.SPRUCE);
 	public static final Log BIRCH = new Log("Birch Wood", 2, DEFAULT, Sapling.BIRCH);
@@ -63,13 +64,13 @@ public class Log extends Solid implements DynamicMaterial, Fuel, Plant, TimedCra
 
 	private Log(String name, Sapling sapling) {
 		super(dataMask, name, 17);
-		this.setHardness(2.0F).setResistance(10.F).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(10.F).setStepSound(SoundEffects.STEP_WOOD).setOpacity((byte) 1);
 		this.sapling = sapling;
 	}
 
 	private Log(String name, int data, Log parent, Sapling sapling) {
 		super(name, 17, data, parent);
-		this.setHardness(2.0F).setResistance(10.F).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(10.F).setStepSound(SoundEffects.STEP_WOOD).setOpacity((byte) 1);
 		this.sapling = sapling;
 	}
 
@@ -84,21 +85,6 @@ public class Log extends Solid implements DynamicMaterial, Fuel, Plant, TimedCra
 	@Override
 	public Instrument getInstrument() {
 		return Instrument.BASSGUITAR;
-	}
-
-	@Override
-	public boolean hasGrowthStages() {
-		return false;
-	}
-
-	@Override
-	public int getNumGrowthStages() {
-		return 0;
-	}
-
-	@Override
-	public int getMinimumLightToGrow() {
-		return 0;
 	}
 
 	@Override
@@ -151,7 +137,7 @@ public class Log extends Solid implements DynamicMaterial, Fuel, Plant, TimedCra
 	}
 
 	@Override
-	public void onDynamicUpdate(Block b, Region r, long updateTime, long lastUpdateTime, int updateData, Object hint) {
+	public void onDynamicUpdate(Block b, Region r, long updateTime, int updateData) {
 		int data = b.getData() & 0xFFFF;
 		if ((data & aliveMask) == 0) {
 			return;

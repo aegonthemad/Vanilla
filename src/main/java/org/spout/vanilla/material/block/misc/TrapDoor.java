@@ -26,6 +26,7 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import org.spout.api.collision.CollisionStrategy;
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
@@ -33,6 +34,7 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.block.Openable;
@@ -40,10 +42,7 @@ import org.spout.vanilla.material.block.attachable.AbstractAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
 import org.spout.vanilla.material.item.tool.Axe;
 import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.util.RedstoneUtil;
-
-import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockEffect;
 
 public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Openable, RedstoneTarget {
 	public final float BURN_TIME = 15.f;
@@ -51,6 +50,7 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 	public TrapDoor(String name, int id) {
 		super(name, id);
 		this.setAttachable(BlockFaces.NESW).setHardness(3.0F).setResistance(5.0F).setTransparent();
+		this.setCollision(CollisionStrategy.SOLID);
 	}
 
 	@Override
@@ -60,7 +60,7 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 			boolean powered = this.isReceivingPower(block);
 			if (powered != this.isOpen(block)) {
 				this.setOpen(block, powered);
-				playBlockEffect(block, null, PlayEffectMessage.Messages.RANDOM_DOOR);
+				GeneralEffects.DOOR.playGlobal(block.getPosition(), powered);
 			}
 		}
 	}
@@ -84,7 +84,7 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, type, clickedFace);
 		toggleOpen(block);
-		playBlockEffect(block, entity, PlayEffectMessage.Messages.RANDOM_DOOR);
+		GeneralEffects.DOOR.playGlobal(block.getPosition(), this.isOpen(block), entity);
 	}
 
 	@Override
@@ -108,8 +108,8 @@ public class TrapDoor extends AbstractAttachable implements Fuel, Mineable, Open
 	}
 
 	@Override
-	public BlockFace getAttachedFace(Block block) {
-		return BlockFaces.WESN.get(block.getData() & ~0x4);
+	public BlockFace getAttachedFace(short data) {
+		return BlockFaces.WESN.get(data & 0x3);
 	}
 
 	@Override

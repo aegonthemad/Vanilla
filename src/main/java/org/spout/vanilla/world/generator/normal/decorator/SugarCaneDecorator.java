@@ -31,7 +31,6 @@ import java.util.Random;
 import org.spout.api.generator.biome.Decorator;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
-import org.spout.api.material.BlockMaterial;
 
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.normal.object.largeplant.SugarCaneStackObject;
@@ -89,7 +88,7 @@ public class SugarCaneDecorator extends Decorator {
 
 	private int getHighestWorkableBlock(World world, int x, int z) {
 		int y = world.getHeight();
-		while (!world.getBlockMaterial(x, y, z).equals(VanillaMaterials.DIRT, VanillaMaterials.GRASS, VanillaMaterials.SAND)) {
+		while (!world.getBlockMaterial(x, y, z).isMaterial(VanillaMaterials.DIRT, VanillaMaterials.GRASS, VanillaMaterials.SAND)) {
 			y--;
 			if (y == 0) {
 				return -1;

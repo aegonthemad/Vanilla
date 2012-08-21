@@ -34,6 +34,7 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.EffectRange;
 import org.spout.api.material.range.ListEffectRange;
+
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.misc.Torch;
@@ -121,7 +122,7 @@ public class RedstoneTorch extends Torch implements RedstoneSource, RedstoneTarg
 	}
 
 	@Override
-	public void onDynamicUpdate(Block block, Region r, long updateTime, long lastUpdateTime, int data, Object hint) {
+	public void onDynamicUpdate(Block block, Region r, long updateTime, int data) {
 		boolean receiving = this.isReceivingPower(block);
 		if (this.isPowered() == receiving) {
 			this.setPowered(block, !receiving);

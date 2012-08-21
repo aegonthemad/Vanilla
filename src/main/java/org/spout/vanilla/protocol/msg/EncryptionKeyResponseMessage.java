@@ -35,17 +35,15 @@ import org.spout.api.protocol.ProcessorSetupMessage;
 import org.spout.api.util.SpoutToStringStyle;
 
 public class EncryptionKeyResponseMessage extends Message implements ProcessorSetupMessage {
-	protected final byte[] encoded;
-	private final boolean locking;
+	private final byte[] secret, verifyToken;
+	private final boolean locking; //TODO: Locking is not used in the codec...should locking be removed?
 	private ChannelProcessor processor;
 	private ProcessorHandler handler;
 
-	public EncryptionKeyResponseMessage(byte[] encoded, boolean locking) {
-		if (encoded == null) {
-			throw new IllegalArgumentException("Encoded parameter may not be null");
-		}
-		this.encoded = encoded;
+	public EncryptionKeyResponseMessage(boolean locking, byte[] secret, byte[] verifyToken) {
 		this.locking = locking;
+		this.secret = secret;
+		this.verifyToken = verifyToken;
 	}
 
 	@Override
@@ -66,8 +64,12 @@ public class EncryptionKeyResponseMessage extends Message implements ProcessorSe
 		return handler;
 	}
 
-	public byte[] getEncodedArray() {
-		return encoded;
+	public byte[] getSecretArray() {
+		return secret;
+	}
+
+	public byte[] getVerifyTokenArray() {
+		return verifyToken;
 	}
 
 	@Override
@@ -85,14 +87,18 @@ public class EncryptionKeyResponseMessage extends Message implements ProcessorSe
 		}
 		final EncryptionKeyResponseMessage other = (EncryptionKeyResponseMessage) obj;
 		return new org.apache.commons.lang3.builder.EqualsBuilder()
-				.append(this.encoded, other.encoded)
+				.append(this.isChannelLocking(), other.isChannelLocking())
+				.append(this.getSecretArray(), other.getSecretArray())
+				.append(this.getVerifyTokenArray(), other.getVerifyTokenArray())
 				.isEquals();
 	}
 
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
-				.append("encoded", encoded)
+				.append("locking", this.isChannelLocking())
+				.append("secret", this.getSecretArray())
+				.append("verifyToken", this.getVerifyTokenArray())
 				.toString();
 	}
 }

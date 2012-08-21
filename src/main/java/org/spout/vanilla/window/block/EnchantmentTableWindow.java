@@ -28,14 +28,26 @@ package org.spout.vanilla.window.block;
 
 import org.spout.vanilla.controller.block.EnchantmentTable;
 import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.util.SlotIndexMap;
+import org.spout.vanilla.event.window.WindowPropertyEvent;
+import org.spout.vanilla.util.intmap.SlotIndexCollection;
+import org.spout.vanilla.util.intmap.SlotIndexRow;
 import org.spout.vanilla.window.TransactionWindow;
+import org.spout.vanilla.window.WindowType;
 
 public class EnchantmentTableWindow extends TransactionWindow {
-	private static final SlotIndexMap SLOTS = new SlotIndexMap("28-36, 19-27, 10-18, 1-9, 0");
+	private static final SlotIndexCollection ENCHANT_SLOTS = new SlotIndexRow(1);
 
 	public EnchantmentTableWindow(VanillaPlayer owner, EnchantmentTable table) {
-		super(4, "Enchant", owner, table);
-		this.setSlotIndexMap(SLOTS);
+		super(WindowType.ENCHANTMENTTABLE, "Enchant", owner, 1, table);
+		this.addInventory(table.getInventory(), ENCHANT_SLOTS);
+	}
+
+	/**
+	 * Updates the enchantment level of an Item displayed in this window
+	 * @param index of the item (0, 1 or 2)
+	 * @param level of enchantment of the item
+	 */
+	public void updateItemLevel(int index, int level) {
+		this.sendEvent(new WindowPropertyEvent(this, index, level));
 	}
 }

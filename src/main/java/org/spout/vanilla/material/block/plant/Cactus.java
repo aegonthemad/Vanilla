@@ -27,44 +27,35 @@
 package org.spout.vanilla.material.block.plant;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.geo.cuboid.Region;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
-import org.spout.api.material.range.CuboidEffectRange;
-import org.spout.api.material.range.EffectRange;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.material.block.Plant;
-import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.controlled.Furnace;
 import org.spout.vanilla.material.item.misc.Dye;
 import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.material.item.weapon.Sword;
 
-public class Cactus extends GroundAttachable implements Plant, TimedCraftable, DynamicMaterial {
-	private static EffectRange dynamicRange = new CuboidEffectRange(0, 0, 0, 0, 1, 0);
-	private Set<BlockMaterial> allowedNeighbours = new HashSet<BlockMaterial>();
+public class Cactus extends StackGrowingBase implements TimedCraftable {
+	private Set<BlockMaterial> deniedNeighbours = new HashSet<BlockMaterial>();
 
 	public Cactus(String name, int id) {
 		super(name, id);
-		addAllowedNeighbour(VanillaMaterials.AIR,
-				VanillaMaterials.TORCH,
-				VanillaMaterials.REDSTONE_TORCH_OFF,
-				VanillaMaterials.REDSTONE_TORCH_ON,
-				VanillaMaterials.LEVER,
-				VanillaMaterials.DEAD_BUSH,
-				VanillaMaterials.TALL_GRASS,
-				VanillaMaterials.REDSTONE_WIRE
-		);
 		this.setHardness(0.4F).setResistance(0.7F).setTransparent();
+		this.addDeniedNeighbour(VanillaMaterials.WEB, VanillaMaterials.STONE_PRESSURE_PLATE, VanillaMaterials.WOODEN_PRESSURE_PLATE);
+	}
+
+	@Override
+	public long getGrowTime(Block block) {
+		return (150 * 1000) + new Random(block.getWorld().getAge()).nextInt(21000) - 10000;
 	}
 
 	@Override
@@ -75,9 +66,9 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable, D
 	}
 
 	@Override
-	public boolean canAttachTo(BlockMaterial material, BlockFace face) {
-		if (super.canAttachTo(material, face)) {
-			return material.equals(VanillaMaterials.SAND, VanillaMaterials.CACTUS);
+	public boolean canAttachTo(Block block, BlockFace face) {
+		if (super.canAttachTo(block, face)) {
+			return block.isMaterial(VanillaMaterials.SAND, VanillaMaterials.CACTUS);
 		}
 		return false;
 	}
@@ -88,7 +79,7 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable, D
 			BlockMaterial mat;
 			for (BlockFace face : BlockFaces.NESW) {
 				mat = block.translate(face).getMaterial();
-				if (!this.allowedNeighbours.contains(mat)) {
+				if (mat.isSolid() || this.deniedNeighbours.contains(mat)) {
 					return false;
 				}
 			}
@@ -102,9 +93,9 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable, D
 		return face == BlockFace.TOP && material.equals(VanillaMaterials.CACTUS);
 	}
 
-	public void addAllowedNeighbour(BlockMaterial... additions) {
+	public void addDeniedNeighbour(BlockMaterial... additions) {
 		for (BlockMaterial mat : additions) {
-			this.allowedNeighbours.add(mat);
+			this.deniedNeighbours.add(mat);
 		}
 	}
 
@@ -121,44 +112,5 @@ public class Cactus extends GroundAttachable implements Plant, TimedCraftable, D
 	@Override
 	public short getDurabilityPenalty(Tool tool) {
 		return tool instanceof Sword ? (short) 2 : (short) 1;
-	}
-
-	@Override
-	public boolean hasGrowthStages() {
-		return true;
-	}
-
-	@Override
-	public int getNumGrowthStages() {
-		return 3;
-	}
-
-	@Override
-	public int getMinimumLightToGrow() {
-		return 0;
-	}
-
-	@Override
-	public EffectRange getDynamicRange() {
-		return dynamicRange;
-	}
-
-	@Override
-	public void onPlacement(Block b, Region r, long currentTime) {
-		if (b.translate(0, -1, 0).getMaterial() == VanillaMaterials.SAND) {
-			b.dynamicUpdate(currentTime + 1000 * 150);
-		}
-	}
-
-	@Override
-	public void onDynamicUpdate(Block b, Region r, long updateTime, long queuedTime, int data, Object hint) {
-		for (int i = 1; i < getNumGrowthStages(); i++) {
-			Block next = b.translate(0, i, 0);
-			if (next.getMaterial() == VanillaMaterials.AIR) {
-				next.setMaterial(this);
-				break;
-			}
-		}
-		b.dynamicUpdate(r.getWorld().getAge() + 1000 * 150);
 	}
 }

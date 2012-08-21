@@ -28,6 +28,7 @@ package org.spout.vanilla.controller.living;
 
 import org.spout.api.collision.BoundingBox;
 import org.spout.api.collision.CollisionModel;
+import org.spout.api.data.Data;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.math.MathHelper;
@@ -36,8 +37,7 @@ import org.spout.api.math.Vector3;
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.controller.VanillaControllerTypes;
 import org.spout.vanilla.controller.source.HealthChangeReason;
-import org.spout.vanilla.data.Data;
-import org.spout.vanilla.protocol.msg.AnimationMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityAnimationMessage;
 import org.spout.vanilla.util.VanillaNetworkUtil;
 
 public class Human extends Living {
@@ -47,7 +47,6 @@ public class Human extends Living {
 	protected long diggingStartTime;
 	protected int miningDamagePosition = 0;
 	protected long previousDiggingTime = 0;
-	protected final Vector3 moveSpeed = new Vector3(10, 0, 0), horizSpeed = new Vector3(0, 0, -10);
 	protected int miningDamageAllowance = VanillaConfiguration.PLAYER_SPEEDMINING_PREVENTION_ALLOWANCE.getInt(), miningDamagePeriod = VanillaConfiguration.PLAYER_SPEEDMINING_PREVENTION_PERIOD.getInt();
 	protected int[] miningDamage;
 	protected String title; //TODO title isn't really a good name...
@@ -55,34 +54,18 @@ public class Human extends Living {
 
 	public Human() {
 		super(VanillaControllerTypes.HUMAN);
-		title = data().get(Data.TITLE);
 		setHeadHeight(1.62f);
-		miningDamage = new int[miningDamagePeriod];
-	}
-
-	public Human(String title) {
-		super(VanillaControllerTypes.HUMAN);
-		this.title = title;
-		setHeadHeight(1.62f);
-		miningDamage = new int[miningDamagePeriod];
 	}
 
 	@Override
 	public void onTick(float dt) {
 		super.onTick(dt);
-		if (isDigging && (getDiggingTicks() % 20) == 0) {
-			VanillaNetworkUtil.sendPacketsToNearbyPlayers(getParent(), getParent().getViewDistance(), new AnimationMessage(getParent().getId(), AnimationMessage.ANIMATION_SWING_ARM));
-		}
 	}
 
 	@Override
 	public void onAttached() {
 		super.onAttached();
-		getParent().setCollision(new CollisionModel(new BoundingBox(1, 2, 1, 2, 2, 1))); //TODO Absolutely guessed here.
-		setMaxHealth(20);
-		setHealth(20, HealthChangeReason.SPAWN);
 		getParent().setObserver(true);
-		getParent().setViewDistance(64);
 	}
 
 	@Override
@@ -227,7 +210,7 @@ public class Human extends Living {
 		}
 		previousDiggingTime = getDiggingTime();
 		isDigging = false;
-		VanillaNetworkUtil.sendPacketsToNearbyPlayers(getParent(), getParent().getViewDistance(), new AnimationMessage(getParent().getId(), AnimationMessage.ANIMATION_NONE));
+		VanillaNetworkUtil.sendPacketsToNearbyPlayers(getParent(), getParent().getViewDistance(), new EntityAnimationMessage(getParent().getId(), EntityAnimationMessage.ANIMATION_NONE));
 		if (!position.equals(diggingPosition)) {
 			return false;
 		}

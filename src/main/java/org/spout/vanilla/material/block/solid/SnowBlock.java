@@ -29,6 +29,7 @@ package org.spout.vanilla.material.block.solid;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 
+import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -39,7 +40,8 @@ import org.spout.vanilla.material.item.tool.Tool;
 public class SnowBlock extends Solid implements Mineable, InitializableMaterial {
 	public SnowBlock(String name, int id) {
 		super(name, id);
-		this.setHardness(0.2F).setResistance(0.3F);
+		this.setHardness(0.2F).setResistance(0.3F).setStepSound(SoundEffects.STEP_CLOTH);
+		;
 	}
 
 	@Override
