@@ -97,8 +97,8 @@ public class EncryptionKeyResponseMessage extends Message implements ProcessorSe
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
 				.append("locking", this.isChannelLocking())
-				.append("secret", this.getSecretArray())
-				.append("verifyToken", this.getVerifyTokenArray())
+				.append("secret.length", this.getSecretArray().length)
+				.append("verifyToken.length", this.getVerifyTokenArray().length)
 				.toString();
 	}
 }

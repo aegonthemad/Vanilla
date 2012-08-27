@@ -64,8 +64,8 @@ public final class EncryptionKeyRequestMessage extends EncryptionKeyResponseMess
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
 				.append("sessionId", this.sessionId)
 				.append("locking", this.isChannelLocking())
-				.append("secret", this.getSecretArray())
-				.append("verifyToken", this.getVerifyTokenArray())
+				.append("secret.length", this.getSecretArray().length)
+				.append("verifyToken.length", this.getVerifyTokenArray().length)
 				.toString();
 	}
 }
