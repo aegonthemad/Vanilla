@@ -26,7 +26,6 @@
  */
 package org.spout.vanilla.material.block.piston;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
@@ -36,20 +35,15 @@ import org.spout.api.material.range.PlusEffectRange;
 import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Directional;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
 import org.spout.vanilla.util.MoveReaction;
 import org.spout.vanilla.util.RedstoneUtil;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-import static org.spout.vanilla.util.VanillaNetworkUtil.playBlockAction;
-
-public class Piston extends VanillaBlockMaterial implements Directional, Mineable, RedstoneTarget, InitializableMaterial {
+public class Piston extends VanillaBlockMaterial implements Directional, RedstoneTarget, InitializableMaterial {
 	public static final BlockFaces BTEWNS = new BlockFaces(BlockFace.BOTTOM, BlockFace.TOP, BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH);
 	public static final int maxLength = 13;
 	public static final EffectRange physicsRange = new PlusEffectRange(maxLength, true);
@@ -64,9 +58,9 @@ public class Piston extends VanillaBlockMaterial implements Directional, Mineabl
 	@Override
 	public void initialize() {
 		if (this.isSticky()) {
-			this.setDropMaterial(VanillaMaterials.PISTON_STICKY_BASE);
+			this.getDrops().DEFAULT.clear().add(VanillaMaterials.PISTON_STICKY_BASE);
 		} else {
-			this.setDropMaterial(VanillaMaterials.PISTON_BASE);
+			this.getDrops().DEFAULT.clear().add(VanillaMaterials.PISTON_BASE);
 		}
 	}
 
@@ -80,15 +74,14 @@ public class Piston extends VanillaBlockMaterial implements Directional, Mineabl
 	}
 
 	@Override
-	public void onDestroyBlock(Block block) {
-		super.onDestroyBlock(block);
+	public void onDestroy(Block block) {
 		if (this.isExtended(block)) {
 			Block extension = block.translate(this.getFacing(block));
 			if (extension.getMaterial() instanceof PistonExtension) {
 				extension.setMaterial(VanillaMaterials.AIR);
 			}
 		}
-		block.setMaterial(VanillaMaterials.AIR);
+		super.onDestroy(block);
 	}
 
 	@Override
@@ -162,7 +155,7 @@ public class Piston extends VanillaBlockMaterial implements Directional, Mineabl
 					reac = this.getReaction(previous);
 					if (reac == MoveReaction.BREAK) {
 						//break block
-						nextMat.getSubMaterial(nextData).onDestroy(previous);
+						nextMat.getSubMaterial(nextData).destroy(previous);
 						previous.setMaterial(prevMat, prevData);
 						break;
 					} else if (reac == MoveReaction.ALLOW) {
@@ -251,35 +244,12 @@ public class Piston extends VanillaBlockMaterial implements Directional, Mineabl
 		block.setData(BTEWNS.indexOf(facing, 1));
 	}
 
-	public BlockFace getPlacedFacing(Block pistonBlock, Entity entity) {
-		Vector3 diff = pistonBlock.getPosition().subtract(entity.getPosition());
-		diff = diff.subtract(0.0f, 0.2f, 0.0f);
-		Vector3 diffabs = diff.abs();
-		if (diffabs.getX() < 2.0f && diffabs.getZ() < 2.0f) {
-			if (diff.getY() < 0.0f) {
-				return BlockFace.TOP;
-			} else if (diff.getY() > 2.0f) {
-				return BlockFace.BOTTOM;
-			}
-		}
-		return VanillaPlayerUtil.getFacing(entity).getOpposite();
-	}
-
 	@Override
 	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
 		if (super.onPlacement(block, data, against, clickedPos, isClickedBlock)) {
-			BlockFace facing = BlockFace.TOP;
-			if (block.getSource() instanceof Entity) {
-				facing = this.getPlacedFacing(block, (Entity) block.getSource());
-			}
-			this.setFacing(block, facing);
+			this.setFacing(block, VanillaPlayerUtil.getBlockFacing(block));
 			return true;
 		}
 		return false;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 }

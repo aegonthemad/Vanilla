@@ -26,24 +26,42 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.block.Solid;
 import org.spout.vanilla.material.block.misc.Slab;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
-public class DoubleSlab extends Solid implements Mineable {
-	public static final DoubleSlab STONE_SLAB = new DoubleSlab("Stone Double Slab", Slab.STONE_SLAB);
-	public static final DoubleSlab SANDSTONE_SLAB = new DoubleSlab("Sandstone Double Slab", 1, STONE_SLAB, Slab.SANDSTONE_SLAB);
-	public static final DoubleSlab WOOD_SLAB = new DoubleSlab("Wooden Double Slab", 2, STONE_SLAB, Slab.WOOD_SLAB);
-	public static final DoubleSlab COBBLESTONE_SLAB = new DoubleSlab("Cobblestone Double Slab", 3, STONE_SLAB, Slab.COBBLESTONE_SLAB);
-	public static final DoubleSlab BRICK_SLAB = new DoubleSlab("Brick Double Slab", 4, STONE_SLAB, Slab.BRICK_SLAB);
-	public static final DoubleSlab STONE_BRICK_SLAB = new DoubleSlab("Stone Brick Double Slab", 5, STONE_SLAB, Slab.STONE_BRICK_SLAB);
+public class DoubleSlab extends Solid implements Burnable {
+	public static final DoubleSlab STONE = new DoubleSlab((short) 0x7, "Stone Double Slab", 43, false, Slab.STONE);
+	public static final DoubleSlab SANDSTONE = new DoubleSlab("Sandstone Double Slab", 0x1, STONE, Slab.SANDSTONE);
+	public static final DoubleSlab STONE_WOOD = new DoubleSlab("Wooden Double Slab", 0x2, STONE, Slab.STONE_WOOD);
+	public static final DoubleSlab COBBLESTONE = new DoubleSlab("Cobblestone Double Slab", 0x3, STONE, Slab.COBBLESTONE);
+	public static final DoubleSlab BRICK = new DoubleSlab("Brick Double Slab", 0x4, STONE, Slab.BRICK);
+	public static final DoubleSlab STONE_BRICK = new DoubleSlab("Stone Brick Double Slab", 0x5, STONE, Slab.STONE_BRICK);
+
+	public static final DoubleSlab OAK_WOOD = new DoubleSlab((short) 0x3, "Oak Wooden Double Slab", 125, true, Slab.OAK_WOOD);
+	public static final DoubleSlab SPRUCE_WOOD = new DoubleSlab("Spruce Wooden Double Slab", 0x1, OAK_WOOD, Slab.SPRUCE_WOOD);
+	public static final DoubleSlab BIRCH_WOOD = new DoubleSlab("Birch Wooden Double Slab", 0x2, OAK_WOOD, Slab.BIRCH_WOOD);
+	public static final DoubleSlab JUNGLE_WOOD = new DoubleSlab("Jungle Wooden Double Slab", 0x3, OAK_WOOD, Slab.JUNGLE_WOOD);
+
 	private Slab singletype;
+	private final boolean wood;
+
+	private DoubleSlab(short datamask, String name, int id, boolean wood, Slab slab) {
+		super(datamask, name, id);
+		this.wood = wood;
+		this.setSingleType(slab).setHardness(2.0F).setResistance(10.0F);
+		this.addMiningType(wood ? ToolType.AXE : ToolType.PICKAXE).setMiningLevel(ToolLevel.WOOD);
+	}
+
+	private DoubleSlab(String name, int data, DoubleSlab parent, Slab slab) {
+		super(name, parent.getMinecraftId(), data, parent);
+		this.wood = parent.wood;
+		this.setSingleType(slab).setHardness(2.0F).setResistance(10.0F);
+		this.addMiningType(wood ? ToolType.AXE : ToolType.PICKAXE).setMiningLevel(ToolLevel.WOOD);
+	}
 
 	public Slab getSingleType() {
 		return this.singletype;
@@ -55,14 +73,13 @@ public class DoubleSlab extends Solid implements Mineable {
 		return this;
 	}
 
-	private DoubleSlab(String name, Slab slab) {
-		super((short) 0x0007, name, 43);
-		this.setSingleType(slab).setHardness(2.0F).setResistance(10.0F);
-	}
-
-	private DoubleSlab(String name, int data, DoubleSlab parent, Slab slab) {
-		super(name, 43, data, parent);
-		this.setSingleType(slab).setHardness(2.0F).setResistance(10.0F);
+	/**
+	 * Gets if this Double Slab is made of Wood
+	 * 
+	 * @return True if wooden, False if not
+	 */
+	public boolean isWooden() {
+		return this.wood;
 	}
 
 	@Override
@@ -71,16 +88,12 @@ public class DoubleSlab extends Solid implements Mineable {
 	}
 
 	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
+	public int getBurnPower() {
+		return isWooden() ? 5 : 0;
 	}
 
 	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.getMaterial() instanceof Pickaxe) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
+	public int getCombustChance() {
+		return isWooden() ? 20 : 0;
 	}
 }

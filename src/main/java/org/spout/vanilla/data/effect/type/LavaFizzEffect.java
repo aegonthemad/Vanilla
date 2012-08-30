@@ -26,10 +26,10 @@
  */
 package org.spout.vanilla.data.effect.type;
 
-import java.util.Set;
+import java.util.List;
 
+import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
 
 import org.spout.vanilla.data.effect.Effect;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
@@ -51,7 +51,7 @@ public class LavaFizzEffect extends Effect {
 	}
 
 	@Override
-	public void play(Set<Player> players, Point position) {
+	public void play(List<Player> players, Point position) {
 		GeneralEffects.RANDOM_FIZZ.play(players, position);
 		position = position.add(0, 1, 0);
 		for (int i = 0; i < 8; i++) {

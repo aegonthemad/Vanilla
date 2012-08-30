@@ -26,11 +26,11 @@
  */
 package org.spout.vanilla.protocol.handler;
 
+import org.spout.api.entity.Player;
 import org.spout.api.math.MathHelper;
-import org.spout.api.player.Player;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.Living;
+import org.spout.vanilla.entity.component.HeadOwner;
 import org.spout.vanilla.protocol.ChannelBufferUtils;
 import org.spout.vanilla.protocol.msg.entity.EntityHeadYawMessage;
 
@@ -42,10 +42,10 @@ public class EntityHeadYawMessageHandler implements ServerMessageHandler<EntityH
 		}
 
 		Player player = session.getPlayer();
-		if (!(player.getController() instanceof Living)) {
+		if (!(player.getController() instanceof HeadOwner)) {
 			return;
 		}
-		Living creature = (Living) player.getController();
-		creature.setHeadYaw(MathHelper.floor(ChannelBufferUtils.deProtocolifyRotation(message.getHeadYaw())));
+		HeadOwner creature = (HeadOwner) player.getController();
+		creature.getHead().setYaw(MathHelper.floor(ChannelBufferUtils.deProtocolifyRotation(message.getHeadYaw())));
 	}
 }

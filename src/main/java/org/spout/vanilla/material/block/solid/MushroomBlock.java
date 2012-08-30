@@ -26,28 +26,30 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import java.util.ArrayList;
-import java.util.Random;
-
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-
 import org.spout.vanilla.material.Fuel;
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.enchantment.Enchantments;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
-import org.spout.vanilla.util.EnchantmentUtil;
 import org.spout.vanilla.util.Instrument;
 
-public class MushroomBlock extends Solid implements Fuel, Mineable {
+public class MushroomBlock extends Solid implements Fuel, InitializableMaterial {
 	public final float BURN_TIME = 15.f;
 
 	public MushroomBlock(String name, int id) {
 		super(name, id);
 		this.setHardness(0.2F).setResistance(0.3F);
+	}
+
+	@Override
+	public void initialize() {
+		getDrops().DEFAULT.clear();
+		if (this.equals(VanillaMaterials.HUGE_RED_MUSHROOM)) {
+			getDrops().DEFAULT.addRange(VanillaMaterials.RED_MUSHROOM, -7, 2);
+			getDrops().SILK_TOUCH.add(VanillaMaterials.HUGE_RED_MUSHROOM);
+		} else {
+			getDrops().DEFAULT.addRange(VanillaMaterials.BROWN_MUSHROOM, -7, 2);
+			getDrops().SILK_TOUCH.add(VanillaMaterials.HUGE_BROWN_MUSHROOM);
+		}
 	}
 
 	@Override
@@ -58,26 +60,5 @@ public class MushroomBlock extends Solid implements Fuel, Mineable {
 	@Override
 	public Instrument getInstrument() {
 		return Instrument.BASSGUITAR;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block, ItemStack holding) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		if (holding != null && holding.getMaterial() instanceof Tool && EnchantmentUtil.hasEnchantment(holding, Enchantments.SILK_TOUCH)) {
-			drops.add(new ItemStack(this, 1));
-		} else {
-			int amount = new Random().nextInt(0 - 2 + 1) + 0;
-			if (this.equals(VanillaMaterials.HUGE_RED_MUSHROOM)) {
-				drops.add(new ItemStack(VanillaMaterials.RED_MUSHROOM, amount));
-			} else {
-				drops.add(new ItemStack(VanillaMaterials.BROWN_MUSHROOM, amount));
-			}
-		}
-		return drops;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 }

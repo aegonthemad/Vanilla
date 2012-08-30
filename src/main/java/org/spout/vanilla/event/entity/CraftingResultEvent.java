@@ -26,7 +26,7 @@
  */
 package org.spout.vanilla.event.entity;
 
-import org.spout.api.entity.component.Controller;
+import org.spout.api.entity.Controller;
 import org.spout.api.event.Cancellable;
 import org.spout.api.event.HandlerList;
 import org.spout.api.event.entity.EntityEvent;
@@ -48,8 +48,8 @@ public class CraftingResultEvent extends EntityEvent implements Cancellable {
 	}
 
 	/**
-	 * Returns the controller of this CraftingResultEvent
-	 * @return controller
+	 * Returns the entity of this CraftingResultEvent
+	 * @return entity
 	 */
 	public Controller getController() {
 		return controller;

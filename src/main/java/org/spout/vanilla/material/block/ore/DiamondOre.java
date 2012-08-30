@@ -26,27 +26,27 @@
  */
 package org.spout.vanilla.material.block.ore;
 
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Ore;
-import org.spout.vanilla.material.block.controlled.Furnace;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.util.MiningType;
+import org.spout.vanilla.material.block.controlled.FurnaceBlock;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
 public class DiamondOre extends Ore implements InitializableMaterial, TimedCraftable {
 	public DiamondOre(String name, int id) {
 		super(name, id);
-		this.setHardness(3.0F).setResistance(5.0F).setMiningType(MiningType.PICKAXE).setMiningLevel(MiningType.MiningLevel.IRON);
+		this.setHardness(3.0F).setResistance(5.0F).addMiningType(ToolType.PICKAXE).setMiningLevel(ToolLevel.IRON);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.DIAMOND);
+		getDrops().clear();
+		getDrops().DEFAULT.add(VanillaMaterials.DIAMOND);
+		getDrops().SILK_TOUCH.add(VanillaMaterials.DIAMOND_ORE);
 	}
 
 	@Override
@@ -56,20 +56,6 @@ public class DiamondOre extends Ore implements InitializableMaterial, TimedCraft
 
 	@Override
 	public float getCraftTime() {
-		return Furnace.SMELT_TIME;
-	}
-
-	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.isMaterial(VanillaMaterials.IRON_PICKAXE, VanillaMaterials.DIAMOND_PICKAXE)) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
+		return FurnaceBlock.SMELT_TIME;
 	}
 }

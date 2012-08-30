@@ -30,26 +30,22 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.SpreadingSolid;
-import org.spout.vanilla.material.item.tool.Spade;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.util.ToolType;
 
-public class Mycelium extends SpreadingSolid implements Mineable, InitializableMaterial {
+public class Mycelium extends SpreadingSolid implements InitializableMaterial {
 	public Mycelium(String name, int id) {
 		super(name, id);
-		this.setHardness(0.6F).setResistance(0.8F);
+		this.setHardness(0.6F).setResistance(0.8F).addMiningType(ToolType.SPADE);
 	}
 
 	@Override
 	public void initialize() {
-		this.setReplacedMaterial(VanillaMaterials.DIRT).setDropMaterial(VanillaMaterials.DIRT);
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Spade ? (short) 1 : (short) 2;
+		setReplacedMaterial(VanillaMaterials.DIRT);
+		getDrops().DEFAULT.clear();
+		getDrops().DEFAULT.add(VanillaMaterials.DIRT);
+		getDrops().SILK_TOUCH.add(VanillaMaterials.MYCELIUM);
 	}
 
 	@Override

@@ -26,10 +26,10 @@
  */
 package org.spout.vanilla.data.effect;
 
-import java.util.Set;
+import java.util.List;
 
+import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
 
 /**
  * Picks a random Effect when playing
@@ -60,7 +60,7 @@ public class RandomEffect extends Effect {
 	}
 
 	@Override
-	public void play(Set<Player> players, Point position) {
+	public void play(List<Player> players, Point position) {
 		this.getRandomEffect().play(players, position);
 	}
 }

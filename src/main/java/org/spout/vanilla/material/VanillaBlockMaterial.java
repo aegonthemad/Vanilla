@@ -26,37 +26,38 @@
  */
 package org.spout.vanilla.material;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import org.spout.api.collision.CollisionStrategy;
+import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
 import org.spout.api.event.block.BlockChangeEvent;
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.Material;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.block.BlockSnapshot;
 import org.spout.api.math.Vector3;
+import org.spout.api.util.flag.Flag;
+import org.spout.api.util.flag.FlagBundle;
 
+import org.spout.vanilla.data.drops.flag.DropFlags;
+import org.spout.vanilla.data.drops.flag.PlayerFlags;
+import org.spout.vanilla.data.drops.type.block.BlockDrops;
 import org.spout.vanilla.data.effect.SoundEffect;
 import org.spout.vanilla.data.effect.store.SoundEffects;
+import org.spout.vanilla.event.block.BlockActionEvent;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
-import org.spout.vanilla.material.enchantment.Enchantments;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.util.EnchantmentUtil;
 import org.spout.vanilla.util.Instrument;
 import org.spout.vanilla.util.ItemUtil;
-import org.spout.vanilla.util.MiningType;
 import org.spout.vanilla.util.MoveReaction;
 import org.spout.vanilla.util.RedstonePowerMode;
-import org.spout.vanilla.util.VanillaPlayerUtil;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
 public abstract class VanillaBlockMaterial extends BlockMaterial implements VanillaMaterial {
 	public static short REDSTONE_POWER_MAX = 15;
@@ -64,11 +65,11 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	private final int minecraftId;
 	private float resistance;
 	private int meleeDamage = 1;
-	private int miningLevel;
-	private MiningType miningType;
 	private boolean liquidObstacle = true;
 	private SoundEffect stepSound = SoundEffects.STEP_STONE;
-	private Map<Material, int[]> dropMaterials = new HashMap<Material, int[]>();
+	private final BlockDrops drops = new BlockDrops();
+	private Set<ToolType> miningTypes = new HashSet<ToolType>();
+	private ToolLevel miningLevel = ToolLevel.NONE;
 
 	public VanillaBlockMaterial(String name, int id) {
 		this((short) 0, name, id);
@@ -79,9 +80,8 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		this.minecraftId = id;
 		this.setCollision(CollisionStrategy.NOCOLLIDE);
 		this.setTransparent();
-		this.setMiningLevel(0);
-		this.setMiningType(MiningType.PICKAXE);
-		this.setDropMaterial(this);
+		this.getDrops().SILK_TOUCH.add(this);
+		this.getDrops().DEFAULT.add(this);
 	}
 
 	public VanillaBlockMaterial(String name, int id, int data, VanillaBlockMaterial parent) {
@@ -89,9 +89,8 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		this.minecraftId = id;
 		this.setCollision(CollisionStrategy.NOCOLLIDE);
 		this.setTransparent();
-		this.setMiningLevel(0);
-		this.setMiningType(MiningType.PICKAXE);
-		this.setDropMaterial(this);
+		this.getDrops().SILK_TOUCH.add(this);
+		this.getDrops().DEFAULT.add(this);
 	}
 
 	@Override
@@ -109,27 +108,28 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	 * @param block that got ignited
 	 */
 	public void onIgnite(Block block) {
-		this.onDestroy(block, 0.3);
+		HashSet<Flag> dropFlags = new HashSet<Flag>();
+		if (Math.random() > 0.3) {
+			dropFlags.add(DropFlags.NO_DROPS);
+		}
+		this.destroy(block, dropFlags);
 	}
 
 	@Override
-	public final void onDestroy(Block block) {
-		onDestroy(block, 1.0);
+	public boolean destroy(Block block, Set<Flag> flags) {
+		BlockChangeEvent event = new BlockChangeEvent(block, new BlockSnapshot(block, this, block.getData()), block.getSource());
+		if (event.isCancelled()) {
+			return false;
+		}
+		return super.destroy(block, flags);
 	}
 
-	public void onDestroy(Block block, double dropChance) {
-		//Grab the drops based on material classes' rules.
-		List<ItemStack> drops = Collections.<ItemStack>emptyList();
-		if (Math.random() < dropChance && !VanillaPlayerUtil.isCreative(block.getSource())) {
-			drops = getDrops(block);
-		}
-		BlockChangeEvent event = new BlockChangeEvent(block, new BlockSnapshot(block, this, getData()), block.getSource());
-		if (event.isCancelled()) {
-			return;
-		}
-		this.onDestroyBlock(block);
-		if (!drops.isEmpty()) {
-			this.onDestroySpawnDrops(block, drops);
+	@Override
+	public void onPostDestroy(Block block, Set<Flag> flags) {
+		//TODO stack items together for more performance
+		Random random = new Random(block.getWorld().getAge());
+		for (ItemStack item : this.getDrops().getDrops(random, flags)) {
+			ItemUtil.dropItemNaturally(block.getPosition(), item);
 		}
 	}
 
@@ -191,6 +191,15 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		return this.meleeDamage;
 	}
 
+	/**
+	 * Temporary function to handle entities entering this Block<br>
+	 * <b>This is a STUB! Needs to be moved to SpoutAPI!</b>
+	 * @param entity that entered or moved
+	 * @param block of this material that got entered
+	 */
+	public void onEntityCollision(Entity entity, Block block) {
+	}
+
 	@Override
 	public VanillaBlockMaterial setDamage(int damage) {
 		this.meleeDamage = damage;
@@ -203,32 +212,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	 */
 	public Instrument getInstrument() {
 		return Instrument.PIANO;
-	}
-
-	/**
-	 * Called when this block is destroyed to perform the actual block destruction
-	 * @param block to destroy
-	 */
-	public void onDestroyBlock(Block block) {
-		block.setMaterial(VanillaMaterials.AIR);
-	}
-
-	/**
-	 * Called when this block is destroyed to perform the drops spawning
-	 * @param block to spawn drops for
-	 */
-	public void onDestroySpawnDrops(Block block, List<ItemStack> drops) {
-		if (drops == null || drops.isEmpty() || drops.size() <= 0) {
-			return;
-		}
-
-		//TODO stack items together for more performance
-		for (ItemStack item : drops) {
-			if (item == null) {
-				continue;
-			}
-			ItemUtil.dropItemNaturally(block.getPosition(), item);
-		}
 	}
 
 	/**
@@ -340,39 +323,6 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	}
 
 	/**
-	 * Gets the drops that should be dropped. Override this method to provide rules
-	 * for what should be dropped and when.
-	 * @param block
-	 * @return a list of drops
-	 */
-	public List<ItemStack> getDrops(Block block) {
-		return getDrops(block, VanillaPlayerUtil.getCurrentItem(block.getSource()));
-	}
-
-	/**
-	 * Gets the drops that should be dropped. Override this method to provide rules
-	 * for what should be dropped and when.
-	 * @param block
-	 * @param holding item that is held by the player
-	 * @return a list of drops
-	 */
-	public List<ItemStack> getDrops(Block block, ItemStack holding) {
-		if (canDrop(block, holding)) {
-			if (holding != null && EnchantmentUtil.hasEnchantment(holding, Enchantments.SILK_TOUCH)) {
-				return Arrays.asList(new ItemStack(this, 1));
-			} else if (!this.dropMaterials.isEmpty()) {
-				ArrayList<ItemStack> drops = new ArrayList<ItemStack>(this.dropMaterials.size());
-				for (Material m : dropMaterials.keySet()) {
-					int[] amount = dropMaterials.get(m);
-					drops.add(new ItemStack(m, amount[(int) (Math.random() * amount.length)]));
-				}
-				return drops;
-			}
-		}
-		return Collections.<ItemStack>emptyList();
-	}
-
-	/**
 	 * Gets if this material is a liquid obstacle
 	 * @return True if it can stop liquids, False if this material gets destroyed
 	 */
@@ -389,114 +339,77 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		return this;
 	}
 
-	/**
-	 * Gets whether this Block Material can spawn drops when dug by the held item specified
-	 * @param block to be broken
-	 * @param holding item of the diggers
-	 * @return True if it spawns items, False if not
-	 */
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (this.miningLevel == 0) {
-			return true;
-		}
-		Material heldMaterial = holding.getMaterial();
-		if (heldMaterial instanceof Tool) {
-			Tool heldTool = (Tool) heldMaterial;
-			if (this.miningType.isInstance(heldTool) && heldTool.getMiningLevel() >= this.miningLevel) {
-				return true;
+	private void updateDropFlags() {
+		this.drops.NOT_CREATIVE.clearFlags();
+		this.drops.NOT_CREATIVE.addFlags(PlayerFlags.CREATIVE.NOT);
+		if (this.miningLevel != null && this.miningLevel != ToolLevel.NONE) {
+			this.drops.NOT_CREATIVE.addFlags(this.miningLevel.getDropFlag());
+			Flag[] typeFlags = new Flag[this.miningTypes.size()];
+			int i = 0;
+			for (ToolType type : this.miningTypes) {
+				typeFlags[i] = type.getDropFlag();
+				i++;
 			}
+			this.drops.NOT_CREATIVE.addFlags(new FlagBundle(typeFlags));
 		}
-		return false;
 	}
 
-	/**
-	 * Sets the mining level required for this block to spawn drops
-	 * @param miningLevel to set to
-	 * @return this material
-	 */
-	public VanillaBlockMaterial setMiningLevel(int miningLevel) {
+	public VanillaBlockMaterial setMiningLevel(ToolLevel miningLevel) {
 		this.miningLevel = miningLevel;
+		updateDropFlags();
 		return this;
 	}
 
 	/**
-	 * Gets the mining level required for this block to spawn drops
+	 * Adds the mining type to this Block material<br>
+	 * This type will be used when checking for drops and when calculating the digging time
+	 * @param miningType to add
+	 * @return this material
+	 */
+	public VanillaBlockMaterial addMiningType(ToolType miningType) {
+		this.miningTypes.add(miningType);
+		updateDropFlags();
+		return this;
+	}
+
+	/**
+	 * Gets if the mining type is set for this Block material<br>
+	 * This type is used when checking for drops and when calculating digging time
+	 * @return True if the tool type is set
+	 */
+	public boolean isMiningType(ToolType toolType) {
+		return this.miningTypes.contains(toolType);
+	}
+
+	/**
+	 * Gets the mining level required for breaking this BlockMaterial<br>
+	 * This level has to be met to spawn drops
 	 * @return mining level
 	 */
-	public int getMiningLevel() {
+	public ToolLevel getMiningLevel() {
 		return miningLevel;
 	}
 
 	/**
-	 * Sets the mining type of this Block material<br>
-	 * This type is used when checking for drops
-	 * @param miningType to set to
-	 * @return this material
+	 * Gets the drops for this block material
+	 * @return the drops
 	 */
-	public VanillaBlockMaterial setMiningType(MiningType miningType) {
-		this.miningType = miningType;
-		return this;
+	public BlockDrops getDrops() {
+		return this.drops;
 	}
 
 	/**
-	 * Gets the mining type of this Block material<br>
-	 * This type is used when checking for drops
-	 * @return the mining type
+	 * Plays a block action for this type of Block Material
+	 * 
+	 * @param block to play at
+	 * @param arg1 for the action
+	 * @param arg2 for the action
 	 */
-	public MiningType getMiningType() {
-		return miningType;
-	}
-
-	public VanillaBlockMaterial removeDropMaterial(Material dropMaterial) {
-		dropMaterials.remove(dropMaterial);
-		return this;
-	}
-
-	public VanillaBlockMaterial clearDropMaterials() {
-		dropMaterials.clear();
-		return this;
-	}
-
-	public VanillaBlockMaterial addDropMaterial(Material dropMaterial) {
-		return addDropMaterial(dropMaterial, 1);
-	}
-
-	public VanillaBlockMaterial addDropMaterial(Material dropMaterial, int min, int max) {
-		if (min >= max) {
-			throw new IllegalArgumentException("min must be less than max");
+	public void playBlockAction(Block block, byte arg1, byte arg2) {
+		BlockActionEvent event = new BlockActionEvent(block, this, arg1, arg2);
+		Point position = block.getPosition();
+		for (Player player : position.getWorld().getNearbyPlayers(position, 48)) {
+			player.getNetworkSynchronizer().callProtocolEvent(event);
 		}
-		int j = 0;
-		int[] amount = new int[(max - min) + 1];
-		for (int i = min; i <= max; i++) {
-			amount[j++] = i;
-		}
-		return addDropMaterial(dropMaterial, amount);
-	}
-
-	public VanillaBlockMaterial addDropMaterial(Material dropMaterial, int... amount) {
-		dropMaterials.put(dropMaterial, amount);
-		return this;
-	}
-
-	public VanillaBlockMaterial setDropMaterial(Material dropMaterial) {
-		return setDropMaterial(dropMaterial, 1);
-	}
-
-	public VanillaBlockMaterial setDropMaterial(Material dropMaterial, int min, int max) {
-		dropMaterials.clear();
-		return addDropMaterial(dropMaterial, min, max);
-	}
-
-	public VanillaBlockMaterial setDropMaterial(Material dropMaterial, int... amount) {
-		dropMaterials.clear();
-		return addDropMaterial(dropMaterial, amount);
-	}
-
-	public Set<Material> getDropMaterialsSet() {
-		return dropMaterials.keySet();
-	}
-
-	public Map<Material, int[]> getDropMaterialsMap() {
-		return dropMaterials;
 	}
 }

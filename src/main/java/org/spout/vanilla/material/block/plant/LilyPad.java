@@ -33,15 +33,12 @@ import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
-import org.spout.vanilla.controller.living.Living;
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.entity.component.HeadOwner;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.liquid.Water;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class LilyPad extends GroundAttachable implements Mineable {
+public class LilyPad extends GroundAttachable {
 	public LilyPad(String name, int id) {
 		super(name, id);
 		this.setHardness(0.0F).setResistance(0.3F).setTransparent();
@@ -62,8 +59,8 @@ public class LilyPad extends GroundAttachable implements Mineable {
 	@Override
 	public void onInteract(Entity entity, Action type) {
 		super.onInteract(entity, type);
-		if (type == Action.RIGHT_CLICK && entity.getController() instanceof Living) {
-			Block block = ((Living) entity.getController()).hitTest();
+		if (type == Action.RIGHT_CLICK && entity.getController() instanceof HeadOwner) {
+			Block block = ((HeadOwner) entity.getController()).getHead().hitTest();
 			if (block == null) {
 				return;
 			}
@@ -81,10 +78,5 @@ public class LilyPad extends GroundAttachable implements Mineable {
 				}
 			}
 		}
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 }

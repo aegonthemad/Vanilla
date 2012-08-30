@@ -37,18 +37,19 @@ import org.spout.api.material.Material;
 import org.spout.api.material.MaterialRegistry;
 import org.spout.api.util.map.concurrent.AtomicShortArray;
 
-import org.spout.vanilla.data.entityeffect.food.FoodSaturation;
-import org.spout.vanilla.data.entityeffect.food.Hunger;
-import org.spout.vanilla.data.entityeffect.food.Poisoning;
-import org.spout.vanilla.material.block.controlled.BrewingStand;
-import org.spout.vanilla.material.block.controlled.Chest;
-import org.spout.vanilla.material.block.controlled.CraftingTable;
-import org.spout.vanilla.material.block.controlled.Dispenser;
-import org.spout.vanilla.material.block.controlled.EnchantmentTable;
-import org.spout.vanilla.material.block.controlled.Furnace;
-import org.spout.vanilla.material.block.controlled.Jukebox;
-import org.spout.vanilla.material.block.controlled.MonsterSpawner;
-import org.spout.vanilla.material.block.controlled.NoteBlock;
+import org.spout.vanilla.entity.component.effect.food.FoodSaturation;
+import org.spout.vanilla.entity.component.effect.food.Hunger;
+import org.spout.vanilla.entity.component.effect.food.Poisoning;
+import org.spout.vanilla.material.block.controlled.BrewingStandBlock;
+import org.spout.vanilla.material.block.controlled.ChestBlock;
+import org.spout.vanilla.material.block.controlled.CraftingTableBlock;
+import org.spout.vanilla.material.block.controlled.DispenserBlock;
+import org.spout.vanilla.material.block.controlled.EnchantmentTableBlock;
+import org.spout.vanilla.material.block.controlled.EnderChest;
+import org.spout.vanilla.material.block.controlled.FurnaceBlock;
+import org.spout.vanilla.material.block.controlled.JukeboxBlock;
+import org.spout.vanilla.material.block.controlled.MonsterSpawnerBlock;
+import org.spout.vanilla.material.block.controlled.NoteBlockBlock;
 import org.spout.vanilla.material.block.controlled.PistonExtensionMoving;
 import org.spout.vanilla.material.block.controlled.SignBase;
 import org.spout.vanilla.material.block.controlled.SignPost;
@@ -94,6 +95,7 @@ import org.spout.vanilla.material.block.ore.RedstoneOre;
 import org.spout.vanilla.material.block.piston.Piston;
 import org.spout.vanilla.material.block.piston.PistonExtension;
 import org.spout.vanilla.material.block.plant.Cactus;
+import org.spout.vanilla.material.block.plant.CocoaPlant;
 import org.spout.vanilla.material.block.plant.DeadBush;
 import org.spout.vanilla.material.block.plant.Flower;
 import org.spout.vanilla.material.block.plant.LilyPad;
@@ -155,6 +157,7 @@ import org.spout.vanilla.material.block.solid.Wool;
 import org.spout.vanilla.material.block.stair.BrickStairs;
 import org.spout.vanilla.material.block.stair.CobblestoneStairs;
 import org.spout.vanilla.material.block.stair.NetherBrickStairs;
+import org.spout.vanilla.material.block.stair.SandstoneStairs;
 import org.spout.vanilla.material.block.stair.StoneBrickStairs;
 import org.spout.vanilla.material.block.stair.WoodenStairs;
 import org.spout.vanilla.material.item.BlockItem;
@@ -198,7 +201,6 @@ import org.spout.vanilla.material.item.misc.LavaBucket;
 import org.spout.vanilla.material.item.misc.MusicDisc;
 import org.spout.vanilla.material.item.misc.PaintingItem;
 import org.spout.vanilla.material.item.misc.Potion;
-import org.spout.vanilla.material.item.misc.Shears;
 import org.spout.vanilla.material.item.misc.Sign;
 import org.spout.vanilla.material.item.misc.SpawnEgg;
 import org.spout.vanilla.material.item.misc.Stick;
@@ -206,28 +208,13 @@ import org.spout.vanilla.material.item.misc.StringItem;
 import org.spout.vanilla.material.item.tool.FishingRod;
 import org.spout.vanilla.material.item.tool.FlintAndSteel;
 import org.spout.vanilla.material.item.tool.Hoe;
-import org.spout.vanilla.material.item.tool.diamond.DiamondAxe;
-import org.spout.vanilla.material.item.tool.diamond.DiamondPickaxe;
-import org.spout.vanilla.material.item.tool.diamond.DiamondSpade;
-import org.spout.vanilla.material.item.tool.diamond.DiamondSword;
-import org.spout.vanilla.material.item.tool.gold.GoldAxe;
-import org.spout.vanilla.material.item.tool.gold.GoldPickaxe;
-import org.spout.vanilla.material.item.tool.gold.GoldSpade;
-import org.spout.vanilla.material.item.tool.gold.GoldSword;
-import org.spout.vanilla.material.item.tool.iron.IronAxe;
-import org.spout.vanilla.material.item.tool.iron.IronPickaxe;
-import org.spout.vanilla.material.item.tool.iron.IronSpade;
-import org.spout.vanilla.material.item.tool.iron.IronSword;
-import org.spout.vanilla.material.item.tool.stone.StoneAxe;
-import org.spout.vanilla.material.item.tool.stone.StonePickaxe;
-import org.spout.vanilla.material.item.tool.stone.StoneSpade;
-import org.spout.vanilla.material.item.tool.stone.StoneSword;
-import org.spout.vanilla.material.item.tool.wood.WoodenAxe;
-import org.spout.vanilla.material.item.tool.wood.WoodenPickaxe;
-import org.spout.vanilla.material.item.tool.wood.WoodenSpade;
-import org.spout.vanilla.material.item.tool.wood.WoodenSword;
-import org.spout.vanilla.material.item.weapon.Bow;
+import org.spout.vanilla.material.item.tool.MiningTool;
+import org.spout.vanilla.material.item.tool.Shears;
+import org.spout.vanilla.material.item.tool.weapon.Bow;
+import org.spout.vanilla.material.item.tool.weapon.Sword;
 import org.spout.vanilla.util.Music;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
 // TODO: Remove all casts and separate remaining "set" methods out into each material's init() method
 public final class VanillaMaterials {
@@ -244,9 +231,9 @@ public final class VanillaMaterials {
 	public static final Leaves LEAVES = Leaves.DEFAULT;
 	public static final Sponge SPONGE = new Sponge("Sponge", 19);
 	public static final Glass GLASS = new Glass("Glass", 20);
-	public static final Dispenser DISPENSER = new Dispenser("Dispenser", 23);
+	public static final DispenserBlock DISPENSER = new DispenserBlock("Dispenser", 23);
 	public static final Sandstone SANDSTONE = Sandstone.SANDSTONE;
-	public static final NoteBlock NOTEBLOCK = new NoteBlock("Note Block", 25);
+	public static final NoteBlockBlock NOTEBLOCK = new NoteBlockBlock("Note Block", 25);
 	public static final BedBlock BED_BLOCK = new BedBlock("Bed", 26);
 	public static final Web WEB = new Web("Cobweb", 30);
 	// == Piston ==
@@ -292,13 +279,16 @@ public final class VanillaMaterials {
 	public static final CobblestoneStairs STAIRS_COBBLESTONE = new CobblestoneStairs("Cobblestone Stairs", 67);
 	public static final WoodenStairs STAIRS_WOODEN = new WoodenStairs("Wooden Stairs", 53);
 	public static final StoneBrickStairs STAIRS_STONE_BRICK = new StoneBrickStairs("Stone Brick Stairs", 109);
+	public static final SandstoneStairs STAIRS_SANDSTONE = new SandstoneStairs("Sandstone Stairs", 128);
 	// == Portals ==
 	public static final NetherPortal PORTAL = new NetherPortal("Portal", 90);
 	public static final EndPortal END_PORTAL = new EndPortal("End Portal", 119);
 	public static final EndPortalFrame END_PORTAL_FRAME = new EndPortalFrame("End Portal Frame", 120);
 	// ================
-	public static final DoubleSlab DOUBLE_SLABS = DoubleSlab.STONE_SLAB;
-	public static final Slab SLAB = Slab.STONE_SLAB;
+	public static final Slab SLAB = Slab.STONE;
+	public static final DoubleSlab DOUBLE_SLABS = DoubleSlab.STONE;
+	public static final Slab WOODEN_SLAB = Slab.OAK_WOOD;
+	public static final DoubleSlab WOODEN_DOUBLE_SLABS = DoubleSlab.OAK_WOOD;
 	public static final Wool WOOL = Wool.WHITE_WOOL;
 	public static final Brick BRICK = new Brick("Brick Block", 45);
 	public static final TNT TNT = new TNT("TNT", 46);
@@ -307,14 +297,15 @@ public final class VanillaMaterials {
 	public static final Obsidian OBSIDIAN = new Obsidian("Obsidian", 49);
 	public static final Torch TORCH = new Torch("Torch", 50);
 	public static final Fire FIRE = new Fire("Fire", 51);
-	public static final MonsterSpawner MONSTER_SPAWNER = new MonsterSpawner("Monster Spawner", 52);
-	public static final Chest CHEST = new Chest("Chest", 54);
+	public static final MonsterSpawnerBlock MONSTER_SPAWNER = new MonsterSpawnerBlock("Monster Spawner", 52);
+	public static final ChestBlock CHEST = new ChestBlock("Chest", 54);
+	public static final EnderChest ENDER_CHEST = new EnderChest("Ender Chest", 130);
 	public static final RedstoneWire REDSTONE_WIRE = new RedstoneWire("Redstone Wire", 55);
-	public static final CraftingTable CRAFTING_TABLE = new CraftingTable("Crafting Table", 58);
+	public static final CraftingTableBlock CRAFTING_TABLE = new CraftingTableBlock("Crafting Table", 58);
 	public static final WheatCrop WHEATCROP = new WheatCrop("Wheat Crop", 59);
 	public static final FarmLand FARMLAND = new FarmLand("Farmland", 60);
-	public static final Furnace FURNACE = new Furnace("Furnace", 61, false);
-	public static final Furnace FURNACE_BURNING = new Furnace("Burning Furnace", 62, true);
+	public static final FurnaceBlock FURNACE = new FurnaceBlock("Furnace", 61, false);
+	public static final FurnaceBlock FURNACE_BURNING = new FurnaceBlock("Burning Furnace", 62, true);
 	public static final SignPost SIGN_POST = new SignPost("Sign Post", 63);
 	public static final Ladder LADDER = new Ladder("Ladder", 65);
 	public static final SignBase WALL_SIGN = new WallSign("Wall Sign", 68);
@@ -332,7 +323,7 @@ public final class VanillaMaterials {
 	public static final Cactus CACTUS = new Cactus("Cactus", 81);
 	public static final ClayBlock CLAY_BLOCK = new ClayBlock("Clay Block", 82);
 	public static final SugarCaneBlock SUGAR_CANE_BLOCK = new SugarCaneBlock("Sugar Cane", 83);
-	public static final Jukebox JUKEBOX = new Jukebox("Jukebox", 84);
+	public static final JukeboxBlock JUKEBOX = new JukeboxBlock("Jukebox", 84);
 	public static final WoodenFence WOODEN_FENCE = new WoodenFence("Wooden Fence", 85);
 	public static final Pumpkin PUMPKIN_BLOCK = new Pumpkin("Pumpkin", 86, false);
 	public static final NetherRack NETHERRACK = new NetherRack("Netherrack", 87);
@@ -361,41 +352,42 @@ public final class VanillaMaterials {
 	public static final NetherBrick NETHER_BRICK = new NetherBrick("Nether Brick", 112);
 	public static final NetherBrickFence NETHER_BRICK_FENCE = new NetherBrickFence("Nether Brick Fence", 113);
 	public static final NetherWartBlock NETHER_WART_BLOCK = new NetherWartBlock("Nether Wart", 115);
-	public static final EnchantmentTable ENCHANTMENT_TABLE = new EnchantmentTable("Enchantment Table", 116);
-	public static final BrewingStand BREWING_STAND_BLOCK = new BrewingStand("Brewing Stand", 117);
+	public static final EnchantmentTableBlock ENCHANTMENT_TABLE = new EnchantmentTableBlock("Enchantment Table", 116);
+	public static final BrewingStandBlock BREWING_STAND_BLOCK = new BrewingStandBlock("Brewing Stand", 117);
 	public static final CauldronBlock CAULDRON_BLOCK = new CauldronBlock("Cauldron", 118);
 	public static final DragonEgg DRAGON_EGG = new DragonEgg("Dragon Egg", 122);
 	public static final RedstoneLamp REDSTONE_LAMP_OFF = new RedstoneLamp("Redstone Lamp", 123, false);
 	public static final RedstoneLamp REDSTONE_LAMP_ON = new RedstoneLamp("Redstone Lamp (On)", 124, true);
 	public static final TripWireHook TRIPWIRE_HOOK = new TripWireHook("Trip Wire Hook", 131);
 	public static final TripWire TRIPWIRE = new TripWire("Trip Wire", 132);
+	public static final CocoaPlant COCOA_PLANT = new CocoaPlant("Cocoa Plant", 127);
 	/*
 	 * Items
 	 */
 	// == Swords ==
-	public static final WoodenSword WOODEN_SWORD = new WoodenSword("Wooden Sword", 268, (short) 60);
-	public static final GoldSword GOLD_SWORD = new GoldSword("Gold Sword", 283, (short) 33);
-	public static final StoneSword STONE_SWORD = new StoneSword("Stone Sword", 272, (short) 132);
-	public static final IronSword IRON_SWORD = new IronSword("Iron Sword", 267, (short) 251);
-	public static final DiamondSword DIAMOND_SWORD = new DiamondSword("Diamond Sword", 276, (short) 1562);
+	public static final Sword WOODEN_SWORD = new Sword("Wooden Sword", 268, ToolLevel.WOOD);
+	public static final Sword GOLD_SWORD = new Sword("Gold Sword", 283, ToolLevel.GOLD);
+	public static final Sword STONE_SWORD = new Sword("Stone Sword", 272, ToolLevel.STONE);
+	public static final Sword IRON_SWORD = new Sword("Iron Sword", 267, ToolLevel.IRON);
+	public static final Sword DIAMOND_SWORD = new Sword("Diamond Sword", 276, ToolLevel.DIAMOND);
 	// == Spades ==
-	public static final GoldSpade GOLD_SPADE = new GoldSpade("Gold Shovel", 284, (short) 33);
-	public static final WoodenSpade WOODEN_SPADE = new WoodenSpade("Wooden Shovel", 269, (short) 60);
-	public static final StoneSpade STONE_SPADE = new StoneSpade("Stone Shovel", 273, (short) 132);
-	public static final IronSpade IRON_SPADE = new IronSpade("Iron Shovel", 256, (short) 251);
-	public static final DiamondSpade DIAMOND_SPADE = new DiamondSpade("Diamond Shovel", 277, (short) 1562);
+	public static final MiningTool GOLD_SPADE = new MiningTool("Gold Shovel", 284, ToolLevel.GOLD, ToolType.SPADE);
+	public static final MiningTool WOODEN_SPADE = new MiningTool("Wooden Shovel", 269, ToolLevel.WOOD, ToolType.SPADE);
+	public static final MiningTool STONE_SPADE = new MiningTool("Stone Shovel", 273, ToolLevel.STONE, ToolType.SPADE);
+	public static final MiningTool IRON_SPADE = new MiningTool("Iron Shovel", 256, ToolLevel.IRON, ToolType.SPADE);
+	public static final MiningTool DIAMOND_SPADE = new MiningTool("Diamond Shovel", 277, ToolLevel.DIAMOND, ToolType.SPADE);
 	// == Pickaxes ==
-	public static final GoldPickaxe GOLD_PICKAXE = new GoldPickaxe("Gold Pickaxe", 285, (short) 33);
-	public static final WoodenPickaxe WOODEN_PICKAXE = new WoodenPickaxe("Wooden Pickaxe", 270, (short) 60);
-	public static final StonePickaxe STONE_PICKAXE = new StonePickaxe("Stone Pickaxe", 274, (short) 132);
-	public static final IronPickaxe IRON_PICKAXE = new IronPickaxe("Iron Pickaxe", 257, (short) 251);
-	public static final DiamondPickaxe DIAMOND_PICKAXE = new DiamondPickaxe("Diamond Pickaxe", 278, (short) 1562);
+	public static final MiningTool GOLD_PICKAXE = new MiningTool("Gold Pickaxe", 285, ToolLevel.GOLD, ToolType.PICKAXE);
+	public static final MiningTool WOODEN_PICKAXE = new MiningTool("Wooden Pickaxe", 270, ToolLevel.WOOD, ToolType.PICKAXE);
+	public static final MiningTool STONE_PICKAXE = new MiningTool("Stone Pickaxe", 274, ToolLevel.STONE, ToolType.PICKAXE);
+	public static final MiningTool IRON_PICKAXE = new MiningTool("Iron Pickaxe", 257, ToolLevel.IRON, ToolType.PICKAXE);
+	public static final MiningTool DIAMOND_PICKAXE = new MiningTool("Diamond Pickaxe", 278, ToolLevel.DIAMOND, ToolType.PICKAXE);
 	// == Axes ==
-	public static final GoldAxe GOLD_AXE = new GoldAxe("Gold Axe", 286, (short) 33);
-	public static final WoodenAxe WOODEN_AXE = new WoodenAxe("Wooden Axe", 271, (short) 60);
-	public static final StoneAxe STONE_AXE = new StoneAxe("Stone Axe", 275, (short) 132);
-	public static final IronAxe IRON_AXE = new IronAxe("Iron Axe", 258, (short) 251);
-	public static final DiamondAxe DIAMOND_AXE = new DiamondAxe("Diamond Axe", 279, (short) 1562);
+	public static final MiningTool GOLD_AXE = new MiningTool("Gold Axe", 286, ToolLevel.GOLD, ToolType.AXE);
+	public static final MiningTool WOODEN_AXE = new MiningTool("Wooden Axe", 271, ToolLevel.WOOD, ToolType.AXE);
+	public static final MiningTool STONE_AXE = new MiningTool("Stone Axe", 275, ToolLevel.STONE, ToolType.AXE);
+	public static final MiningTool IRON_AXE = new MiningTool("Iron Axe", 258, ToolLevel.IRON, ToolType.AXE);
+	public static final MiningTool DIAMOND_AXE = new MiningTool("Diamond Axe", 279, ToolLevel.DIAMOND, ToolType.AXE);
 	// == Hoes ==
 	public static final Hoe GOLD_HOE = new Hoe("Gold Hoe", 294, (short) 33);
 	public static final Hoe WOODEN_HOE = new Hoe("Wooden Hoe", 290, (short) 60);
@@ -468,6 +460,8 @@ public final class VanillaMaterials {
 	public static final BlockItem SUGAR_CANE = new BlockItem("Sugar Cane", 338, VanillaMaterials.SUGAR_CANE_BLOCK);
 	public static final VanillaItemMaterial PAPER = new VanillaItemMaterial("Paper", 339);
 	public static final VanillaItemMaterial BOOK = new VanillaItemMaterial("Book", 340);
+	public static final VanillaItemMaterial BOOK_AND_QUILL = new VanillaItemMaterial("Book and Quill", 386);
+	public static final VanillaItemMaterial WRITTEN_BOOK = new VanillaItemMaterial("Written Book", 387);
 	public static final VanillaItemMaterial SLIMEBALL = new VanillaItemMaterial("Slimeball", 341);
 	public static final VanillaItemMaterial EGG = new VanillaItemMaterial("Egg", 344);
 	public static final VanillaItemMaterial COMPASS = new VanillaItemMaterial("Compass", 345);
@@ -565,6 +559,7 @@ public final class VanillaMaterials {
 					}
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 				throw new RuntimeException(e);
 			}
 		}

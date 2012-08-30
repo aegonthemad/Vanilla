@@ -35,8 +35,6 @@ import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.DoorBlock;
-import org.spout.vanilla.material.item.tool.Axe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
@@ -48,7 +46,7 @@ public class WoodenDoorBlock extends DoorBlock implements InitializableMaterial 
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.WOODEN_DOOR);
+		getDrops().DEFAULT.clear().add(VanillaMaterials.WOODEN_DOOR);
 	}
 
 	@Override
@@ -64,10 +62,5 @@ public class WoodenDoorBlock extends DoorBlock implements InitializableMaterial 
 	@Override
 	public Instrument getInstrument() {
 		return Instrument.BASSGUITAR;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Axe ? (short) 1 : (short) 2;
 	}
 }

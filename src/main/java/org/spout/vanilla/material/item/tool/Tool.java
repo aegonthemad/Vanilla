@@ -33,39 +33,49 @@ import java.util.Set;
 
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
+import org.spout.api.util.flag.Flag;
 
-import org.spout.vanilla.controller.VanillaEntityController;
-import org.spout.vanilla.controller.living.creature.hostile.Silverfish;
-import org.spout.vanilla.controller.living.creature.hostile.Skeleton;
-import org.spout.vanilla.controller.living.creature.hostile.Spider;
-import org.spout.vanilla.controller.living.creature.hostile.Zombie;
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.data.drops.flag.ToolEnchantFlags;
+import org.spout.vanilla.entity.VanillaEntityController;
+import org.spout.vanilla.entity.creature.hostile.Silverfish;
+import org.spout.vanilla.entity.creature.hostile.Skeleton;
+import org.spout.vanilla.entity.creature.hostile.Spider;
+import org.spout.vanilla.entity.creature.hostile.Zombie;
 import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.material.item.Enchantable;
 import org.spout.vanilla.material.item.VanillaItemMaterial;
 import org.spout.vanilla.util.EnchantmentUtil;
+import org.spout.vanilla.util.ToolType;
 
 public abstract class Tool extends VanillaItemMaterial implements Enchantable {
 	private final Random rand = new Random();
 	private short durability;
 	private int enchantability;
 	private Map<BlockMaterial, Float> strengthModifiers = new HashMap<BlockMaterial, Float>();
-	private int miningLevel;
+	private ToolType toolType;
 
-	public Tool(String name, int id, short durability) {
+	public Tool(String name, int id, short durability, ToolType toolType) {
 		super(name, id);
 		this.durability = durability;
+		this.toolType = toolType;
 	}
 
-	public short getDurabilityPenalty(Mineable mineable, ItemStack item) {
-		short penalty = mineable.getDurabilityPenalty(this);
+	public short getDurabilityPenalty(ItemStack item) {
 		if (EnchantmentUtil.hasEnchantment(item, Enchantments.UNBREAKING)) {
 			// Level 1 = 50%, Level 2 = 67%, Level 3 = 75% chance to not consume durability
 			if (100 - (100 / (EnchantmentUtil.getEnchantmentLevel(item, Enchantments.UNBREAKING) + 1)) > rand.nextInt(100)) {
-				penalty = 0;
+				return (short) 0;
 			}
 		}
-		return penalty;
+		return (short) 1;
+	}
+
+	/**
+	 * Gets the type of tool
+	 * @return tool type
+	 */
+	public ToolType getToolType() {
+		return this.toolType;
 	}
 
 	public short getMaxDurability() {
@@ -93,15 +103,6 @@ public abstract class Tool extends VanillaItemMaterial implements Enchantable {
 		return strengthModifiers.keySet();
 	}
 
-	public int getMiningLevel() {
-		return miningLevel;
-	}
-
-	public Tool setMiningLevel(int miningLevel) {
-		this.miningLevel = miningLevel;
-		return this;
-	}
-
 	@Override
 	public int getEnchantability() {
 		return enchantability;
@@ -115,6 +116,15 @@ public abstract class Tool extends VanillaItemMaterial implements Enchantable {
 	@Override
 	public boolean hasNBTData() {
 		return true;
+	}
+
+	@Override
+	public void getItemFlags(ItemStack item, Set<Flag> flags) {
+		super.getItemFlags(item, flags);
+		flags.add(this.toolType.getToolFlag());
+		if (EnchantmentUtil.hasEnchantment(item, Enchantments.SILK_TOUCH)) {
+			flags.add(ToolEnchantFlags.SILK_TOUCH);
+		}
 	}
 
 	public int getDamageBonus(VanillaEntityController damaged, ItemStack heldItem) {

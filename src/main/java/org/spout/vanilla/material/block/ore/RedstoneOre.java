@@ -26,16 +26,15 @@
  */
 package org.spout.vanilla.material.block.ore;
 
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Ore;
-import org.spout.vanilla.material.block.controlled.Furnace;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.material.block.controlled.FurnaceBlock;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
 public class RedstoneOre extends Ore implements TimedCraftable, InitializableMaterial {
 	private final boolean glowing;
@@ -43,12 +42,14 @@ public class RedstoneOre extends Ore implements TimedCraftable, InitializableMat
 	public RedstoneOre(String name, int id, boolean glowing) {
 		super(name, id);
 		this.glowing = glowing;
-		this.setHardness(3.0F).setResistance(5.0F);
+		this.setHardness(3.0F).setResistance(5.0F).addMiningType(ToolType.PICKAXE).setMiningLevel(ToolLevel.STONE);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.REDSTONE_DUST, 4);
+		getDrops().clear();
+		getDrops().add(VanillaMaterials.REDSTONE_DUST, 4);
+		getDrops().SILK_TOUCH.add(VanillaMaterials.REDSTONE_ORE);
 	}
 
 	@Override
@@ -58,26 +59,12 @@ public class RedstoneOre extends Ore implements TimedCraftable, InitializableMat
 
 	@Override
 	public float getCraftTime() {
-		return Furnace.SMELT_TIME;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
+		return FurnaceBlock.SMELT_TIME;
 	}
 
 	@Override
 	public byte getLightLevel(short data) {
 		return glowing ? (byte) 13 : (byte) 0;
-	}
-
-	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.isMaterial(VanillaMaterials.IRON_PICKAXE, VanillaMaterials.DIAMOND_PICKAXE)) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
 	}
 
 	/**

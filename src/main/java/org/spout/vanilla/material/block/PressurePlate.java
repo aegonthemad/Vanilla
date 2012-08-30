@@ -27,22 +27,23 @@
 package org.spout.vanilla.material.block;
 
 import org.spout.api.entity.Entity;
-import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
 import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.range.CubicEffectRange;
+import org.spout.api.material.range.CuboidEffectRange;
 import org.spout.api.material.range.EffectRange;
+import org.spout.api.material.range.ListEffectRange;
 
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
 import org.spout.vanilla.util.RedstonePowerMode;
 
-public abstract class PressurePlate extends GroundAttachable implements Mineable, RedstoneSource, DynamicMaterial {
+public abstract class PressurePlate extends GroundAttachable implements RedstoneSource, DynamicMaterial {
 	public static final int TICK_DELAY = 1000;
-	private static final EffectRange physicsRange = new CubicEffectRange(1);
+	private static final EffectRange physicsRange = new ListEffectRange(new CubicEffectRange(1), new CuboidEffectRange(0, -2, 0, 0, -1, 0));
 
 	public PressurePlate(String name, int id) {
 		super(name, id);
@@ -64,33 +65,16 @@ public abstract class PressurePlate extends GroundAttachable implements Mineable
 	 * @param pressed whether it is pressed
 	 */
 	public void setPressed(Block block, boolean pressed) {
-		this.setPressed(block, pressed, true);
-	}
-
-	/**
-	 * Sets whether this pressure plate is pressed down
-	 * @param block to set it of
-	 * @param pressed whether it is pressed
-	 * @param doPhysics whether to perform redstone physics
-	 */
-	public void setPressed(Block block, boolean pressed, boolean doPhysics) {
-		block.setDataBits(0x1, pressed);
-		if (doPhysics) {
-			block.queueUpdate(EffectRange.THIS_AND_BELOW);
+		if (this.isPressed(block) != pressed) {
+			block.setDataBits(0x1, pressed);
+			GeneralEffects.BLOCK_PRESS.playGlobal(block.getPosition(), pressed);
 		}
-	}
-
-	public void press(Block block) {
-		if (!this.isPressed(block)) {
-			this.setPressed(block, true);
-			block.resetDynamic();
-		}
+		block.resetDynamic();
 	}
 
 	@Override
-	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
-		super.onInteractBy(entity, block, type, clickedFace);
-		this.press(block); //TESTING ONLY - REMOVE AFTER
+	public void onEntityCollision(Entity entity, Block block) {
+		this.setPressed(block, true);
 	}
 
 	@Override
@@ -124,8 +108,8 @@ public abstract class PressurePlate extends GroundAttachable implements Mineable
 	}
 
 	@Override
-	public void onPlacement(Block b, Region r, long currentTime) {
-		b.dynamicUpdate(currentTime + TICK_DELAY);
+	public void onPlacement(Block block, Region r, long currentTime) {
+		block.dynamicUpdate(currentTime + TICK_DELAY);
 	}
 
 	@Override

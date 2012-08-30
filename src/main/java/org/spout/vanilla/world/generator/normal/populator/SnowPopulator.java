@@ -32,16 +32,16 @@ import net.royawesome.jlibnoise.NoiseQuality;
 import net.royawesome.jlibnoise.module.source.Perlin;
 
 import org.spout.api.generator.Populator;
+import org.spout.api.generator.WorldGeneratorUtils;
 import org.spout.api.geo.World;
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Chunk;
 
-import org.spout.vanilla.data.Climate;
-import org.spout.vanilla.world.generator.VanillaBiome;
 import org.spout.vanilla.world.generator.normal.object.SnowObject;
+import org.spout.vanilla.world.generator.object.VanillaObjects;
 
 public class SnowPopulator extends Populator {
 	private static final Perlin SNOW_HEIGHT = new Perlin();
+	private static final SnowObject SNOW = VanillaObjects.FALLING_SNOW;
 
 	static {
 		SNOW_HEIGHT.setFrequency(0.2D);
@@ -53,29 +53,24 @@ public class SnowPopulator extends Populator {
 
 	@Override
 	public void populate(Chunk chunk, Random random) {
-		SnowObject snowObject = new SnowObject(random);
-		final int seed = (int) chunk.getWorld().getSeed();
-		SNOW_HEIGHT.setSeed(seed);
-
 		if (chunk.getY() != 4) {
 			return;
 		}
 		final World world = chunk.getWorld();
+		final int seed = (int) (world.getSeed() * 51);
+		SNOW_HEIGHT.setSeed(seed);
+		SNOW.setRandom(random);
 		final int x = chunk.getBlockX();
 		final int z = chunk.getBlockZ();
+		double[][] heights = WorldGeneratorUtils.fastNoise(SNOW_HEIGHT, 16, 16, 4, x, 63, z);
 		for (byte xx = 0; xx < 16; xx++) {
 			for (byte zz = 0; zz < 16; zz++) {
-				final Block block = world.getBlock(x + xx, world.getHeight() - 1, z + zz, world);
-				if (block.getBiomeType() instanceof VanillaBiome) {
-					VanillaBiome biome = (VanillaBiome) block.getBiomeType();
-					if (biome.getClimate() != Climate.COLD) {
-						continue;
-					}
+				if (!SNOW.canPlaceObject(world, x + xx, 63, z + zz)) {
+					continue;
 				}
-
-				int count = (int) ((SNOW_HEIGHT.GetValue(x + xx + 0.001, 0.123, z + zz + 0.1) + 1.0) * 4.0);
+				int count = (int) ((heights[xx][zz] + 1) * 4.0);
 				for (int i = 0; i < count; i++) {
-					snowObject.placeObject(world, x + xx, 0, z + zz);
+					SNOW.placeObject(world, x + xx, 0, z + zz);
 				}
 			}
 		}

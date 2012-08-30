@@ -26,11 +26,11 @@
  */
 package org.spout.vanilla.data.effect;
 
-import java.util.Set;
+import java.util.List;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
 
 import org.spout.vanilla.event.world.PlaySoundEffectEvent;
 
@@ -38,6 +38,10 @@ public class SoundEffect extends Effect {
 	private static final int SOUND_RANGE = 16;
 	private final String name;
 	private final float volume, pitch;
+
+	public SoundEffect(SoundEffect sound, float volume, float pitch) {
+		this(sound.getName(), volume, pitch, sound.getRange());
+	}
 
 	public SoundEffect(String name) {
 		this(name, 1.0f, 1.0f);
@@ -66,6 +70,25 @@ public class SoundEffect extends Effect {
 		return this.pitch;
 	}
 
+	/**
+	 * Gets this Sound Effect with the volume and pitch adjusted
+	 * @param volume to set to
+	 * @param pitch to set to
+	 * @return a new sound effect with the new settings
+	 */
+	public SoundEffect adjust(float volume, float pitch) {
+		return new SoundEffect(this, volume, pitch);
+	}
+
+	/**
+	 * Adds the amount of randomness in the pitch of this Sound
+	 * @param amount of randomness to add
+	 * @return a new sound effect with the new settings
+	 */
+	public SoundEffect randomPitch(float amount) {
+		return new RandomPitchSoundEffect(this, amount);
+	}
+
 	public String getName() {
 		return this.name;
 	}
@@ -81,7 +104,7 @@ public class SoundEffect extends Effect {
 	 * @param ignore Entity to ignore
 	 * @return a Set of nearby Players
 	 */
-	public Set<Player> getNearbyPlayers(Point position, Entity ignore, float volume) {
+	public List<Player> getNearbyPlayers(Point position, Entity ignore, float volume) {
 		int range = this.getRange();
 		if (volume > 1.0f) {
 			// Multiply range for different volumes
@@ -99,7 +122,7 @@ public class SoundEffect extends Effect {
 		player.getSession().getNetworkSynchronizer().callProtocolEvent(new PlaySoundEffectEvent(position, this, volume, pitch));
 	}
 
-	public void play(Set<Player> players, Point position, float volume, float pitch) {
+	public void play(List<Player> players, Point position, float volume, float pitch) {
 		for (Player player : players) {
 			this.play(player, position, volume, pitch);
 		}

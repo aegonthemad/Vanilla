@@ -33,18 +33,16 @@ import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Ore;
 import org.spout.vanilla.material.block.controlled.SignBase;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
 
 public class Glowstone extends Ore implements InitializableMaterial {
 	public Glowstone(String name, int id) {
 		super(name, id);
-		this.setHardness(0.3F).setResistance(0.5F).setOpacity((byte) 0);
+		this.setHardness(0.3F).setResistance(0.5F);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.GLOWSTONE_DUST, 2, 4);
+		this.getDrops().addRange(VanillaMaterials.GLOWSTONE_DUST, 2, 4);
 	}
 
 	@Override
@@ -60,10 +58,5 @@ public class Glowstone extends Ore implements InitializableMaterial {
 	@Override
 	public byte getLightLevel(short data) {
 		return 15;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 }

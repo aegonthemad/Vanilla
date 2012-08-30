@@ -27,37 +27,21 @@
 package org.spout.vanilla.material.block.solid;
 
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.material.Mineable;
-import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.data.drops.flag.ToolLevelFlags;
+import org.spout.vanilla.data.drops.flag.ToolTypeFlags;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.MoveReaction;
 
-public class Obsidian extends Solid implements Mineable {
+public class Obsidian extends Solid {
 	public Obsidian(String name, int id) {
 		super(name, id);
 		this.setHardness(50.0F).setResistance(2000.0F);
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
+		this.getDrops().NOT_CREATIVE.addFlags(ToolTypeFlags.PICKAXE, ToolLevelFlags.DIAMOND_UP);
 	}
 
 	@Override
 	public MoveReaction getMoveReaction(Block block) {
 		return MoveReaction.DENY;
-	}
-
-	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.isMaterial(VanillaMaterials.DIAMOND_PICKAXE)) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
 	}
 }

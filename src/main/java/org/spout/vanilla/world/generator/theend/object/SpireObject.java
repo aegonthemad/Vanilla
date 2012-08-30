@@ -32,7 +32,7 @@ import org.spout.api.geo.World;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.material.BlockMaterial;
 
-import org.spout.vanilla.controller.object.misc.EnderCrystal;
+import org.spout.vanilla.entity.object.misc.EnderCrystal;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.object.LargePlantObject;
 
@@ -53,7 +53,7 @@ public class SpireObject extends LargePlantObject {
 
 	public SpireObject(Random random) {
 		super(random, (byte) 6, (byte) 32);
-		randomizeRadius();
+		randomize();
 	}
 
 	@Override
@@ -94,9 +94,9 @@ public class SpireObject extends LargePlantObject {
 	}
 
 	@Override
-	public void randomize() {
-		super.randomize();
-		randomizeRadius();
+	public final void randomize() {
+		totalHeight = (byte) (baseHeight + random.nextInt(randomHeight));
+		totalRadius = (byte) (baseRadius + random.nextInt(randRadius));
 	}
 
 	private byte getDiameter() {
@@ -105,10 +105,6 @@ public class SpireObject extends LargePlantObject {
 
 	private short getRadiusSquare() {
 		return (short) (totalRadius * totalRadius + 1);
-	}
-
-	public final void randomizeRadius() {
-		totalRadius = (byte) (baseRadius + random.nextInt(randRadius));
 	}
 
 	public void setBaseRadius(byte baseRadius) {

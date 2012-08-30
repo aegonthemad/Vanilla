@@ -27,6 +27,9 @@
 package org.spout.vanilla.protocol;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -34,33 +37,51 @@ import org.jboss.netty.buffer.ChannelBuffers;
 
 import org.spout.api.chat.ChatArguments;
 import org.spout.api.command.Command;
-import org.spout.api.entity.component.Controller;
+import org.spout.api.entity.Player;
 import org.spout.api.exception.UnknownPacketException;
 import org.spout.api.map.DefaultedKey;
 import org.spout.api.map.DefaultedKeyImpl;
-import org.spout.api.player.Player;
 import org.spout.api.protocol.Message;
 import org.spout.api.protocol.MessageCodec;
 import org.spout.api.protocol.Protocol;
 import org.spout.api.protocol.Session;
-import org.spout.api.protocol.common.message.CustomDataMessage;
 import org.spout.api.util.Named;
 
 import org.spout.vanilla.chat.style.VanillaStyleHandler;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.controller.source.ControllerChangeReason;
 import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.entity.VanillaPlayerController;
+import org.spout.vanilla.entity.source.ControllerChangeReason;
+import org.spout.vanilla.protocol.customdata.RegisterPluginChannelCodec;
+import org.spout.vanilla.protocol.customdata.RegisterPluginChannelMessage;
+import org.spout.vanilla.protocol.customdata.RegisterPluginChannelMessageHandler;
+import org.spout.vanilla.protocol.customdata.UnregisterPluginChannelCodec;
+import org.spout.vanilla.protocol.customdata.UnregisterPluginChannelMessageHandler;
 import org.spout.vanilla.protocol.msg.ChatMessage;
+import org.spout.vanilla.protocol.msg.CustomDataMessage;
 import org.spout.vanilla.protocol.msg.KickMessage;
 
 public class VanillaProtocol extends Protocol {
 	public final static DefaultedKey<String> SESSION_ID = new DefaultedKeyImpl<String>("sessionid", "0000000000000000");
 	public final static DefaultedKey<String> HANDSHAKE_USERNAME = new DefaultedKeyImpl<String>("handshake_username", "");
 	public final static DefaultedKey<Long> LOGIN_TIME = new DefaultedKeyImpl<Long>("handshake_time", -1L);
+	public static final DefaultedKey<ArrayList<String>> REGISTERED_CUSTOM_PACKETS = new DefaultedKey<ArrayList<String>>() {
+		private final List<String> defaultRestricted = Arrays.asList("REGISTER", "UNREGISTER");
+
+		public ArrayList<String> getDefaultValue() {
+			return new ArrayList<String>(defaultRestricted);
+		}
+
+		public String getKeyString() {
+			return "registeredPluginChannels";
+		}
+	};
 	public static final int DEFAULT_PORT = 25565;
 
 	public VanillaProtocol() {
 		super("Vanilla", DEFAULT_PORT, new VanillaCodecLookupService(), new VanillaHandlerLookupService());
+		/* PacketFA wrapped packets */
+		registerPacket(RegisterPluginChannelCodec.class, new RegisterPluginChannelMessageHandler());
+		registerPacket(UnregisterPluginChannelCodec.class, new UnregisterPluginChannelMessageHandler());
 	}
 
 	@Override
@@ -108,14 +129,25 @@ public class VanillaProtocol extends Protocol {
 	@Override
 	public Message getIntroductionMessage(String playerName) {
 		//return new HandshakeMessage(VanillaPlugin.MINECRAFT_PROTOCOL_ID, playerName); //TODO Fix this Raphfrk
+
 		return null;
 	}
 
-	private String getName(MessageCodec<?> codec) {
+	public static MessageCodec<?> getCodec(String name, Protocol activeProtocol) {
+		for (Pair<Integer, String> item : activeProtocol.getDynamicallyRegisteredPackets()) {
+			MessageCodec<?> codec = activeProtocol.getCodecLookupService().find(item.getLeft());
+			if (getName(codec).equalsIgnoreCase(name)) {
+				return codec;
+			}
+		}
+		return null;
+	}
+
+	public static String getName(MessageCodec<?> codec) {
 		if (codec instanceof Named) {
 			return ((Named) codec).getName();
 		} else {
-			return "Spout-" + codec.getOpcode();
+			return "SPOUT:" + codec.getOpcode();
 		}
 	}
 
@@ -124,38 +156,25 @@ public class VanillaProtocol extends Protocol {
 		final Player player = session.getPlayer();
 		session.setNetworkSynchronizer(new VanillaNetworkSynchronizer(player, player));
 
-		Controller controller = player.getController();
-
-		if (controller instanceof VanillaPlayer) {
-			VanillaPlayer vanillaPlayer = (VanillaPlayer) controller;
-			// Set protocol and send packets
-			if (vanillaPlayer.isSurvival()) {
-				vanillaPlayer.updateHealth();
-			}
-		}
-
-		StringBuilder listBuilder = new StringBuilder();
+		List<MessageCodec<?>> dynamicCodecList = new ArrayList<MessageCodec<?>>();
 		for (Pair<Integer, String> item : getDynamicallyRegisteredPackets()) {
 			MessageCodec<?> codec = getCodecLookupService().find(item.getLeft());
 			if (codec != null) {
-				if (listBuilder.length() > 0) {
-					listBuilder.append('\0');
-				}
-				System.out.println(codec);
-				listBuilder.append(getName(codec));
+				dynamicCodecList.add(codec);
 			} else {
-				throw new IllegalArgumentException("Dynamic packet class" + item.getRight() + " claims to be registered but is not in CodecLookupService!");
+				throw new IllegalStateException("Dynamic packet class" + item.getRight() + " claims to be registered but is not in our CodecLookupService!");
 			}
 		}
 
-		session.send(false, new CustomDataMessage("REGISTER", listBuilder.toString().getBytes(ChannelBufferUtils.CHARSET_UTF8)));
+		session.send(false, new RegisterPluginChannelMessage(dynamicCodecList));
 	}
 
 	@Override
 	public void setPlayerController(Player player) {
-		VanillaPlayer vanillaPlayer = new VanillaPlayer(player.getWorld().getDataMap().get(VanillaData.GAMEMODE));
+		VanillaPlayerController vanillaPlayer = new VanillaPlayerController();
 		vanillaPlayer.setTitle(player.getDisplayName());
-
 		player.setController(vanillaPlayer, ControllerChangeReason.INITIALIZATION);
+		// Set game mode
+		vanillaPlayer.setGameMode(player.getWorld().getDataMap().get(VanillaData.GAMEMODE));
 	}
 }

@@ -26,12 +26,10 @@
  */
 package org.spout.vanilla.material.block.plant;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.RandomBlockMaterial;
 import org.spout.api.material.block.BlockFace;
@@ -42,14 +40,13 @@ import org.spout.api.math.IntVector3;
 import org.spout.api.math.Vector3;
 import org.spout.api.util.BlockIterator;
 
-import org.spout.vanilla.controller.living.Living;
+import org.spout.vanilla.data.drops.flag.ToolTypeFlags;
+import org.spout.vanilla.entity.component.HeadOwner;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.Spreading;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
 
 public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Burnable, RandomBlockMaterial {
 	private static final EffectRange VINE_RANGE = new CuboidEffectRange(-4, -1, -4, 4, 1, 4);
@@ -59,6 +56,7 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 		super(name, id);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.2F).setResistance(0.3F).setTransparent();
+		this.getDrops().DEFAULT.clear().add(this).addFlags(ToolTypeFlags.SHEARS);
 	}
 
 	@Override
@@ -152,8 +150,8 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 		if (block.getMaterial().equals(VanillaMaterials.VINES) && block.getSource() instanceof Entity) {
 			//get block by block tracing from the player view
 			Entity entity = (Entity) block.getSource();
-			if (entity.getController() instanceof Living) {
-				BlockIterator iter = ((Living) entity.getController()).getHeadBlockView(7);
+			if (entity.getController() instanceof HeadOwner) {
+				BlockIterator iter = ((HeadOwner) entity.getController()).getHead().getBlockView();
 				Block next;
 				while (iter.hasNext()) {
 					next = iter.next();
@@ -261,20 +259,6 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 	@Override
 	public boolean isPlacementObstacle() {
 		return false;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block, ItemStack holding) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		if (holding != null && holding.isMaterial(VanillaMaterials.SHEARS)) {
-			drops.add(new ItemStack(this, 1));
-		}
-		return drops;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 
 	@Override

@@ -31,20 +31,18 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.math.Vector3;
 
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.block.Directional;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Axe;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.util.ToolType;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class Pumpkin extends Solid implements Directional, Mineable {
+public class Pumpkin extends Solid implements Directional {
 	private final boolean lantern;
 
 	public Pumpkin(String name, int id, boolean lantern) {
 		super(name, id);
 		this.lantern = lantern;
-		this.setHardness(1.0F).setResistance(1.7F);
+		this.setHardness(1.0F).setResistance(1.7F).addMiningType(ToolType.AXE);
 	}
 
 	@Override
@@ -78,10 +76,5 @@ public class Pumpkin extends Solid implements Directional, Mineable {
 	 */
 	public boolean isLantern() {
 		return lantern;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Axe ? (short) 1 : (short) 2;
 	}
 }

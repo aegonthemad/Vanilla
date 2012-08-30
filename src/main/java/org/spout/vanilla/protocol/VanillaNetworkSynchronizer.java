@@ -33,12 +33,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import gnu.trove.set.TIntSet;
 
+import org.spout.api.Server;
 import org.spout.api.Spout;
+import org.spout.api.entity.Controller;
 import org.spout.api.entity.Entity;
-import org.spout.api.entity.component.Controller;
+import org.spout.api.entity.Player;
 import org.spout.api.event.EventHandler;
 import org.spout.api.generator.biome.Biome;
 import org.spout.api.geo.World;
+import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.cuboid.ChunkSnapshot;
 import org.spout.api.geo.cuboid.ChunkSnapshot.EntityType;
@@ -48,7 +51,6 @@ import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.math.Quaternion;
-import org.spout.api.player.Player;
 import org.spout.api.protocol.EntityProtocol;
 import org.spout.api.protocol.Message;
 import org.spout.api.protocol.NetworkSynchronizer;
@@ -61,15 +63,24 @@ import org.spout.api.util.set.concurrent.TSyncIntHashSet;
 import org.spout.api.util.set.concurrent.TSyncIntPairHashSet;
 import org.spout.vanilla.VanillaPlugin;
 import org.spout.vanilla.configuration.VanillaConfiguration;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.data.Difficulty;
 import org.spout.vanilla.data.Dimension;
 import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.data.Weather;
 import org.spout.vanilla.data.WorldType;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.event.block.BlockActionEvent;
+import org.spout.vanilla.event.block.BlockControllerDataEvent;
+import org.spout.vanilla.event.block.SignUpdateEvent;
+import org.spout.vanilla.event.entity.EntityAnimationEvent;
+import org.spout.vanilla.event.entity.EntityCollectItemEvent;
+import org.spout.vanilla.event.entity.EntityMetaChangeEvent;
+import org.spout.vanilla.event.entity.EntityStatusEvent;
 import org.spout.vanilla.event.player.PlayerGameModeChangedEvent;
+import org.spout.vanilla.event.player.network.PlayerGameStateEvent;
 import org.spout.vanilla.event.player.network.PlayerKeepAliveEvent;
+import org.spout.vanilla.event.player.network.PlayerUpdateStatsEvent;
 import org.spout.vanilla.event.player.network.PlayerUpdateUserListEvent;
 import org.spout.vanilla.event.window.WindowCloseEvent;
 import org.spout.vanilla.event.window.WindowOpenEvent;
@@ -79,9 +90,12 @@ import org.spout.vanilla.event.window.WindowSetSlotsEvent;
 import org.spout.vanilla.event.world.PlayExplosionEffectEvent;
 import org.spout.vanilla.event.world.PlayParticleEffectEvent;
 import org.spout.vanilla.event.world.PlaySoundEffectEvent;
+import org.spout.vanilla.event.world.TimeUpdateEvent;
+import org.spout.vanilla.event.world.WeatherChangeEvent;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.protocol.msg.BlockActionMessage;
 import org.spout.vanilla.protocol.msg.BlockChangeMessage;
+import org.spout.vanilla.protocol.msg.ChangeGameStateMessage;
 import org.spout.vanilla.protocol.msg.CompressedChunkMessage;
 import org.spout.vanilla.protocol.msg.ExplosionMessage;
 import org.spout.vanilla.protocol.msg.KeepAliveMessage;
@@ -90,9 +104,17 @@ import org.spout.vanilla.protocol.msg.PlayEffectMessage;
 import org.spout.vanilla.protocol.msg.PlayerListMessage;
 import org.spout.vanilla.protocol.msg.PlayerLookMessage;
 import org.spout.vanilla.protocol.msg.PlayerPositionLookMessage;
+import org.spout.vanilla.protocol.msg.PlayerUpdateStatsMessage;
 import org.spout.vanilla.protocol.msg.RespawnMessage;
 import org.spout.vanilla.protocol.msg.SpawnPositionMessage;
+import org.spout.vanilla.protocol.msg.TileEntityDataMessage;
+import org.spout.vanilla.protocol.msg.TimeUpdateMessage;
+import org.spout.vanilla.protocol.msg.UpdateSignMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityAnimationMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityCollectItemMessage;
 import org.spout.vanilla.protocol.msg.entity.EntityEquipmentMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityMetadataMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityStatusMessage;
 import org.spout.vanilla.protocol.msg.entity.EntityTeleportMessage;
 import org.spout.vanilla.protocol.msg.login.LoginRequestMessage;
 import org.spout.vanilla.protocol.msg.window.WindowCloseMessage;
@@ -303,7 +325,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@Override
 	protected void worldChanged(World world) {
-		VanillaPlayer vc = (VanillaPlayer) owner.getController();
+		VanillaPlayerController vc = (VanillaPlayerController) owner.getController();
 
 		GameMode gamemode = world.getDataMap().get(VanillaData.GAMEMODE);
 		//The world the player is entering has a different gamemode...
@@ -326,7 +348,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (first) {
 			first = false;
 			int entityId = owner.getId();
-			LoginRequestMessage idMsg = new LoginRequestMessage(entityId, worldType.toString(), gamemode.getId(), (byte) dimension.getId(), difficulty.getId(), (byte) session.getEngine().getMaxPlayers());
+			LoginRequestMessage idMsg = new LoginRequestMessage(entityId, worldType.toString(), gamemode.getId(), (byte) dimension.getId(), difficulty.getId(), (byte) ((Server) session.getEngine()).getMaxPlayers());
 			owner.getSession().send(true, idMsg);
 			owner.getSession().setState(State.GAME);
 			for (int slot = 0; slot < 4; slot++) {
@@ -372,60 +394,27 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	}
 
 	@Override
-	public void spawnEntity(Entity e) {
-		if (e == null) {
-			return;
-		}
-
+	public void syncEntity(Entity e, boolean spawn, boolean destroy, boolean update) {
 		Controller c = e.getController();
 		if (c != null) {
 			EntityProtocol ep = c.getType().getEntityProtocol(VanillaPlugin.VANILLA_PROTOCOL_ID);
 			if (ep != null) {
-				Message[] spawn = ep.getSpawnMessage(e);
-				if (spawn != null) {
-					session.sendAll(spawn);
+				List<Message> messages = new ArrayList<Message>(3);
+				// Sync using vanilla protocol
+				if (destroy) {
+					messages.addAll(ep.getDestroyMessages(e));
+				}
+				if (spawn) {
+					messages.addAll(ep.getSpawnMessages(e));
+				}
+				if (update) {
+					messages.addAll(ep.getUpdateMessages(e));
+				}
+				for (Message message : messages) {
+					this.session.send(false, message);
 				}
 			}
 		}
-		super.spawnEntity(e);
-	}
-
-	@Override
-	public void destroyEntity(Entity e) {
-		if (e == null) {
-			return;
-		}
-
-		Controller c = e.getController();
-		if (c != null) {
-			EntityProtocol ep = c.getType().getEntityProtocol(VanillaPlugin.VANILLA_PROTOCOL_ID);
-			if (ep != null) {
-				Message[] death = ep.getDestroyMessage(e);
-				if (death != null) {
-					session.sendAll(death);
-				}
-			}
-		}
-		super.destroyEntity(e);
-	}
-
-	@Override
-	public void syncEntity(Entity e) {
-		if (e == null) {
-			return;
-		}
-
-		Controller c = e.getController();
-		if (c != null) {
-			EntityProtocol ep = c.getType().getEntityProtocol(VanillaPlugin.VANILLA_PROTOCOL_ID);
-			if (ep != null) {
-				Message[] sync = ep.getUpdateMessage(e);
-				if (sync != null) {
-					session.sendAll(sync);
-				}
-			}
-		}
-		super.syncEntity(e);
 	}
 
 	@EventHandler
@@ -433,7 +422,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (event.getWindow() instanceof DefaultWindow) {
 			return null; // no message for the default Window
 		}
-		int size = event.getWindow().getInventorySize() - event.getWindow().getOwner().getInventory().getMain().getSize();
+		int size = event.getWindow().getInventorySize() - event.getWindow().getParent().getInventory().getMain().getSize();
 		return new WindowOpenMessage(event.getWindow(), size);
 	}
 
@@ -500,12 +489,73 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	public Message onPlayerUpdateUserList(PlayerUpdateUserListEvent event) {
 		Controller controller = event.getPlayer().getController();
 		String name;
-		if (controller instanceof VanillaPlayer) {
-			name = ((VanillaPlayer) controller).getTabListName();
+		if (controller instanceof VanillaPlayerController) {
+			name = ((VanillaPlayerController) controller).getTabListName();
 		} else {
 			name = event.getPlayer().getDisplayName();
 		}
 		return new PlayerListMessage(name, true, (short) event.getPingDelay());
+	}
+
+	@EventHandler
+	public Message onEntityAnimation(EntityAnimationEvent event) {
+		return new EntityAnimationMessage(event.getEntity().getId(), event.getAnimation());
+	}
+
+	@EventHandler
+	public Message onEntityStatus(EntityStatusEvent event) {
+		return new EntityStatusMessage(event.getEntity().getId(), event.getStatus());
+	}
+
+	@EventHandler
+	public Message onPlayerUpdateStats(PlayerUpdateStatsEvent event) {
+		if (event.getPlayer() != getOwner()) {
+			return null;
+		}
+		VanillaPlayerController player = (VanillaPlayerController) event.getPlayer().getController();
+		return new PlayerUpdateStatsMessage((short) player.getHealth().getHealth(), player.getSurvivalComponent().getHunger(), player.getSurvivalComponent().getFoodSaturation());
+	}
+
+	@EventHandler
+	public Message onEntityMetaChange(EntityMetaChangeEvent event) {
+		return new EntityMetadataMessage(event.getEntity().getId(), event.getParameters());
+	}
+
+	@EventHandler
+	public Message onSignUpdate(SignUpdateEvent event) {
+		Block block = event.getSign().getBlock();
+		return new UpdateSignMessage(block.getX(), block.getY(), block.getZ(), event.getLines());
+	}
+
+	@EventHandler
+	public Message onEntityCollectItem(EntityCollectItemEvent event) {
+		return new EntityCollectItemMessage(event.getCollected().getId(), event.getEntity().getId());
+	}
+
+	@EventHandler
+	public Message onPlayerGameState(PlayerGameStateEvent event) {
+		return new ChangeGameStateMessage(event.getReason(), event.getGameMode());
+	}
+
+	@EventHandler
+	public Message onWeatherChanged(WeatherChangeEvent event) {
+		Weather newWeather = event.getNewWeather();
+		if (newWeather.equals(Weather.RAIN) || newWeather.equals(Weather.THUNDERSTORM)) {
+			return new ChangeGameStateMessage(ChangeGameStateMessage.BEGIN_RAINING);
+		} else {
+			return new ChangeGameStateMessage(ChangeGameStateMessage.END_RAINING);
+		}
+	}
+
+	@EventHandler
+	public Message onTimeUpdate(TimeUpdateEvent event) {
+		return new TimeUpdateMessage(event.getNewTime());
+	}
+
+	@EventHandler
+	public Message onBlockControllerData(BlockControllerDataEvent event) {
+		Block b = event.getBlock();
+		return new TileEntityDataMessage(b.getX(), b.getY(), b.getZ(), event.getAction(), event.getData());
 	}
 
 	public static enum ChunkInit {

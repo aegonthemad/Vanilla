@@ -26,10 +26,10 @@
  */
 package org.spout.vanilla.data.effect;
 
-import java.util.Set;
+import java.util.List;
 
+import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
 
 /**
  * Plays all set Effects when playing
@@ -58,7 +58,7 @@ public class BatchEffect extends Effect {
 	}
 
 	@Override
-	public void play(Set<Player> players, Point position) {
+	public void play(List<Player> players, Point position) {
 		int distanceSquared;
 		for (Player player : players) {
 			distanceSquared = (int) player.getPosition().distanceSquared(position);

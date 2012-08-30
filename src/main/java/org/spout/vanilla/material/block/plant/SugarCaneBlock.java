@@ -38,7 +38,6 @@ import org.spout.api.material.block.BlockFaces;
 
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.material.item.tool.Tool;
 
 public class SugarCaneBlock extends StackGrowingBase implements InitializableMaterial {
 	private final Set<Material> allowedBases = new HashSet<Material>(4);
@@ -51,7 +50,7 @@ public class SugarCaneBlock extends StackGrowingBase implements InitializableMat
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.SUGAR_CANE);
+		this.getDrops().DEFAULT.clear().add(VanillaMaterials.SUGAR_CANE);
 	}
 
 	@Override
@@ -89,10 +88,5 @@ public class SugarCaneBlock extends StackGrowingBase implements InitializableMat
 		for (Material mat : materials) {
 			allowedBases.add(mat);
 		}
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return 1;
 	}
 }

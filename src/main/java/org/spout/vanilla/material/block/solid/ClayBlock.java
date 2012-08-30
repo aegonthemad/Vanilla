@@ -28,25 +28,20 @@ package org.spout.vanilla.material.block.solid;
 
 import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Spade;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.util.ToolType;
 
-public class ClayBlock extends Solid implements Mineable, InitializableMaterial {
+public class ClayBlock extends Solid implements InitializableMaterial {
 	public ClayBlock(String name, int id) {
 		super(name, id);
 		this.setHardness(0.6F).setResistance(1.0F).setStepSound(SoundEffects.STEP_GRAVEL);
+		this.addMiningType(ToolType.SPADE);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.CLAY, 4);
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Spade ? (short) 1 : (short) 2;
+		getDrops().DEFAULT.clear().add(VanillaMaterials.CLAY, 4);
+		getDrops().SILK_TOUCH.add(VanillaMaterials.CLAY_BLOCK);
 	}
 }
