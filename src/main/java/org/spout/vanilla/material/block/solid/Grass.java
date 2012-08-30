@@ -32,26 +32,23 @@ import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.SpreadingSolid;
-import org.spout.vanilla.material.item.tool.Spade;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.util.ToolType;
 
-public class Grass extends SpreadingSolid implements Mineable, RandomBlockMaterial, InitializableMaterial {
+public class Grass extends SpreadingSolid implements RandomBlockMaterial, InitializableMaterial {
 	public Grass(String name, int id) {
 		super(name, id);
 		this.setHardness(0.6F).setResistance(0.8F).setStepSound(SoundEffects.STEP_GRASS);
+		this.addMiningType(ToolType.SPADE);
 	}
 
 	@Override
 	public void initialize() {
-		this.setReplacedMaterial(VanillaMaterials.DIRT).setDropMaterial(VanillaMaterials.DIRT);
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Spade ? (short) 1 : (short) 2;
+		this.setReplacedMaterial(VanillaMaterials.DIRT);
+		getDrops().DEFAULT.clear();
+		getDrops().DEFAULT.add(VanillaMaterials.DIRT);
+		getDrops().SILK_TOUCH.add(VanillaMaterials.GRASS);
 	}
 
 	@Override

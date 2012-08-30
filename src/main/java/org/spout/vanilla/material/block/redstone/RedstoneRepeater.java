@@ -42,16 +42,14 @@ import org.spout.api.material.range.ListEffectRange;
 import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Directional;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.RedstonePowerMode;
 import org.spout.vanilla.util.RedstoneUtil;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class RedstoneRepeater extends GroundAttachable implements Directional, Mineable, RedstoneSource, RedstoneTarget, DynamicMaterial, InitializableMaterial {
+public class RedstoneRepeater extends GroundAttachable implements Directional, RedstoneSource, RedstoneTarget, DynamicMaterial, InitializableMaterial {
 	private static final EffectRange[] physicsRanges;
 	private final boolean powered;
 
@@ -78,7 +76,7 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.REDSTONE_REPEATER);
+		this.getDrops().DEFAULT.clear().add(VanillaMaterials.REDSTONE_REPEATER);
 	}
 
 	public boolean isPowered() {
@@ -88,10 +86,6 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 	@Override
 	public byte getLightLevel(short data) {
 		return powered ? (byte) 9 : (byte) 0;
-	}
-
-	public void onDestroy(Block block, double dropChance) {
-		super.onDestroy(block, dropChance);
 	}
 
 	public void setPowered(Block block, boolean powered) {
@@ -176,11 +170,6 @@ public class RedstoneRepeater extends GroundAttachable implements Directional, M
 	public boolean isReceivingPower(Block block) {
 		BlockFace face = this.getFacing(block).getOpposite();
 		return RedstoneUtil.isEmittingPower(block.translate(face));
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return 1;
 	}
 
 	@Override

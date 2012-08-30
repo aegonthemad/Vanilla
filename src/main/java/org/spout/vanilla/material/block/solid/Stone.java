@@ -26,44 +26,27 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
-public class Stone extends Solid implements Mineable, InitializableMaterial {
+public class Stone extends Solid implements InitializableMaterial {
 	public Stone(String name, int id) {
 		super(name, id);
-		this.setHardness(1.5F).setResistance(10.0F);
+		this.setHardness(1.5F).setResistance(10.0F).addMiningType(ToolType.PICKAXE).setMiningLevel(ToolLevel.WOOD);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.COBBLESTONE);
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
+		this.getDrops().DEFAULT.clear().add(VanillaMaterials.COBBLESTONE);
+		this.getDrops().SILK_TOUCH.add(VanillaMaterials.STONE);
 	}
 
 	@Override
 	public Instrument getInstrument() {
 		return Instrument.BASSDRUM;
-	}
-
-	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.getMaterial() instanceof Pickaxe) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
 	}
 }

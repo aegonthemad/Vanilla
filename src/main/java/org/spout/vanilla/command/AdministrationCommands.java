@@ -28,13 +28,14 @@ package org.spout.vanilla.command;
 
 import java.util.Set;
 
+import org.spout.api.Server;
 import org.spout.api.Spout;
 import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.command.CommandContext;
 import org.spout.api.command.CommandSource;
 import org.spout.api.command.annotated.Command;
 import org.spout.api.command.annotated.CommandPermissions;
-import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
 import org.spout.api.exception.CommandException;
 import org.spout.api.generator.biome.Biome;
 import org.spout.api.generator.biome.BiomeGenerator;
@@ -43,16 +44,15 @@ import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.Material;
-import org.spout.api.player.Player;
+import org.spout.api.plugin.Platform;
 import org.spout.api.protocol.NetworkSynchronizer;
-
 import org.spout.vanilla.VanillaPlugin;
 import org.spout.vanilla.configuration.OpConfiguration;
 import org.spout.vanilla.configuration.VanillaConfiguration;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.controller.world.VanillaSky;
 import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.Weather;
+import org.spout.vanilla.entity.VanillaPlayerController;
+import org.spout.vanilla.entity.world.VanillaSky;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.util.VanillaBlockUtil;
 
@@ -63,55 +63,60 @@ public class AdministrationCommands {
 		this.plugin = plugin;
 	}
 
-	@Command(aliases = {"tp", "teleport"}, usage = "<player> [player|x] [y] [z]", desc = "Teleport to a location", min = 1, max = 3)
+	@Command(aliases = {"tp", "teleport"}, usage = "[player] [player|x] [y] [z] [-w <world>]", flags = "w:", desc = "Teleport to a location", min = 1, max = 4)
 	@CommandPermissions("vanilla.command.tp")
 	public void tp(CommandContext args, CommandSource source) throws CommandException {
-		Player player = null;
-		Point point = null;
-		if (args.length() == 1) {
-			if (!(source instanceof Player)) {
-				throw new CommandException("You must be a player to teleport to another player!");
-			}
+		int index = 0;
+		Player player;
 
-			player = (Player) source;
-			Player to = Spout.getEngine().getPlayer(args.getString(0), true);
-			if (to != null) {
-				point = to.getPosition();
-			} else {
-				throw new CommandException(args.getString(0) + " is not online!");
+		if (args.length() % 2 == 0) {
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
 			}
-		}
+			player = ((Server) Spout.getEngine()).getPlayer(args.getString(index++), true);
 
-		if (args.length() == 2) {
-			player = Spout.getEngine().getPlayer(args.getString(0), true);
 			if (player == null) {
-				throw new CommandException(args.getString(0) + " is not online!");
+				throw new CommandException(args.getString(0) + " is not online.");
 			}
-
-			Player to = Spout.getEngine().getPlayer(args.getString(1), true);
-			if (to != null) {
-				point = to.getPosition();
-			} else {
-				throw new CommandException(args.getString(1) + " is not online!");
-			}
-		}
-
-		if (args.length() == 3) {
+		} else {
 			if (!(source instanceof Player)) {
-				throw new CommandException("You must be a player to teleport to coordinates!");
+				throw new CommandException("You must be a player to teleport yourself!");
 			}
 
 			player = (Player) source;
-			Entity playerEntity = player;
-			point = new Point(playerEntity.getWorld(), args.getInteger(0), args.getInteger(1), args.getInteger(2));
 		}
 
-		if (player == null) {
-			throw new CommandException("Player not found!");
-		}
+		Point point;
 
-		if (point == null) {
-			throw new CommandException("Point not found!");
+		if (args.length() > 2) {
+			World world = player.getWorld();
+
+			if (args.hasFlag('w')) {
+				if (!source.hasPermission("vanilla.command.tp.world-flag")) {
+					throw new CommandException("You are not allowed to use the world flag.");
+				}
+
+				world = Spout.getEngine().getWorld(args.getFlagString('w'));
+
+				if (world == null) {
+					throw new CommandException("Please supply an existing world.");
+				}
+			}
+			
+			point = new Point(world, args.getInteger(index), args.getInteger(index + 1), args.getInteger(index + 2));
+		} else {
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
+			}
+			Player target = ((Server) Spout.getEngine()).getPlayer(args.getString(index), true);
+
+			if (target == null) {
+				throw new CommandException(args.getString(0) + " is not online.");
+			}
+
+			point = target.getPosition();
 		}
 
 		point.getWorld().getChunkFromBlock(point);
@@ -124,23 +129,34 @@ public class AdministrationCommands {
 	public void give(CommandContext args, CommandSource source) throws CommandException {
 		int index = 0;
 		Player player = null;
-		Material material = null;
 
-		if (args.length() == 1) {
-			if (!(source instanceof Player)) {
-				throw new CommandException("You must be a player to give yourself materials!");
+		if (args.length() != 1) {
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
 			}
+			player = ((Server) Spout.getEngine()).getPlayer(args.getString(index++), true);
+		}
 
-			player = (Player) source;
-		} else {
-			player = Spout.getEngine().getPlayer(args.getString(index++), true);
-			if (player == null) {
-				throw new CommandException(args.getString(0) + " is not online.");
+		if (player == null) {
+			switch (args.length()) {
+				case 3:
+					throw new CommandException(args.getString(0) + " is not online.");
+				case 2:
+					index--;
+				case 1:
+					if (!(source instanceof Player)) {
+						throw new CommandException("You must be a player to give yourself materials!");
+					}
+
+					player = (Player) source;
+					break;
 			}
 		}
-		VanillaPlayer vplayer = (VanillaPlayer) player.getController();
 
-		short data = 0;
+		Material material;
+		VanillaPlayerController controller = (VanillaPlayerController) player.getController();
+
 		if (args.isInteger(index)) {
 			material = VanillaMaterials.getMaterial((short) args.getInteger(index));
 		} else {
@@ -148,13 +164,9 @@ public class AdministrationCommands {
 
 			if (name.contains(":")) {
 				String[] parts = args.getString(index).split(":");
-				material = VanillaMaterials.getMaterial(Short.parseShort(parts[0]));
-				data = Short.parseShort(parts[1]);
+				material = VanillaMaterials.getMaterial(Short.parseShort(parts[0]), Short.parseShort(parts[1]));
 			} else {
 				material = Material.get(args.getString(index));
-				if (material != null) {
-					data = material.getData();
-				}
 			}
 		}
 
@@ -162,25 +174,26 @@ public class AdministrationCommands {
 			throw new CommandException(args.getString(index) + " is not a block!");
 		}
 
-		int count = args.getInteger(2, 1);
+		int count = args.getInteger(++index, 1);
 
-		vplayer.getInventory().getMain().addItem(new ItemStack(material, data, count), false);
+		controller.getInventory().getMain().addItem(new ItemStack(material, count));
 
-		source.sendMessage("Gave ", vplayer.getParent().getName(), " ", count, " ", material.getSubMaterial(data).getDisplayName());
+		source.sendMessage("Gave ", controller.getParent().getName(), " ", count, " ", material.getDisplayName());
 	}
 
 	@Command(aliases = {"deop"}, usage = "<player>", desc = "Revoke a players operator status", min = 1, max = 1)
 	@CommandPermissions("vanilla.command.deop")
 	public void deop(CommandContext args, CommandSource source) throws CommandException {
-		if (args.length() != 1) {
-			throw new CommandException("Please provide a player to remove operator status!");
+		Platform platform = Spout.getPlatform();
+		if (platform != Platform.SERVER || platform != Platform.PROXY) {
+			throw new CommandException("You cannot search for players unless you are in server mode.");
 		}
 
 		String playerName = args.getString(0);
 		OpConfiguration ops = VanillaConfiguration.OPS;
 		ops.setOp(playerName, false);
 		source.sendMessage(ChatStyle.YELLOW, playerName, " had their operator status revoked!");
-		Player player = Spout.getEngine().getPlayer(playerName, true);
+		Player player = ((Server) Spout.getEngine()).getPlayer(playerName, true);
 		if (player != null && !source.equals(player)) {
 			player.sendMessage(ChatStyle.YELLOW, "You had your operator status revoked!");
 		}
@@ -189,17 +202,38 @@ public class AdministrationCommands {
 	@Command(aliases = {"op"}, usage = "<player>", desc = "Make a player an operator", min = 1, max = 1)
 	@CommandPermissions("vanilla.command.op")
 	public void op(CommandContext args, CommandSource source) throws CommandException {
-		if (args.length() != 1) {
-			throw new CommandException("Please player to OP!");
+		Platform platform = Spout.getPlatform();
+		if (platform != Platform.SERVER || platform != Platform.PROXY) {
+			throw new CommandException("You cannot search for players unless you are in server mode.");
 		}
 
 		String playerName = args.getString(0);
 		OpConfiguration ops = VanillaConfiguration.OPS;
 		ops.setOp(playerName, true);
 		source.sendMessage(ChatStyle.YELLOW, playerName, " is now an operator!");
-		Player player = Spout.getEngine().getPlayer(playerName, true);
+		Player player = ((Server) Spout.getEngine()).getPlayer(playerName, true);
 		if (player != null && !source.equals(player)) {
 			player.sendMessage(ChatStyle.YELLOW, "You are now an operator!");
+		}
+	}
+
+	public enum Times {
+		DAWN(0),
+		DAY(6000),
+		DUSK(12000),
+		NIGHT(18000);
+		private int time;
+
+		Times(int time) {
+			this.time = time;
+		}
+
+		public int getTime() {
+			return time;
+		}
+
+		public static Times get(String name) {
+			return valueOf(name.toUpperCase());
 		}
 	}
 
@@ -211,16 +245,12 @@ public class AdministrationCommands {
 		if (args.getString(0).equalsIgnoreCase("set")) {
 			if (args.isInteger(1)) {
 				time = args.getInteger(1);
-			} else if (args.getString(1).equalsIgnoreCase("day")) {
-				time = 6000;
-			} else if (args.getString(1).equalsIgnoreCase("night")) {
-				time = 18000;
-			} else if (args.getString(1).equalsIgnoreCase("dawn")) {
-				time = 0;
-			} else if (args.getString(1).equalsIgnoreCase("dusk")) {
-				time = 12000;
 			} else {
-				throw new CommandException("'" + args.getString(1) + "' is not a valid time.");
+				try {
+					time = Times.get(args.getString(1)).getTime();
+				} catch (Exception e) {
+					throw new CommandException("'" + args.getString(1) + "' is not a valid time.");
+				}
 			}
 		} else if (args.getString(0).equalsIgnoreCase("add")) {
 			relative = true;
@@ -253,13 +283,17 @@ public class AdministrationCommands {
 		source.sendMessage("Set ", world.getName(), "'s time to: ", sky.getTime());
 	}
 
-	@Command(aliases = {"gamemode", "gm"}, usage = "[player] <0|1|survival|creative> (0 = SURVIVAL, 1 = CREATIVE)", desc = "Change a player's game mode", min = 1, max = 2)
+	@Command(aliases = {"gamemode", "gm"}, usage = "[player] <0|1|2|survival|creative|adventure> (0 = SURVIVAL, 1 = CREATIVE, 2 = ADVENTURE)", desc = "Change a player's game mode", min = 1, max = 2)
 	@CommandPermissions("vanilla.command.gamemode")
 	public void gamemode(CommandContext args, CommandSource source) throws CommandException {
 		int index = 0;
 		Player player;
 		if (args.length() == 2) {
-			player = Spout.getEngine().getPlayer(args.getString(index++), true);
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
+			}
+			player = ((Server) Spout.getEngine()).getPlayer(args.getString(index++), true);
 			if (player == null) {
 				throw new CommandException(args.getString(0) + " is not online.");
 			}
@@ -271,41 +305,32 @@ public class AdministrationCommands {
 			player = (Player) source;
 		}
 
-		if (!(player.getController() instanceof VanillaPlayer)) {
+		if (!(player.getController() instanceof VanillaPlayerController)) {
 			throw new CommandException("Invalid player!");
 		}
 
-		int mode;
-		if (args.isInteger(index)) {
-			mode = args.getInteger(index);
-		} else if (args.getString(index).equalsIgnoreCase("survival")) {
-			mode = 0;
-		} else if (args.getString(index).equalsIgnoreCase("creative")) {
-			mode = 1;
-		} else {
-			throw new CommandException("A game mode must be either a number between 1 and 2, 'CREATIVE' or 'SURVIVAL'");
+		VanillaPlayerController controller = (VanillaPlayerController) player.getController();
+
+		GameMode mode;
+
+		try {
+			if (args.isInteger(index)) {
+				mode = GameMode.get(args.getInteger(index));
+			} else {
+				mode = GameMode.get(args.getString(index));
+			}
+		} catch (Exception e) {
+			throw new CommandException("A game mode must be either a number between 0 and 2, 'CREATIVE', 'SURVIVAL' or 'ADVENTURE'");
 		}
 
-		String message;
-		VanillaPlayer p = (VanillaPlayer) player.getController();
-		switch (mode) {
-			case 0:
-				p.setGameMode(GameMode.SURVIVAL);
-				message = "SURVIVAL";
-				break;
-			case 1:
-				p.setGameMode(GameMode.CREATIVE);
-				message = "CREATIVE";
-				break;
-			default:
-				throw new CommandException("A game mode must be either a number between 1 and 2, 'CREATIVE' or 'SURVIVAL'");
-		}
+		controller.setGameMode(mode);
+
 		if (!player.equals(source)) {
-			source.sendMessage(p.getParent().getName(), "'s game mode has been changed to ", message, ".");
+			source.sendMessage(controller.getParent().getName(), "'s game mode has been changed to ", mode.name(), ".");
 		}
 	}
 
-	@Command(aliases = "xp", usage = "[player] <amount>", desc = "Give/take experience from a player", max = 2)
+	@Command(aliases = "xp", usage = "[player] <amount>", desc = "Give/take experience from a player", min = 1, max = 2)
 	@CommandPermissions("vanilla.command.xp")
 	public void xp(CommandContext args, CommandSource source) throws CommandException {
 		// If source is player
@@ -319,11 +344,12 @@ public class AdministrationCommands {
 			} else {
 				throw new CommandException("You must be a player to give yourself xp.");
 			}
-		}
-
-		// If source is not player
-		if (args.length() == 2) {
-			Player player = Spout.getEngine().getPlayer(args.getString(0), true);
+		} else {
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
+			}
+			Player player = ((Server) Spout.getEngine()).getPlayer(args.getString(0), true);
 			if (player != null) {
 				int amount = args.getInteger(1);
 				player.sendMessage("You have been given ", amount, " xp.");
@@ -337,12 +363,12 @@ public class AdministrationCommands {
 	@Command(aliases = "weather", usage = "<0|1|2> (0 = CLEAR, 1 = RAIN/SNOW, 2 = THUNDERSTORM) [world]", desc = "Changes the weather", min = 1, max = 2)
 	@CommandPermissions("vanilla.command.weather")
 	public void weather(CommandContext args, CommandSource source) throws CommandException {
-		World world = null;
+		World world;
 		if (source instanceof Player && args.length() == 1) {
-			Player player = (Player) source;
-			world = player.getWorld();
+			world = ((Player) source).getWorld();
 		} else if (args.length() == 2) {
 			world = plugin.getEngine().getWorld(args.getString(1));
+
 			if (world == null) {
 				throw new CommandException("Invalid world '" + args.getString(1) + "'.");
 			}
@@ -351,34 +377,13 @@ public class AdministrationCommands {
 		}
 
 		Weather weather;
-		if (args.isInteger(0)) {
-			int mode = args.getInteger(0);
-			switch (mode) {
-				case 0:
-					source.sendMessage("Weather set to CLEAR.");
-					weather = Weather.CLEAR;
-					break;
-				case 1:
-					source.sendMessage("Weather set to RAIN/SNOW.");
-					weather = Weather.RAIN;
-					break;
-				case 2:
-					source.sendMessage("Weather set to THUNDERSTORM.");
-					weather = Weather.THUNDERSTORM;
-					break;
-				default:
-					throw new CommandException("Weather must be between 0 and 2.");
+		try {
+			if (args.isInteger(0)) {
+				weather = Weather.get(args.getInteger(0));
+			} else {
+				weather = Weather.get(args.getString(0).replace("snow", "rain"));
 			}
-		} else if (args.getString(0).equalsIgnoreCase("clear")) {
-			source.sendMessage("Weather set to CLEAR.");
-			weather = Weather.CLEAR;
-		} else if (args.getString(0).equalsIgnoreCase("rain") || args.getString(0).equalsIgnoreCase("snow")) {
-			source.sendMessage("Weather set to RAIN/SNOW.");
-			weather = Weather.RAIN;
-		} else if (args.getString(0).equalsIgnoreCase("thunderstorm")) {
-			source.sendMessage("Weather set to THUNDERSTORM.");
-			weather = Weather.THUNDERSTORM;
-		} else {
+		} catch(Exception e) {
 			throw new CommandException("Weather must be a mode between 0 and 2, 'CLEAR', 'RAIN', 'SNOW', or 'THUNDERSTORM'");
 		}
 
@@ -388,16 +393,29 @@ public class AdministrationCommands {
 		}
 
 		sky.setWeather(weather);
+
+		switch (weather) {
+			case RAIN:
+				source.sendMessage("Weather set to RAIN/SNOW.");
+				break;
+			default:
+				source.sendMessage("Weather set to ", weather.name(), ".");
+				break;
+		}
 	}
 
 	@Command(aliases = "debug", usage = "[type] (/resend /resendall)", desc = "Debug commands", max = 2)
 	@CommandPermissions("vanilla.command.debug")
-	public void debug(CommandContext args, CommandSource source) {
-		Player player = null;
+	public void debug(CommandContext args, CommandSource source) throws CommandException {
+		Player player;
 		if (source instanceof Player) {
 			player = (Player) source;
 		} else {
-			player = Spout.getEngine().getPlayer(args.getString(1, ""), true);
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
+			}
+			player = ((Server) Spout.getEngine()).getPlayer(args.getString(1, ""), true);
 			if (player == null) {
 				source.sendMessage("Must be a player or send player name in arguments");
 				return;
@@ -423,18 +441,22 @@ public class AdministrationCommands {
 		}
 	}
 
-	@Command(aliases = {"kill"}, usage = "<player>", desc = "Kill yourself or another player", min = 0, max = 1)
+	@Command(aliases = {"kill"}, usage = "[player]", desc = "Kill yourself or another player", min = 0, max = 1)
 	@CommandPermissions("vanilla.command.kill")
-	public void setHealth(CommandContext args, CommandSource source) throws CommandException {
-		if (args.length() < 1) {
+	public void kill(CommandContext args, CommandSource source) throws CommandException {
+		if (args.length() == 0) {
 			if (!(source instanceof Player)) {
 				throw new CommandException("Don't be silly...you cannot kill yourself as the console.");
 			}
-			((VanillaPlayer) ((Player) source).getController()).setHealth(0, source);
+			((VanillaPlayerController) ((Player) source).getController()).getHealth().die(source);
 		} else {
-			VanillaPlayer victim = (VanillaPlayer) Spout.getEngine().getPlayer(args.getString(0), true).getController();
+			Platform platform = Spout.getPlatform();
+			if (platform != Platform.SERVER || platform != Platform.PROXY) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
+			}
+			VanillaPlayerController victim = (VanillaPlayerController) ((Server) Spout.getEngine()).getPlayer(args.getString(0), true).getController();
 			if (victim != null) {
-				victim.setHealth(0, source);
+				victim.getHealth().die(source);
 			}
 		}
 	}

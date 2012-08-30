@@ -42,10 +42,10 @@ public class BootstrapHandshakeMessageHandler implements ServerMessageHandler<Ha
 	@Override
 	public void handle(Session session, HandshakeMessage message) {
 		if (message.getProtocolVersion() < VanillaPlugin.MINECRAFT_PROTOCOL_ID) {
-			session.disconnect("Outdated client!");
+			session.disconnect(VanillaConfiguration.OUTDATED_CLIENT_MESSAGE.getString());
 			return;
 		} else if (message.getProtocolVersion() > VanillaPlugin.MINECRAFT_PROTOCOL_ID) {
-			session.disconnect("Outdated server!");
+			session.disconnect(VanillaConfiguration.OUTDATED_SERVER_MESSAGE.getString());
 			return;
 		}
 		Session.State state = session.getState();

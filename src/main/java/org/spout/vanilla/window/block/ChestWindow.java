@@ -26,26 +26,25 @@
  */
 package org.spout.vanilla.window.block;
 
-import org.spout.vanilla.controller.block.Chest;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.entity.block.Chest;
 import org.spout.vanilla.util.intmap.SlotIndexCollection;
 import org.spout.vanilla.util.intmap.SlotIndexGrid;
 import org.spout.vanilla.window.TransactionWindow;
 import org.spout.vanilla.window.WindowType;
 
 public class ChestWindow extends TransactionWindow {
-	private static final SlotIndexCollection SMALL_CHEST_SLOTS = new SlotIndexGrid(9, 3);
+	public static final SlotIndexCollection SMALL_CHEST_SLOTS = new SlotIndexGrid(9, 3);
 	private static final SlotIndexCollection LARGE_CHEST1_SLOTS = new SlotIndexGrid(9, 3, 27);
 	private static final SlotIndexCollection LARGE_CHEST2_SLOTS = new SlotIndexGrid(9, 3);
 
-	public ChestWindow(VanillaPlayer owner, Chest chest1, Chest chest2) {
-		super(WindowType.CHEST, "Double Chest", owner, 54, chest1, chest2);
+	public ChestWindow(Chest chest1, Chest chest2) {
+		super(WindowType.CHEST, "Double Chest", 54, chest1, chest2);
 		this.addInventory(chest1.getInventory(), LARGE_CHEST1_SLOTS);
 		this.addInventory(chest2.getInventory(), LARGE_CHEST2_SLOTS);
 	}
 
-	public ChestWindow(VanillaPlayer owner, Chest chest) {
-		super(WindowType.CHEST, "Chest", owner, 27, chest);
+	public ChestWindow(Chest chest) {
+		super(WindowType.CHEST, "Chest", 27, chest);
 		this.addInventory(chest.getInventory(), SMALL_CHEST_SLOTS);
 	}
 }

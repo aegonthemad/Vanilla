@@ -33,29 +33,34 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.Material;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.CuboidEffectRange;
 import org.spout.api.material.range.EffectRange;
+import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.data.effect.store.SoundEffects;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.material.block.Directional;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.block.controlled.Furnace;
+import org.spout.vanilla.material.block.controlled.FurnaceBlock;
 import org.spout.vanilla.material.block.plant.Sapling;
 import org.spout.vanilla.material.item.misc.Coal;
-import org.spout.vanilla.material.item.tool.Axe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.util.ToolType;
+import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class Log extends Solid implements DynamicMaterial, Fuel, TimedCraftable, Burnable, Mineable {
+public class Log extends Solid implements DynamicMaterial, Fuel, TimedCraftable, Burnable, Directional {
 	public static final Log DEFAULT = new Log("Wood", Sapling.DEFAULT);
 	public static final Log SPRUCE = new Log("Spruce Wood", 1, DEFAULT, Sapling.SPRUCE);
 	public static final Log BIRCH = new Log("Birch Wood", 2, DEFAULT, Sapling.BIRCH);
 	public static final Log JUNGLE = new Log("Jungle Wood", 3, DEFAULT, Sapling.JUNGLE);
+	private static final BlockFaces DIRECTION_OPPOS = new BlockFaces(BlockFace.BOTTOM, BlockFace.NORTH, BlockFace.EAST);
+	private static final BlockFaces DIRECTION_FACES = new BlockFaces(BlockFace.TOP, BlockFace.SOUTH, BlockFace.WEST, BlockFace.THIS);
 	private static final short dataMask = 0x0003;
+	private static final short directionMask = 0x00C;
 	public static final short aliveMask = 0x0100;
 	public static final short heightMask = 0x0600;
 	private static final EffectRange dynamicRange = new CuboidEffectRange(-4, 0, -4, 4, 8, 4);
@@ -64,13 +69,15 @@ public class Log extends Solid implements DynamicMaterial, Fuel, TimedCraftable,
 
 	private Log(String name, Sapling sapling) {
 		super(dataMask, name, 17);
-		this.setHardness(2.0F).setResistance(10.F).setStepSound(SoundEffects.STEP_WOOD).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(10.F).setStepSound(SoundEffects.STEP_WOOD);
+		this.addMiningType(ToolType.AXE);
 		this.sapling = sapling;
 	}
 
 	private Log(String name, int data, Log parent, Sapling sapling) {
 		super(name, 17, data, parent);
-		this.setHardness(2.0F).setResistance(10.F).setStepSound(SoundEffects.STEP_WOOD).setOpacity((byte) 1);
+		this.setHardness(2.0F).setResistance(10.F).setStepSound(SoundEffects.STEP_WOOD);
+		this.addMiningType(ToolType.AXE);
 		this.sapling = sapling;
 	}
 
@@ -109,12 +116,7 @@ public class Log extends Solid implements DynamicMaterial, Fuel, TimedCraftable,
 
 	@Override
 	public float getCraftTime() {
-		return Furnace.SMELT_TIME;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Axe ? (short) 1 : (short) 2;
+		return FurnaceBlock.SMELT_TIME;
 	}
 
 	@Override
@@ -127,13 +129,30 @@ public class Log extends Solid implements DynamicMaterial, Fuel, TimedCraftable,
 	}
 
 	@Override
-	public void onPlacement(Block b, Region r, long currentTime) {
-		int data = b.getData() & 0xFFFF;
-		if ((data & aliveMask) == 0) {
-			return;
-		}
+	public BlockFace getFacing(Block block) {
+		return DIRECTION_FACES.get(block.getDataField(directionMask));
+	}
 
-		b.dynamicUpdate(currentTime + 10000);
+	@Override
+	public void setFacing(Block block, BlockFace facing) {
+		if (DIRECTION_OPPOS.contains(facing)) {
+			facing = facing.getOpposite();
+		}
+		block.setDataField(directionMask, DIRECTION_FACES.indexOf(facing, 0));
+	}
+
+	@Override
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
+		block.setMaterial(this);
+		this.setFacing(block, VanillaPlayerUtil.getBlockFacing(block));
+		return true;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		if (b.isDataBitSet(aliveMask)) {
+			b.dynamicUpdate(currentTime + 10000);
+		}
 	}
 
 	@Override

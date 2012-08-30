@@ -30,16 +30,20 @@ import org.spout.api.inventory.InventoryBase;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.inventory.special.InventorySlot;
 
-import org.spout.vanilla.controller.WindowController;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.entity.WindowController;
 import org.spout.vanilla.inventory.CraftingInventory;
+import org.spout.vanilla.util.intmap.SlotIndexCollection;
 
-public abstract class CraftingWindow extends Window {
-	protected final CraftingInventory craftingGrid;
+public abstract class CraftingWindow extends TransactionWindow {
+	protected CraftingInventory craftingGrid;
 
-	public CraftingWindow(WindowType type, String title, VanillaPlayer owner, CraftingInventory craftingGrid, WindowController... windowOwners) {
-		super(type, title, owner, windowOwners);
-		this.craftingGrid = craftingGrid;
+	public CraftingWindow(WindowType type, String title, int transactionSize, WindowController... windowOwners) {
+		super(type, title, transactionSize, windowOwners);
+	}
+
+	public <T extends CraftingInventory> T setCraftingGrid(T craftingGrid, SlotIndexCollection slots) {
+		this.craftingGrid = this.addInventory(craftingGrid, slots);
+		return craftingGrid;
 	}
 
 	public CraftingInventory getCraftingGrid() {
@@ -61,7 +65,7 @@ public abstract class CraftingWindow extends Window {
 			ItemStack item = this.craftingGrid.getItem(i);
 			if (item != null) {
 				this.craftingGrid.setItem(i, null);
-				this.getOwner().dropItem(item);
+				this.getParent().dropItem(item);
 			}
 		}
 		// Drop item on cursor
@@ -78,16 +82,14 @@ public abstract class CraftingWindow extends Window {
 			if (args.isShiftDown()) {
 				InventorySlot slot = this.craftingGrid.getOutput();
 				ItemStack clickedItem = slot.getItem().clone();
-				ItemStack[] before = this.craftingGrid.getGrid().getClonedContents();
-				ItemStack items = new ItemStack(clickedItem.getMaterial(), 0);
+				ItemStack[] before = this.craftingGrid.getGrid().getContents();
+				ItemStack newItem = new ItemStack(clickedItem.getMaterial(), 0);
 				while (clickedItem.equalsIgnoreSize(slot.getItem())) {
-					items.setAmount(items.getAmount() + 1);
+					newItem.setAmount(newItem.getAmount() + 1);
 					this.craftingGrid.craft();
 				}
-				if (!owner.getInventory().getMain().canItemFit(items, true, true)) {
+				if (!getParent().getInventory().addItemFully(newItem)) {
 					this.craftingGrid.setContents(before);
-				} else {
-					owner.getInventory().getMain().addItem(items);
 				}
 				return true;
 			} else if (args.isLeftClick()) {

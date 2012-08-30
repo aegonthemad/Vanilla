@@ -27,20 +27,21 @@
 package org.spout.vanilla.command;
 
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
 
+import org.spout.api.Server;
 import org.spout.api.Spout;
 import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.command.CommandContext;
 import org.spout.api.command.CommandSource;
 import org.spout.api.command.annotated.Command;
-import org.spout.api.data.Data;
+import org.spout.api.entity.Controller;
 import org.spout.api.entity.Entity;
-import org.spout.api.entity.component.Controller;
-import org.spout.api.entity.component.controller.BlockController;
-import org.spout.api.entity.component.controller.PlayerController;
-import org.spout.api.entity.component.controller.type.ControllerRegistry;
-import org.spout.api.entity.component.controller.type.ControllerType;
+import org.spout.api.entity.Player;
+import org.spout.api.entity.controller.BlockController;
+import org.spout.api.entity.controller.PlayerController;
+import org.spout.api.entity.controller.type.ControllerRegistry;
+import org.spout.api.entity.controller.type.ControllerType;
 import org.spout.api.entity.spawn.DiscSpawnArrangement;
 import org.spout.api.entity.spawn.SpawnArrangement;
 import org.spout.api.entity.spawn.SpiralSpawnArrangement;
@@ -49,14 +50,14 @@ import org.spout.api.generator.WorldGeneratorObject;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
+import org.spout.api.plugin.Platform;
 
 import org.spout.vanilla.VanillaPlugin;
-import org.spout.vanilla.controller.VanillaEntityController;
-import org.spout.vanilla.controller.living.Human;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.controller.source.HealthChangeReason;
-import org.spout.vanilla.data.entityeffect.potion.Speed;
+import org.spout.vanilla.entity.component.effect.potion.Speed;
+import org.spout.vanilla.entity.VanillaEntityController;
+import org.spout.vanilla.entity.VanillaPlayerController;
+import org.spout.vanilla.entity.creature.neutral.Human;
+import org.spout.vanilla.entity.source.HealthChangeReason;
 import org.spout.vanilla.util.explosion.ExplosionModels;
 import org.spout.vanilla.world.generator.object.RandomizableObject;
 import org.spout.vanilla.world.generator.object.VanillaObjects;
@@ -77,11 +78,28 @@ public class TestCommands {
 
 		Entity entity = (Player) source;
 		Point position = entity.getPosition();
-		if (entity.getController() instanceof VanillaPlayer) {
-			position = position.add(((VanillaPlayer) entity.getController()).getLookingAt());
+		if (entity.getController() instanceof VanillaPlayerController) {
+			position = position.add(((VanillaPlayerController) entity.getController()).getHead().getLookingAt());
 		}
 
 		ExplosionModels.SPHERICAL.execute(position, 4.0f);
+	}
+
+	@Command(aliases = {"tpworld", "tpw"}, usage = "<world name>", desc = "Teleport to a world's spawn.", min = 1, max = 1)
+	public void tpWorld(CommandContext args, CommandSource source) throws CommandException {
+		if (!(source instanceof Player)) {
+			throw new CommandException("You must be a player to teleport");
+		}
+		final Player player = (Player) source;
+		final World world = args.getWorld(0);
+		if (world != null) {
+			final Point loc = world.getSpawnPoint().getPosition();
+			world.getChunkFromBlock(loc);
+			player.setPosition(loc);
+			player.getNetworkSynchronizer().setPositionDirty();
+		} else {
+			throw new CommandException("Please enter a valid world");
+		}
 	}
 
 	@Command(aliases = {"spawn"}, usage = "<spiral or disk> <number> <controller> ... <number> <controller>", desc = "Spawn up to 50 controllers!", min = 1, max = 10)
@@ -115,7 +133,6 @@ public class TestCommands {
 						}
 						types.add(testType);
 						match = true;
-						;
 						break;
 					}
 				}
@@ -145,7 +162,7 @@ public class TestCommands {
 			toSpawn += numbers.get(i);
 		}
 
-		ControllerType[] typeArray = types.toArray(new ControllerType[0]);
+		ControllerType[] typeArray;
 
 		if (types.size() == 1) {
 			typeArray = new ControllerType[]{types.get(0)};
@@ -184,7 +201,12 @@ public class TestCommands {
 
 	@Command(aliases = {"tppos"}, usage = "<name> <world> <x> <y> <z>", desc = "Teleport to coordinates!", min = 5, max = 5)
 	public void tppos(CommandContext args, CommandSource source) throws CommandException {
-		Player player = Spout.getEngine().getPlayer(args.getString(0), true);
+		Platform platform = Spout.getPlatform();
+		if (platform != Platform.SERVER || platform != Platform.PROXY) {
+			return;
+		}
+
+		Player player = ((Server) Spout.getEngine()).getPlayer(args.getString(0), true);
 		if (!(source instanceof Player) && player == null) {
 			throw new CommandException("Must specify a valid player to tppos from the console.");
 		}
@@ -271,14 +293,14 @@ public class TestCommands {
 		if (world == null) {
 			world = ((Player) source).getWorld();
 		}
-		Set<Entity> entities = world.getAll();
+		List<Entity> entities = world.getAll();
 		int count = 0;
 		for (Entity entity : entities) {
 			if (entity.getController() instanceof PlayerController || (!(entity.getController() instanceof VanillaEntityController))) {
 				continue;
 			}
 			count++;
-			((VanillaEntityController) entity.getController()).setHealth(0, HealthChangeReason.COMMAND);
+			((VanillaEntityController) entity.getController()).getHealth().setHealth(0, HealthChangeReason.COMMAND);
 			entity.kill();
 			Spout.log(entity.getController().toString() + " was killed");
 		}
@@ -298,8 +320,8 @@ public class TestCommands {
 		}
 
 		Controller controller = ((Player) source).getController();
-		if (controller instanceof VanillaPlayer) {
-			((VanillaPlayer) controller).rollCredits();
+		if (controller instanceof VanillaPlayerController) {
+			((VanillaPlayerController) controller).rollCredits();
 		}
 	}
 
@@ -310,7 +332,7 @@ public class TestCommands {
 		}
 
 		Controller controller = ((Player) source).getController();
-		controller.registerProcess(new Speed((VanillaPlayer) controller, args.getInteger(0), args.getInteger(1)));
+		controller.addComponent(new Speed((VanillaPlayerController) controller, args.getInteger(0), args.getInteger(1)));
 	}
 
 	@Command(aliases = "npc", desc = "Spawns an npc at your location", min = 1, max = 1)
@@ -320,8 +342,8 @@ public class TestCommands {
 		}
 		Player spawner = (Player) source;
 		Human npc = new Human();
-		String title = npc.data().get(Data.TITLE);
-		npc.setTitle(title.equals("") ? "Steve" : title);
+		String title = args.getString(0);
+		npc.setDisplayName(title.equals("") ? "Steve" : title);
 		spawner.getWorld().createAndSpawnEntity(spawner.getPosition(), npc);
 	}
 }

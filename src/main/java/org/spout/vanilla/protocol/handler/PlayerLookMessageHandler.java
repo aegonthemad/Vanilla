@@ -26,10 +26,10 @@
  */
 package org.spout.vanilla.protocol.handler;
 
-import org.spout.api.player.Player;
+import org.spout.api.entity.Player;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.protocol.msg.PlayerLookMessage;
 
 public class PlayerLookMessageHandler implements ServerMessageHandler<PlayerLookMessage> {
@@ -42,8 +42,8 @@ public class PlayerLookMessageHandler implements ServerMessageHandler<PlayerLook
 		Player player = session.getPlayer();
 
 		player.setPitch(message.getPitch());
-		player.setYaw(-message.getYaw()); //cardinal direction adjustment
+		player.setYaw(message.getYaw());
 		player.setRoll(message.getRoll());
-		((VanillaPlayer) player.getController()).setLookingAtVector(message.getLookingAtVector());
+		((VanillaPlayerController) player.getController()).getHead().setLooking(message.getLookingAtVector());
 	}
 }

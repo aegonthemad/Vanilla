@@ -26,21 +26,27 @@
  */
 package org.spout.vanilla.material.block.ore;
 
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 
+import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Ore;
-import org.spout.vanilla.material.block.controlled.Furnace;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.material.block.controlled.FurnaceBlock;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
-public class CoalOre extends Ore implements TimedCraftable {
+public class CoalOre extends Ore implements TimedCraftable, InitializableMaterial {
 	public CoalOre(String name, int id) {
 		super(name, id);
-		this.setHardness(3.0F).setResistance(5.0F);
-		this.setDropMaterial(VanillaMaterials.COAL_ORE, 1);
+		this.setHardness(3.0F).setResistance(5.0F).addMiningType(ToolType.PICKAXE).setMiningLevel(ToolLevel.WOOD);
+	}
+
+	@Override
+	public void initialize() {
+		getDrops().clear();
+		getDrops().DEFAULT.add(VanillaMaterials.COAL);
+		getDrops().SILK_TOUCH.add(VanillaMaterials.COAL_ORE);
 	}
 
 	@Override
@@ -50,20 +56,6 @@ public class CoalOre extends Ore implements TimedCraftable {
 
 	@Override
 	public float getCraftTime() {
-		return Furnace.SMELT_TIME;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
-	}
-
-	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.getMaterial() instanceof Pickaxe) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
+		return FurnaceBlock.SMELT_TIME;
 	}
 }

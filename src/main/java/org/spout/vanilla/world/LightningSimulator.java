@@ -31,14 +31,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import org.spout.api.entity.Player;
 import org.spout.api.geo.World;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.math.MathHelper;
-import org.spout.api.player.Player;
 import org.spout.api.tickable.BasicTickable;
 
-import org.spout.vanilla.controller.object.misc.Lightning;
 import org.spout.vanilla.data.Weather;
+import org.spout.vanilla.entity.object.misc.Lightning;
 
 public class LightningSimulator extends BasicTickable {
 	private static final int MAX_LIGHTNING_BRANCHES = 5;
@@ -63,6 +63,11 @@ public class LightningSimulator extends BasicTickable {
 	 */
 	public float getThunderStrength(float factor) {
 		return (this.previousThunderStrength + factor * (this.currentThunderStrength - this.previousThunderStrength));
+	}
+
+	@Override
+	public boolean canTick() {
+		return true;
 	}
 
 	@Override

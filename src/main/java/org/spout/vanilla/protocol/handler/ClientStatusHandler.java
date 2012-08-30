@@ -26,22 +26,23 @@
  */
 package org.spout.vanilla.protocol.handler;
 
+import java.util.List;
+
 import org.spout.api.Spout;
+import org.spout.api.entity.Player;
 import org.spout.api.event.Event;
 import org.spout.api.event.player.PlayerConnectEvent;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
 import org.spout.api.protocol.EntityProtocol;
 import org.spout.api.protocol.Message;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
 import org.spout.vanilla.VanillaPlugin;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.controller.source.HealthChangeReason;
+import org.spout.vanilla.entity.VanillaPlayerController;
+import org.spout.vanilla.entity.source.HealthChangeReason;
 import org.spout.vanilla.event.player.PlayerRespawnEvent;
 import org.spout.vanilla.protocol.VanillaProtocol;
 import org.spout.vanilla.protocol.msg.ClientStatusMessage;
-import org.spout.vanilla.util.VanillaNetworkUtil;
 
 public class ClientStatusHandler implements ServerMessageHandler<ClientStatusMessage> {
 	@Override
@@ -66,14 +67,21 @@ public class ClientStatusHandler implements ServerMessageHandler<ClientStatusMes
 			Point point = event.getPoint();
 			player.setPosition(point);
 			player.getNetworkSynchronizer().setRespawned();
-			VanillaPlayer controller = (VanillaPlayer) player.getController();
-			controller.setHealth(controller.getMaxHealth(), HealthChangeReason.SPAWN);
+			VanillaPlayerController controller = (VanillaPlayerController) player.getController();
+			controller.getHealth().setHealth(controller.getHealth().getMaxHealth(), HealthChangeReason.SPAWN);
 
 			//send spawn to everyone else
 			EntityProtocol ep = controller.getType().getEntityProtocol(VanillaPlugin.VANILLA_PROTOCOL_ID);
 			if (ep != null) {
-				Message[] spawn = ep.getSpawnMessage(player);
-				VanillaNetworkUtil.broadcastPacket(new Player[]{player}, spawn);
+				List<Message> messages = ep.getSpawnMessages(player);
+				for (Player otherPlayer : player.getWorld().getPlayers()) {
+					if (player == otherPlayer) {
+						continue;
+					}
+					for (Message smessage : messages) {
+						otherPlayer.getSession().send(false, smessage);
+					}
+				}
 			}
 		}
 	}

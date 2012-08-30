@@ -26,16 +26,11 @@
  */
 package org.spout.vanilla.material.block.solid;
 
-import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
-
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.data.drops.flag.ToolTypeFlags;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Pickaxe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
 
-public class StoneBrick extends Solid implements Mineable {
+public class StoneBrick extends Solid {
 	public static final StoneBrick STONE = new StoneBrick("Stone Brick");
 	public static final StoneBrick MOSSY_STONE = new StoneBrick("Mossy Stone Brick", 1, STONE);
 	public static final StoneBrick CRACKED_STONE = new StoneBrick("Cracked Stone Brick", 2, STONE);
@@ -43,29 +38,17 @@ public class StoneBrick extends Solid implements Mineable {
 	private StoneBrick(String name) {
 		super((short) 0x0003, name, 98);
 		this.setHardness(1.5F).setResistance(10.0F);
+		this.getDrops().NOT_CREATIVE.addFlags(ToolTypeFlags.PICKAXE);
 	}
 
 	private StoneBrick(String name, int data, StoneBrick parent) {
 		super(name, 98, data, parent);
 		this.setHardness(1.5F).setResistance(10.0F);
+		this.getDrops().NOT_CREATIVE.addFlags(ToolTypeFlags.PICKAXE);
 	}
 
 	@Override
 	public Instrument getInstrument() {
 		return Instrument.BASSDRUM;
-	}
-
-	@Override
-	public boolean canDrop(Block block, ItemStack holding) {
-		if (holding != null && holding.getMaterial() instanceof Pickaxe) {
-			return super.canDrop(block, holding);
-		} else {
-			return false;
-		}
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Pickaxe ? (short) 1 : (short) 2;
 	}
 }

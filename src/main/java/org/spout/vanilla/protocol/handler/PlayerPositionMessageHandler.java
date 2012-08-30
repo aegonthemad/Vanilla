@@ -26,12 +26,12 @@
  */
 package org.spout.vanilla.protocol.handler;
 
+import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
-import org.spout.api.player.Player;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.data.ExhaustionLevel;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.protocol.msg.PlayerPositionLookMessage;
 import org.spout.vanilla.protocol.msg.PlayerPositionMessage;
 import org.spout.vanilla.util.VanillaPlayerUtil;
@@ -64,7 +64,7 @@ public final class PlayerPositionMessageHandler implements ServerMessageHandler<
 		 * //Figure out how much in X and Z the player has moved
 		 * Vector3 newPos = new Vector3(x,y,z);
 		 * newPos = newPos.normalize();
-		 * Vector3 pPos = controller.getPosition().normalize();
+		 * Vector3 pPos = entity.getPosition().normalize();
 		 * 
 		 * Vector3 difference = pPos.subtract(newPos);
 		 * //Figure out how much in Forward we have moved
@@ -84,7 +84,7 @@ public final class PlayerPositionMessageHandler implements ServerMessageHandler<
 
 		// START Hunger / Damage falling implementation. Will probably have a better way to handle that when Collision is implemented
 		if (VanillaPlayerUtil.isSurvival(player)) {
-			VanillaPlayer vPlayer = (VanillaPlayer) player.getController();
+			VanillaPlayerController vPlayer = (VanillaPlayerController) player.getController();
 			if (ep.getY() > y) {
 				vPlayer.setFalling(true);
 			} else {
@@ -101,7 +101,7 @@ public final class PlayerPositionMessageHandler implements ServerMessageHandler<
 					if (vPlayer.isSprinting()) {
 						level = ExhaustionLevel.SPRINT_JUMP.getAmount();
 					}
-					vPlayer.getSurvivalLogic().setExhaustion(vPlayer.getSurvivalLogic().getExhaustion() + level);
+					vPlayer.getSurvivalComponent().setExhaustion(vPlayer.getSurvivalComponent().getExhaustion() + level);
 				}
 			} else {
 				vPlayer.setJumping(false);

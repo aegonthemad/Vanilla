@@ -28,13 +28,13 @@ package org.spout.vanilla;
 
 import java.util.HashSet;
 
+import org.spout.api.chat.style.ChatStyle;
+import org.spout.api.entity.Controller;
 import org.spout.api.entity.Entity;
-import org.spout.api.entity.component.Controller;
 import org.spout.api.event.EventHandler;
 import org.spout.api.event.Listener;
 import org.spout.api.event.Order;
 import org.spout.api.event.Result;
-import org.spout.api.event.entity.EntityHealthChangeEvent;
 import org.spout.api.event.entity.EntitySpawnEvent;
 import org.spout.api.event.server.permissions.PermissionNodeEvent;
 import org.spout.api.event.world.RegionLoadEvent;
@@ -44,12 +44,11 @@ import org.spout.api.scheduler.TaskPriority;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.configuration.WorldConfigurationNode;
-import org.spout.vanilla.controller.VanillaControllerTypes;
-import org.spout.vanilla.controller.living.creature.hostile.Ghast;
-import org.spout.vanilla.controller.living.creature.passive.Sheep;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.controller.source.HealthChangeReason;
-import org.spout.vanilla.controller.world.RegionSpawner;
+import org.spout.vanilla.entity.VanillaControllerTypes;
+import org.spout.vanilla.entity.creature.hostile.Ghast;
+import org.spout.vanilla.entity.creature.passive.Sheep;
+import org.spout.vanilla.entity.world.RegionSpawner;
+import org.spout.vanilla.event.player.PlayerDeathEvent;
 import org.spout.vanilla.material.VanillaMaterials;
 
 public class VanillaListener implements Listener {
@@ -64,7 +63,9 @@ public class VanillaListener implements Listener {
 		Region region = event.getRegion();
 
 		RegionSpawner spawner = new RegionSpawner(region);
-		region.getTaskManager().scheduleSyncRepeatingTask(plugin, spawner, 100, 100, TaskPriority.LOW);
+		int taskId = region.getTaskManager().scheduleSyncRepeatingTask(plugin, spawner, 100, 100, TaskPriority.LOW);
+		spawner.setTaskId(taskId);
+		spawner.setTaskManager(region.getTaskManager());
 
 		WorldConfigurationNode worldConfig = VanillaConfiguration.WORLDS.getOrCreate(event.getWorld());
 		if (worldConfig.SPAWN_ANIMALS.getBoolean()) {
@@ -85,25 +86,6 @@ public class VanillaListener implements Listener {
 		}
 	}
 
-	@EventHandler(order = Order.MONITOR)
-	public void onEntitySpawn(EntitySpawnEvent event) {
-		if (event.isCancelled()) {
-			return;
-		}
-
-		Entity entity = event.getEntity();
-		Controller c = entity.getController();
-		if (c instanceof Sheep) {
-			Sheep sheep = (Sheep) c;
-			sheep.setTimeUntilAdult(100);
-		}
-
-		if (c instanceof Ghast) {
-			Ghast ghast = (Ghast) c;
-			ghast.setRedEyes(true);
-		}
-	}
-
 	@EventHandler(order = Order.EARLIEST)
 	public void onPermissionNode(PermissionNodeEvent event) {
 		if (VanillaConfiguration.OPS.isOp(event.getSubject().getName())) {
@@ -112,17 +94,9 @@ public class VanillaListener implements Listener {
 	}
 
 	@EventHandler
-	public void onHealthChange(EntityHealthChangeEvent event) {
-		if (event.getSource() == HealthChangeReason.SPAWN) {
-			return;
-		}
-		if (event.isCancelled()) {
-			return;
-		}
-		Controller c = event.getEntity().getController();
-		if (c instanceof VanillaPlayer && ((VanillaPlayer) c).isSurvival()) {
-			VanillaPlayer sp = (VanillaPlayer) c;
-			sp.updateHealth();
+	public void onPlayerDeath(PlayerDeathEvent event) {
+		if (VanillaConfiguration.HARDCORE_MODE.getBoolean()) {
+			event.getPlayer().ban(true, ChatStyle.RED, "Game Over");
 		}
 	}
 }

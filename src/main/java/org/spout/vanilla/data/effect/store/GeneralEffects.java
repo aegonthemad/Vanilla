@@ -27,21 +27,26 @@
 package org.spout.vanilla.data.effect.store;
 
 import org.spout.vanilla.data.effect.BatchEffect;
+import org.spout.vanilla.data.effect.Effect;
 import org.spout.vanilla.data.effect.GeneralEffect;
+import org.spout.vanilla.data.effect.SoundEffect;
 import org.spout.vanilla.data.effect.type.BatchExplosionEffect;
 import org.spout.vanilla.data.effect.type.BreakBlockEffect;
-import org.spout.vanilla.data.effect.type.DoorEffect;
+import org.spout.vanilla.data.effect.type.ToggleSoundEffect;
 import org.spout.vanilla.data.effect.type.ExplosionEffect;
 import org.spout.vanilla.data.effect.type.LavaFizzEffect;
 import org.spout.vanilla.data.effect.type.MusicDiscEffect;
 import org.spout.vanilla.data.effect.type.NoteParticleEffect;
+import org.spout.vanilla.data.effect.type.PressBlockEffect;
 import org.spout.vanilla.data.effect.type.SmokeEffect;
 
 public class GeneralEffects {
 	public static final ExplosionEffect EXPLOSION_PARTICLES = new ExplosionEffect();
-	public static final GeneralEffect RANDOM_CLICK1 = new GeneralEffect(1000);
-	public static final GeneralEffect RANDOM_CLICK2 = new GeneralEffect(1001);
-	public static final GeneralEffect RANDOM_BOW = new GeneralEffect(1002);
+	public static final PressBlockEffect BLOCK_PRESS = new PressBlockEffect();
+	public static final SoundEffect RANDOM_CLICK1 = new SoundEffect(SoundEffects.RANDOM_CLICK, 1.0f, 1.0f); //1000
+	public static final SoundEffect RANDOM_CLICK2 = new SoundEffect(SoundEffects.RANDOM_CLICK, 1.0f, 1.2f); //1001
+	public static final SoundEffect RANDOM_BOW = new SoundEffect(SoundEffects.RANDOM_BOW, 1.0F, 1.2F); //1002
+	public static final SoundEffect TRIPWIRE_SNAP = new SoundEffect(SoundEffects.RANDOM_BOWHIT, 0.4f, 1.09f).randomPitch(0.24f);
 	public static final GeneralEffect RANDOM_DOOR = new GeneralEffect(1003);
 	public static final GeneralEffect RANDOM_FIZZ = new GeneralEffect(1004);
 	public static final MusicDiscEffect MUSIC_DISC = new MusicDiscEffect(1005);
@@ -60,5 +65,10 @@ public class GeneralEffects {
 	public static final LavaFizzEffect LAVA_FIZZ = new LavaFizzEffect();
 	public static final BatchExplosionEffect EXPLOSION = new BatchExplosionEffect(SoundEffects.RANDOM_EXPLODE);
 	public static final BatchEffect EXTINGUISH = new BatchEffect(SoundEffects.RANDOM_FIZZ, GeneralEffects.SMOKE);
-	public static final DoorEffect DOOR = new DoorEffect();
+	public static final ToggleSoundEffect DOOR = new ToggleSoundEffect(SoundEffects.RANDOM_DOOR_OPEN, SoundEffects.RANDOM_DOOR_CLOSE);
+	public static final ToggleSoundEffect CHEST = new ToggleSoundEffect(SoundEffects.RANDOM_CHESTOPEN, SoundEffects.RANDOM_CHESTCLOSED).adjust(0.5f, 0.9f).randomPitch(0.1f);
+	// Lightning sound effects
+	public static final SoundEffect LIGHTNING_THUNDER = SoundEffects.AMBIENT_WEATHER_THUNDER.adjust(10000.0f, 0.7f).randomPitch(0.4f);
+	public static final SoundEffect LIGHTNING_EXPLODE = SoundEffects.RANDOM_EXPLODE.adjust(2.0f, 0.4f).randomPitch(0.4f);
+	public static final Effect LIGHTNING_STRIKE = new BatchEffect(LIGHTNING_THUNDER, LIGHTNING_EXPLODE);
 }

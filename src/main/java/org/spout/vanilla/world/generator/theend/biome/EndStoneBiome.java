@@ -26,60 +26,22 @@
  */
 package org.spout.vanilla.world.generator.theend.biome;
 
-import net.royawesome.jlibnoise.NoiseQuality;
-import net.royawesome.jlibnoise.module.modifier.Turbulence;
-import net.royawesome.jlibnoise.module.source.Perlin;
-
 import org.spout.api.util.cuboid.CuboidShortBuffer;
 
-import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.world.generator.VanillaBiome;
 import org.spout.vanilla.world.generator.theend.decorator.SpireDecorator;
 
 public class EndStoneBiome extends VanillaBiome {
-	private Perlin base = new Perlin();
-	private Turbulence noise = new Turbulence();
-
 	public EndStoneBiome(int biomeId) {
 		super(biomeId, new SpireDecorator());
-		base.setNoiseQuality(NoiseQuality.BEST);
-		base.setOctaveCount(4);
-		base.setFrequency(0.1);
-		base.setPersistence(0.10);
-		base.setLacunarity(0.4);
-		noise.SetSourceModule(0, base);
-		noise.setFrequency(0.2);
-		noise.setRoughness(2);
-		noise.setPower(0.3);
 	}
 
 	@Override
 	public void generateColumn(CuboidShortBuffer blockData, int x, int chunkY, int z) {
-		base.setSeed((int) blockData.getWorld().getSeed());
-		noise.setSeed((int) blockData.getWorld().getSeed());
-		int y = chunkY * 16;
-		double seaLevel = 60.0;
-		double perlinRange = 0.005;
-		double colSize = 16.0;
-		int height = (int) ((noise.GetValue(x / colSize + perlinRange, 0.05, z / colSize + perlinRange) + 1.0) * 4.0 + seaLevel);
-
-		for (int dy = y; dy < y + 16; dy++) {
-			blockData.set(x, dy, z, getBlockId(height, dy));
-		}
 	}
 
 	@Override
 	public String getName() {
 		return "EndStone";
-	}
-
-	private short getBlockId(int noise, int dy) {
-		short id;
-		if (dy > noise) {
-			id = VanillaMaterials.AIR.getId();
-		} else {
-			id = VanillaMaterials.END_STONE.getId();
-		}
-		return id;
 	}
 }

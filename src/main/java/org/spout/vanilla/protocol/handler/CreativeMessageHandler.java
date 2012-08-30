@@ -28,11 +28,11 @@ package org.spout.vanilla.protocol.handler;
 
 import java.util.Map.Entry;
 
+import org.spout.api.entity.Player;
 import org.spout.api.inventory.InventoryBase;
-import org.spout.api.player.Player;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.protocol.msg.CreativeMessage;
 import org.spout.vanilla.window.ClickArgs;
 import org.spout.vanilla.window.Window;
@@ -45,11 +45,11 @@ public class CreativeMessageHandler implements ServerMessageHandler<CreativeMess
 		}
 
 		Player player = session.getPlayer();
-		if (!(player.getController() instanceof VanillaPlayer)) {
+		if (!(player.getController() instanceof VanillaPlayerController)) {
 			return;
 		}
 
-		VanillaPlayer controller = (VanillaPlayer) player.getController();
+		VanillaPlayerController controller = (VanillaPlayerController) player.getController();
 		if (controller.isSurvival()) {
 			player.kick("Now now, don't try that here. Won't work.");
 			return;

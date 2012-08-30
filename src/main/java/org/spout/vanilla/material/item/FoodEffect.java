@@ -28,8 +28,8 @@ package org.spout.vanilla.material.item;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.data.entityeffect.VanillaEntityFoodEffect;
+import org.spout.vanilla.entity.component.effect.VanillaEntityFoodEffect;
+import org.spout.vanilla.entity.VanillaPlayerController;
 
 public class FoodEffect {
 	private final float amount;
@@ -44,7 +44,7 @@ public class FoodEffect {
 		return amount;
 	}
 
-	public void run(VanillaPlayer vPlayer) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
-		vPlayer.registerProcess(effect.getConstructor(new Class[]{VanillaPlayer.class, float.class}).newInstance(vPlayer, amount));
+	public void run(VanillaPlayerController vPlayer) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		vPlayer.addComponent(effect.getConstructor(new Class[]{VanillaPlayerController.class, float.class}).newInstance(vPlayer, amount));
 	}
 }

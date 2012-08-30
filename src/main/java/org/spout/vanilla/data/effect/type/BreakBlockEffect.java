@@ -26,12 +26,12 @@
  */
 package org.spout.vanilla.data.effect.type;
 
-import java.util.Set;
+import java.util.List;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.player.Player;
 
 import org.spout.vanilla.data.effect.GeneralEffect;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -50,7 +50,7 @@ public class BreakBlockEffect extends GeneralEffect {
 		}
 	}
 
-	public void play(Set<Player> players, Point position, BlockMaterial material) {
+	public void play(List<Player> players, Point position, BlockMaterial material) {
 		int id = VanillaMaterials.getMinecraftId(material);
 		if (id != -1) {
 			this.play(players, position, id);

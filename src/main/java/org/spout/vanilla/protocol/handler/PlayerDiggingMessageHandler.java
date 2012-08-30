@@ -27,9 +27,11 @@
 package org.spout.vanilla.protocol.handler;
 
 import java.util.Collection;
+import java.util.HashSet;
 
 import org.spout.api.Spout;
 import org.spout.api.chat.style.ChatStyle;
+import org.spout.api.entity.Player;
 import org.spout.api.event.player.PlayerInteractEvent;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.Protection;
@@ -41,14 +43,15 @@ import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.basic.BasicAir;
 import org.spout.api.material.block.BlockFace;
-import org.spout.api.player.Player;
 import org.spout.api.plugin.services.ProtectionService;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.api.util.flag.Flag;
+
 import org.spout.vanilla.data.ExhaustionLevel;
+import org.spout.vanilla.data.drops.flag.PlayerFlags;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.material.VanillaMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.item.Food;
@@ -58,6 +61,20 @@ import org.spout.vanilla.protocol.msg.PlayerDiggingMessage;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class PlayerDiggingMessageHandler implements ServerMessageHandler<PlayerDiggingMessage> {
+	private void breakBlock(BlockMaterial blockMaterial, Block block, VanillaPlayerController player) {
+		HashSet<Flag> flags = new HashSet<Flag>();
+		if (player.isSurvival()) {
+			flags.add(PlayerFlags.SURVIVAL);
+		} else {
+			flags.add(PlayerFlags.CREATIVE);
+		}
+		ItemStack heldItem = player.getInventory().getQuickbar().getCurrentItem();
+		if (heldItem != null) {
+			heldItem.getMaterial().getItemFlags(heldItem, flags);
+		}
+		blockMaterial.destroy(block, flags);
+	}
+
 	@Override
 	public void handle(Session session, PlayerDiggingMessage message) {
 		if (!session.hasPlayer()) {
@@ -79,10 +96,10 @@ public class PlayerDiggingMessageHandler implements ServerMessageHandler<PlayerD
 		short minecraftID = VanillaMaterials.getMinecraftId(blockMaterial);
 		BlockFace clickedFace = message.getFace();
 
-		VanillaPlayer vp = ((VanillaPlayer) player.getController());
+		VanillaPlayerController vp = ((VanillaPlayerController) player.getController());
 
-		//Don't block protections if dropping an item, silly Notch...
-		if (state != PlayerDiggingMessage.STATE_DROP_ITEM) {
+		// Don't block protections if dropping an item, silly Notch...
+		if (state != PlayerDiggingMessage.STATE_DROP_ITEM && state != PlayerDiggingMessage.STATE_SHOOT_ARROW_EAT_FOOD) {
 			Collection<Protection> protections = Spout.getEngine().getServiceManager().getRegistration(ProtectionService.class).getProvider().getAllProtections(point);
 			for (Protection p : protections) {
 				if (p.contains(point) && !vp.isOp()) {
@@ -94,7 +111,7 @@ public class PlayerDiggingMessageHandler implements ServerMessageHandler<PlayerD
 		}
 
 		if (state == PlayerDiggingMessage.STATE_DROP_ITEM && x == 0 && y == 0 && z == 0) {
-			((VanillaPlayer) player.getController()).dropItem();
+			((VanillaPlayerController) player.getController()).dropItem();
 			return;
 		}
 
@@ -128,7 +145,7 @@ public class PlayerDiggingMessageHandler implements ServerMessageHandler<PlayerD
 				heldItem.getMaterial().onInteract(player, block, Action.LEFT_CLICK, clickedFace);
 				blockMaterial.onInteractBy(player, block, Action.LEFT_CLICK, clickedFace);
 			}
-			// Interaction with controller
+			// Interaction with entity
 			if (blockMaterial.hasController()) {
 				blockMaterial.getController(block).onInteract(player, Action.LEFT_CLICK);
 			}
@@ -141,46 +158,45 @@ public class PlayerDiggingMessageHandler implements ServerMessageHandler<PlayerD
 					VanillaMaterials.FIRE.onDestroy(neigh);
 					GeneralEffects.RANDOM_FIZZ.playGlobal(block.getPosition());
 				} else if (vp.isSurvival() && blockMaterial.getHardness() != 0.0f) {
-					vp.startDigging(new Point(w, x, y, z));
+					vp.getDiggingLogic().startDigging(new Point(w, x, y, z));
 				} else {
 					// insta-break
-					blockMaterial.onDestroy(block);
+					breakBlock(blockMaterial, block, vp);
 					GeneralEffects.BREAKBLOCK.playGlobal(block.getPosition(), blockMaterial, player);
 				}
 			}
 		} else if (state == PlayerDiggingMessage.STATE_DONE_DIGGING) {
-			if (!vp.stopDigging(new Point(w, x, y, z)) || !isInteractable) {
+			if (!vp.getDiggingLogic().stopDigging(new Point(w, x, y, z)) || !isInteractable) {
 				return;
 			}
 
 			if (VanillaPlayerUtil.isSurvival(player)) {
-				((VanillaPlayer) player.getController()).getSurvivalLogic().setExhaustion(((VanillaPlayer) player.getController()).getSurvivalLogic().getExhaustion() + ExhaustionLevel.BREAK_BLOCK.getAmount());
-			}
-
-			long diggingTicks = vp.getDiggingTicks();
-			int damageDone;
-			int totalDamage;
-
-			if (heldItem != null) {
-				if (heldItem.getMaterial() instanceof Tool && blockMaterial instanceof Mineable) {
-					short penalty = ((Tool) heldItem.getMaterial()).getDurabilityPenalty((Mineable) blockMaterial, heldItem);
-					currentSlot.addItemData(penalty);
+				if (vp.isSurvival()) {
+					vp.getSurvivalComponent().addExhaustion(ExhaustionLevel.BREAK_BLOCK.getAmount());
 				}
-			}
-			if (heldItem == null) {
-				damageDone = ((int) diggingTicks * 1);
-			} else {
-				damageDone = ((int) diggingTicks * ((VanillaMaterial) heldItem.getMaterial()).getDamage());
-			}
-			// TODO: Take into account EFFICIENCY enchantment
-			// TODO: Digging is slower while under water, on ladders, etc. AQUA_AFFINITY enchantment speeds up underwater digging
 
-			totalDamage = ((int) blockMaterial.getHardness() - damageDone);
-			if (totalDamage <= 40) { // Yes, this is a very high allowance - this is because this is only over a single block, and this will spike due to varying latency.
-				blockMaterial.onDestroy(block);
-			}
-			if (block.getMaterial() != VanillaMaterials.AIR) {
-				GeneralEffects.BREAKBLOCK.playGlobal(block.getPosition(), blockMaterial, player);
+				long diggingTicks = vp.getDiggingLogic().getDiggingTicks();
+				int damageDone;
+				int totalDamage;
+
+				if (heldItem != null && heldItem.getMaterial() instanceof Tool) {
+					currentSlot.addItemData(((Tool) heldItem.getMaterial()).getDurabilityPenalty(heldItem));
+				}
+				if (heldItem == null) {
+					damageDone = ((int) diggingTicks * 1);
+				} else {
+					damageDone = ((int) diggingTicks * ((VanillaMaterial) heldItem.getMaterial()).getDamage());
+				}
+				// TODO: Take into account EFFICIENCY enchantment
+				// TODO: Digging is slower while under water, on ladders, etc. AQUA_AFFINITY enchantment speeds up underwater digging
+
+				totalDamage = ((int) blockMaterial.getHardness() - damageDone);
+				if (totalDamage <= 40) { // Yes, this is a very high allowance - this is because this is only over a single block, and this will spike due to varying latency.
+					breakBlock(blockMaterial, block, vp);
+				}
+				if (block.getMaterial() != VanillaMaterials.AIR) {
+					GeneralEffects.BREAKBLOCK.playGlobal(block.getPosition(), blockMaterial, player);
+				}
 			}
 		} else if (state == PlayerDiggingMessage.STATE_SHOOT_ARROW_EAT_FOOD) {
 			if (heldItem.getMaterial() instanceof Food) {

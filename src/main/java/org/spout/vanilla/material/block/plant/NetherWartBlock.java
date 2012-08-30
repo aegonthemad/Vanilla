@@ -26,20 +26,19 @@
  */
 package org.spout.vanilla.material.block.plant;
 
-import java.util.ArrayList;
 import java.util.Random;
+import java.util.Set;
 
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.RandomBlockMaterial;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.util.flag.Flag;
 
+import org.spout.vanilla.data.drops.flag.BlockFlags;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
 import org.spout.vanilla.world.generator.VanillaBiomes;
 
 public class NetherWartBlock extends GroundAttachable implements Plant, Growing, RandomBlockMaterial {
@@ -47,6 +46,17 @@ public class NetherWartBlock extends GroundAttachable implements Plant, Growing,
 		super(name, id);
 		this.setLiquidObstacle(false);
 		this.setResistance(0.0F).setHardness(0.0F).setOpacity((byte) 0);
+		this.getDrops().DEFAULT.clear();
+		this.getDrops().DEFAULT.forFlags(BlockFlags.FULLY_GROWN.NOT).add(VanillaMaterials.NETHER_WART);
+		this.getDrops().DEFAULT.forFlags(BlockFlags.FULLY_GROWN).addRange(VanillaMaterials.NETHER_WART, 2, 5);
+	}
+
+	@Override
+	public void getBlockFlags(Block block, Set<Flag> flags) {
+		super.getBlockFlags(block, flags);
+		if (this.isFullyGrown(block)) {
+			flags.add(BlockFlags.FULLY_GROWN);
+		}
 	}
 
 	@Override
@@ -80,18 +90,6 @@ public class NetherWartBlock extends GroundAttachable implements Plant, Growing,
 			return block.isMaterial(VanillaMaterials.SOUL_SAND);
 		}
 		return false;
-	}
-
-	@Override
-	public ArrayList<ItemStack> getDrops(Block block, ItemStack holding) {
-		ArrayList<ItemStack> drops = new ArrayList<ItemStack>();
-		drops.add(new ItemStack(VanillaMaterials.NETHER_WART, this.isFullyGrown(block) ? new Random().nextInt(4) + 2 : 1));
-		return drops;
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
 	}
 
 	@Override

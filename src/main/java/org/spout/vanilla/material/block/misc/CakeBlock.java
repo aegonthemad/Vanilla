@@ -32,23 +32,15 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.DataSource;
 
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
-import org.spout.vanilla.material.Mineable;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.material.item.weapon.Sword;
 
-public class CakeBlock extends Solid implements Mineable {
+public class CakeBlock extends Solid {
 	public CakeBlock(String name, int id) {
 		super(name, id);
 		this.setHardness(0.5F).setResistance(0.8F).setTransparent();
-		this.clearDropMaterials();
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Sword ? (short) 2 : (short) 1;
+		this.getDrops().clear();
 	}
 
 	@Override
@@ -61,9 +53,9 @@ public class CakeBlock extends Solid implements Mineable {
 				setSize(block, CakeSize.getByData((short) (getSize(block).getData() + 1)));
 			}
 
-			if (entity.getController() instanceof VanillaPlayer) {
-				VanillaPlayer player = (VanillaPlayer) entity.getController();
-				player.getSurvivalLogic().setHunger((short) (player.getSurvivalLogic().getHunger() + 2));
+			if (entity.getController() instanceof VanillaPlayerController) {
+				VanillaPlayerController player = (VanillaPlayerController) entity.getController();
+				player.getSurvivalComponent().setHunger((short) (player.getSurvivalComponent().getHunger() + 2));
 			}
 		}
 	}

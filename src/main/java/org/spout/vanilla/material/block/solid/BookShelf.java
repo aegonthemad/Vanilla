@@ -32,24 +32,23 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.item.tool.Axe;
-import org.spout.vanilla.material.item.tool.Tool;
 import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 
-public class BookShelf extends Solid implements Mineable, Fuel, InitializableMaterial, Burnable {
+public class BookShelf extends Solid implements Fuel, InitializableMaterial, Burnable {
 	public final float BURN_TIME = 15.f;
 
 	public BookShelf(String name, int id) {
 		super(name, id);
-		this.setHardness(1.5F).setResistance(2.5F).setOpacity((byte) 1);
+		this.setHardness(1.5F).setResistance(2.5F).addMiningType(ToolType.AXE).setMiningLevel(ToolLevel.WOOD);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.BOOK, 3);
+		this.getDrops().DEFAULT.clear().add(VanillaMaterials.BOOK, 3);
 	}
 
 	@Override
@@ -79,10 +78,5 @@ public class BookShelf extends Solid implements Mineable, Fuel, InitializableMat
 		} else {
 			return super.canSupport(material, face);
 		}
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Axe ? (short) 1 : (short) 2;
 	}
 }

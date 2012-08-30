@@ -33,32 +33,26 @@ import org.spout.api.material.range.EffectRange;
 import org.spout.api.math.IntVector3;
 
 import org.spout.vanilla.material.InitializableMaterial;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Crop;
 import org.spout.vanilla.material.block.liquid.Water;
-import org.spout.vanilla.material.item.tool.Spade;
-import org.spout.vanilla.material.item.tool.Tool;
+import org.spout.vanilla.util.ToolType;
 import org.spout.vanilla.util.VanillaBlockUtil;
 
-public class FarmLand extends VanillaBlockMaterial implements Mineable, InitializableMaterial, RandomBlockMaterial {
+public class FarmLand extends VanillaBlockMaterial implements InitializableMaterial, RandomBlockMaterial {
 	private static final EffectRange WATER_CHECK_RANGE = new CuboidEffectRange(-4, 0, -4, 4, 1, 4);
 	private static final EffectRange CROP_CHECK_RANGE = new CuboidEffectRange(-1, 1, -1, 1, 1, 1);
 
 	public FarmLand(String name, int id) {
 		super(name, id);
 		this.setHardness(0.6F).setResistance(1.0F).setOpaque();
+		this.addMiningType(ToolType.SPADE);
 	}
 
 	@Override
 	public void initialize() {
-		this.setDropMaterial(VanillaMaterials.DIRT);
-	}
-
-	@Override
-	public short getDurabilityPenalty(Tool tool) {
-		return tool instanceof Spade ? (short) 1 : (short) 2;
+		this.getDrops().DEFAULT.clear().add(VanillaMaterials.DIRT);
 	}
 
 	/**

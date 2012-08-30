@@ -28,17 +28,17 @@ package org.spout.vanilla.protocol.handler;
 
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.protocol.msg.KeepAliveMessage;
 
 public class KeepAliveMessageHandler implements ServerMessageHandler<KeepAliveMessage> {
 	@Override
 	public void handle(Session session, KeepAliveMessage message) {
-		if (!session.hasPlayer() || (!(session.getPlayer().getController() instanceof VanillaPlayer))) {
+		if (!session.hasPlayer() || (!(session.getPlayer().getController() instanceof VanillaPlayerController))) {
 			return;
 		}
 
-		VanillaPlayer mp = (VanillaPlayer) session.getPlayer().getController();
-		mp.getPingComponent().resetTimeout(message.getPingId());
+		VanillaPlayerController mp = (VanillaPlayerController) session.getPlayer().getController();
+		mp.getNetworkComponent().resetTimeout(message.getPingId());
 	}
 }

@@ -34,14 +34,13 @@ import org.spout.api.material.block.BlockFaces;
 import org.spout.api.math.Vector3;
 
 import org.spout.vanilla.data.effect.store.GeneralEffects;
-import org.spout.vanilla.material.Mineable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
 import org.spout.vanilla.util.RedstoneUtil;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public abstract class DoorBlock extends GroundAttachable implements Mineable, Openable, RedstoneTarget {
+public abstract class DoorBlock extends GroundAttachable implements Openable, RedstoneTarget {
 	public DoorBlock(String name, int id) {
 		super(name, id);
 		this.setCollision(CollisionStrategy.SOLID);
@@ -70,7 +69,7 @@ public abstract class DoorBlock extends GroundAttachable implements Mineable, Op
 	}
 
 	@Override
-	public void onDestroyBlock(Block block) {
+	public void onDestroy(Block block) {
 		Block top = getCorrectHalf(block, true);
 		Block bottom = getCorrectHalf(block, false);
 		top.setMaterial(VanillaMaterials.AIR);

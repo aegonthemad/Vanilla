@@ -26,9 +26,15 @@
  */
 package org.spout.vanilla.protocol.handler;
 
+import java.util.Collection;
+
+import org.spout.api.Spout;
+import org.spout.api.chat.style.ChatStyle;
+import org.spout.api.entity.Player;
 import org.spout.api.event.EventManager;
 import org.spout.api.event.player.PlayerInteractEvent;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
+import org.spout.api.geo.Protection;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.discrete.Point;
@@ -38,12 +44,12 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.Material;
 import org.spout.api.material.Placeable;
 import org.spout.api.material.block.BlockFace;
-import org.spout.api.player.Player;
+import org.spout.api.plugin.services.ProtectionService;
 import org.spout.api.protocol.ServerMessageHandler;
 import org.spout.api.protocol.Session;
-import org.spout.vanilla.controller.living.player.VanillaPlayer;
 import org.spout.vanilla.data.effect.SoundEffect;
 import org.spout.vanilla.data.effect.store.SoundEffects;
+import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.item.tool.InteractTool;
 import org.spout.vanilla.protocol.msg.BlockChangeMessage;
@@ -183,13 +189,23 @@ public final class PlayerBlockPlacementMessageHandler implements ServerMessageHa
 
 						//For now: simple distance checking
 						Point pos1 = player.getPosition();
-						Point pos2 = ((VanillaPlayer) player.getController()).getHeadPosition();
+						Point pos2 = ((VanillaPlayerController) player.getController()).getHead().getPosition();
 						Point tpos = target.getPosition();
 
 						if (pos1.distance(tpos) < 0.6 || pos2.distance(tpos) < 0.6) {
 							undoPlacement(player, clickedBlock, alterBlock);
 							return;
 						}
+					}
+				}
+
+				//Check if the player can place the block.
+				Collection<Protection> protections = Spout.getEngine().getServiceManager().getRegistration(ProtectionService.class).getProvider().getAllProtections(alterBlock.getPosition());
+				for (Protection p : protections) {
+					if (p.contains(alterBlock.getPosition()) && !((VanillaPlayerController) player.getController()).isOp()) {
+						undoPlacement(player, clickedBlock, alterBlock);
+						player.sendMessage(ChatStyle.DARK_RED, "This area is a protected spawn point!");
+						return;
 					}
 				}
 
@@ -206,7 +222,7 @@ public final class PlayerBlockPlacementMessageHandler implements ServerMessageHa
 					sound.playGlobal(target.getPosition(), 0.8f, 0.8f);
 					//GeneralEffects.BREAKBLOCK.playGlobal(target.getPosition(), target.getMaterial());
 					// Remove block from inventory if not in creative mode.
-					if (!((VanillaPlayer) player.getController()).hasInfiniteResources()) {
+					if (!((VanillaPlayerController) player.getController()).hasInfiniteResources()) {
 						currentSlot.addItemAmount(0, -1);
 					}
 				} else {

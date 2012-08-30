@@ -40,8 +40,8 @@ import org.spout.api.command.CommandRegistrationsFactory;
 import org.spout.api.command.annotated.AnnotatedCommandRegistrationFactory;
 import org.spout.api.command.annotated.SimpleAnnotatedCommandExecutorFactory;
 import org.spout.api.command.annotated.SimpleInjector;
-import org.spout.api.entity.component.controller.basic.PointObserver;
-import org.spout.api.entity.component.controller.type.ControllerType;
+import org.spout.api.entity.controller.basic.PointObserver;
+import org.spout.api.entity.controller.type.ControllerType;
 import org.spout.api.exception.ConfigurationException;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
@@ -64,19 +64,21 @@ import org.spout.vanilla.command.AdministrationCommands;
 import org.spout.vanilla.command.TestCommands;
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.configuration.WorldConfigurationNode;
-import org.spout.vanilla.controller.world.VanillaSky;
-import org.spout.vanilla.controller.world.sky.NetherSky;
-import org.spout.vanilla.controller.world.sky.NormalSky;
-import org.spout.vanilla.controller.world.sky.TheEndSky;
 import org.spout.vanilla.data.Difficulty;
 import org.spout.vanilla.data.Dimension;
 import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.entity.world.VanillaSky;
+import org.spout.vanilla.entity.world.sky.NetherSky;
+import org.spout.vanilla.entity.world.sky.NormalSky;
+import org.spout.vanilla.entity.world.sky.TheEndSky;
 import org.spout.vanilla.inventory.recipe.VanillaRecipes;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.protocol.LANThread;
 import org.spout.vanilla.protocol.VanillaProtocol;
+import org.spout.vanilla.protocol.rcon.RemoteConnectionCore;
+import org.spout.vanilla.protocol.rcon.RemoteConnectionServer;
 import org.spout.vanilla.resources.MapPalette;
 import org.spout.vanilla.resources.RecipeYaml;
 import org.spout.vanilla.resources.loader.MapPaletteLoader;
@@ -96,6 +98,7 @@ public class VanillaPlugin extends CommonPlugin {
 	private VanillaConfiguration config;
 	private JmDNS jmdns = null;
 	private final Object jmdnsSync = new Object();
+	private RemoteConnectionCore rcon;
 
 	@Override
 	public void onDisable() {
@@ -170,22 +173,22 @@ public class VanillaPlugin extends CommonPlugin {
 
 	private void setupBonjour() {
 		if (getEngine() instanceof Server && VanillaConfiguration.BONJOUR.getBoolean()) {
-			Spout.getEngine().getScheduler().scheduleAsyncTask(this, new Runnable() {
+			getEngine().getScheduler().scheduleAsyncTask(this, new Runnable() {
 				public void run() {
 					synchronized (jmdnsSync) {
 						try {
-							Spout.getEngine().getLogger().info("Starting Bonjour Service Discovery");
+							getEngine().getLogger().info("Starting Bonjour Service Discovery");
 							jmdns = JmDNS.create();
 							for (PortBinding binding : ((Server) getEngine()).getBoundAddresses()) {
 								if (binding.getAddress() instanceof InetSocketAddress && binding.getProtocol() instanceof VanillaProtocol) {
 									int port = ((InetSocketAddress) binding.getAddress()).getPort();
 									ServiceInfo info = ServiceInfo.create("pipework._tcp.local.", "Spout Server", port, "");
 									jmdns.registerService(info);
-									Spout.getEngine().getLogger().info("Started Bonjour Service Discovery on port: " + port);
+									getEngine().getLogger().info("Started Bonjour Service Discovery on port: " + port);
 								}
 							}
 						} catch (IOException e) {
-							Spout.getEngine().getLogger().log(Level.WARNING, "Failed to start Bonjour Service Discovery Library", e);
+							getEngine().getLogger().log(Level.WARNING, "Failed to start Bonjour Service Discovery Library", e);
 						}
 					}
 				}
@@ -193,20 +196,39 @@ public class VanillaPlugin extends CommonPlugin {
 		}
 	}
 
+	private void setupRcon() {
+		if (engine.getPlatform() == Platform.SERVER) {
+			RemoteConnectionServer server = new RemoteConnectionServer(getLogger(), getDataFolder());
+			server.bindDefaultPorts((Server) getEngine());
+			rcon = server;
+		}
+	}
+
+	private void closeRcon() {
+		getEngine().getLogger().info("Shutting down rcon connections");
+		if (rcon != null) {
+			try {
+				rcon.close();
+			} catch (IOException e) {
+				getLogger().log(Level.SEVERE, "Error closing RCON channels: ", e);
+			}
+		}
+	}
+
 	private void closeBonjour() {
 		if (jmdns != null) {
 			final JmDNS jmdns = this.jmdns;
 			final Plugin thisPlugin = this;
-			Spout.getEngine().getScheduler().scheduleAsyncTask(thisPlugin, new Runnable() {
+			getEngine().getScheduler().scheduleAsyncTask(thisPlugin, new Runnable() {
 				public void run() {
 					synchronized (jmdnsSync) {
-						Spout.getEngine().getLogger().info("Shutting down Bonjour Service Discovery");
+						getEngine().getLogger().info("Shutting down Bonjour Service Discovery");
 						try {
 							jmdns.close();
 						} catch (IOException e) {
 						}
 					}
-					Spout.getEngine().getLogger().info("Bonjour Service Discovery disabled");
+					getEngine().getLogger().info("Bonjour Service Discovery disabled");
 				}
 			});
 		}
@@ -226,9 +248,9 @@ public class VanillaPlugin extends CommonPlugin {
 				World world = engine.loadWorld(worldNode.getWorldName(), generator);
 
 				// Apply general settings
-				world.getDataMap().put(VanillaData.GAMEMODE, GameMode.valueOf(worldNode.GAMEMODE.getString().toUpperCase()));
-				world.getDataMap().put(VanillaData.DIFFICULTY, Difficulty.valueOf(worldNode.DIFFICULTY.getString().toUpperCase()));
-				world.getDataMap().put(VanillaData.DIMENSION, Dimension.valueOf(worldNode.SKY_TYPE.getString().toUpperCase()));
+				world.getDataMap().put(VanillaData.GAMEMODE, GameMode.get(worldNode.GAMEMODE.getString()));
+				world.getDataMap().put(VanillaData.DIFFICULTY, Difficulty.get(worldNode.DIFFICULTY.getString()));
+				world.getDataMap().put(VanillaData.DIMENSION, Dimension.get(worldNode.SKY_TYPE.getString()));
 
 				// Grab safe spawn if newly created world.
 				if (world.getAge() <= 0) {
@@ -283,7 +305,7 @@ public class VanillaPlugin extends CommonPlugin {
 				try {
 					loaderThreads[i].join();
 				} catch (InterruptedException ie) {
-					Spout.getLogger().info("Interrupted when waiting for spawn area to load");
+					getLogger().info("Interrupted when waiting for spawn area to load");
 				}
 			}
 
