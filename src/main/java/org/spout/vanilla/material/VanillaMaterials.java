@@ -154,10 +154,13 @@ import org.spout.vanilla.material.block.solid.Stone;
 import org.spout.vanilla.material.block.solid.StoneBrick;
 import org.spout.vanilla.material.block.solid.TNT;
 import org.spout.vanilla.material.block.solid.Wool;
+import org.spout.vanilla.material.block.stair.BirchStairs;
 import org.spout.vanilla.material.block.stair.BrickStairs;
 import org.spout.vanilla.material.block.stair.CobblestoneStairs;
+import org.spout.vanilla.material.block.stair.JungleStairs;
 import org.spout.vanilla.material.block.stair.NetherBrickStairs;
 import org.spout.vanilla.material.block.stair.SandstoneStairs;
+import org.spout.vanilla.material.block.stair.SpruceStairs;
 import org.spout.vanilla.material.block.stair.StoneBrickStairs;
 import org.spout.vanilla.material.block.stair.WoodenStairs;
 import org.spout.vanilla.material.item.BlockItem;
@@ -280,6 +283,9 @@ public final class VanillaMaterials {
 	public static final WoodenStairs STAIRS_WOODEN = new WoodenStairs("Wooden Stairs", 53);
 	public static final StoneBrickStairs STAIRS_STONE_BRICK = new StoneBrickStairs("Stone Brick Stairs", 109);
 	public static final SandstoneStairs STAIRS_SANDSTONE = new SandstoneStairs("Sandstone Stairs", 128);
+	public static final SpruceStairs STAIRS_SPRUCE = new SpruceStairs("Spruce Stairs", 134);
+	public static final BirchStairs STAIRS_BIRCH = new BirchStairs("Birch Stairs", 135);
+	public static final JungleStairs STAIRS_JUNGLE = new JungleStairs("Jungle Stairs", 136);
 	// == Portals ==
 	public static final NetherPortal PORTAL = new NetherPortal("Portal", 90);
 	public static final EndPortal END_PORTAL = new EndPortal("End Portal", 119);

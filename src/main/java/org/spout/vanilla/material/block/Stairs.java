@@ -33,9 +33,13 @@ import org.spout.api.math.Vector3;
 import org.spout.api.util.bytebit.ByteBitSet;
 
 import org.spout.vanilla.material.VanillaBlockMaterial;
+import org.spout.vanilla.material.block.misc.Slab;
+import org.spout.vanilla.util.ToolLevel;
+import org.spout.vanilla.util.ToolType;
 import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public abstract class Stairs extends VanillaBlockMaterial implements Directional {
+	
 	private final ByteBitSet[] occlusion;
 
 	public Stairs(String name, int id) {
@@ -46,7 +50,7 @@ public abstract class Stairs extends VanillaBlockMaterial implements Directional
 			this.occlusion[i | 0x4] = new ByteBitSet(BlockFaces.NSEW.get(i).getOpposite(), BlockFace.TOP);
 		}
 	}
-
+	
 	/**
 	 * Gets if this half slab is the top-half
 	 * @param block to get it of
