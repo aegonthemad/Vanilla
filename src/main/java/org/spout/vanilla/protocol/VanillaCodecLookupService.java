@@ -73,6 +73,7 @@ import org.spout.vanilla.protocol.codec.UpdateSignCodec;
 import org.spout.vanilla.protocol.codec.entity.EntityActionCodec;
 import org.spout.vanilla.protocol.codec.entity.EntityAnimationCodec;
 import org.spout.vanilla.protocol.codec.entity.EntityAttachEntityCodec;
+import org.spout.vanilla.protocol.codec.entity.EntityBlockBreakAnimationCodec;
 import org.spout.vanilla.protocol.codec.entity.EntityCollectItemCodec;
 import org.spout.vanilla.protocol.codec.entity.EntityCreateCodec;
 import org.spout.vanilla.protocol.codec.entity.EntityEffectCodec;
@@ -102,6 +103,7 @@ import org.spout.vanilla.protocol.codec.window.WindowPropertyCodec;
 import org.spout.vanilla.protocol.codec.window.WindowSetSlotCodec;
 import org.spout.vanilla.protocol.codec.window.WindowSetSlotsCodec;
 import org.spout.vanilla.protocol.codec.window.WindowTransactionCodec;
+import org.spout.vanilla.protocol.msg.entity.EntityBlockBreakAnimationMessage;
 
 public class VanillaCodecLookupService extends CodecLookupService {
 	public VanillaCodecLookupService() {
@@ -196,6 +198,8 @@ public class VanillaCodecLookupService extends CodecLookupService {
 			bind(BlockChangeCodec.class);
 			/* 0x36 */
 			bind(BlockActionCodec.class);
+			/* 0x37 */
+			bind(EntityBlockBreakAnimationCodec.class);
 			/* 0x38 */
 			bind(BulkChunkCodec.class);
 			/* 0x3C */
