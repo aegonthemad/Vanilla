@@ -83,6 +83,10 @@ public final class CompressedChunkMessage implements Message {
 	public boolean shouldUnload() {
 		return unload;
 	}
+	
+	public boolean isUnload() {
+        return unload;
+    }
 
 	@Override
 	public String toString() {
