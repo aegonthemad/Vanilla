@@ -34,6 +34,9 @@ import org.spout.api.protocol.ProcessorSetupMessage;
 import org.spout.api.util.SpoutToStringStyle;
 
 public class EncryptionKeyResponseMessage implements ProcessorSetupMessage {
+    
+    private static final byte[] EMPTY_PAYLOAD = new byte[0];
+    
 	private final byte[] secret, verifyToken;
 	private final boolean locking; //TODO: Locking is not used in the codec...should locking be removed?
 	private ChannelProcessor processor;
@@ -45,7 +48,15 @@ public class EncryptionKeyResponseMessage implements ProcessorSetupMessage {
 		this.verifyToken = verifyToken;
 	}
 
-	@Override
+	public EncryptionKeyResponseMessage() {
+	    this(false, EMPTY_PAYLOAD, EMPTY_PAYLOAD);
+    }
+
+    public EncryptionKeyResponseMessage(byte[] secret, byte[] verifyToken) {
+        this(false, secret, verifyToken);
+    }
+
+    @Override
 	public ChannelProcessor getProcessor() {
 		return processor;
 	}
@@ -95,9 +106,8 @@ public class EncryptionKeyResponseMessage implements ProcessorSetupMessage {
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
-				.append("locking", this.isChannelLocking())
-				.append("secret.length", this.getSecretArray().length)
-				.append("verifyToken.length", this.getVerifyTokenArray().length)
-				.toString();
+			.append("secret.length", secret.length)
+			.append("verifyToken.length", verifyToken.length)
+			.toString();
 	}
 }
