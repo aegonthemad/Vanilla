@@ -27,32 +27,28 @@
 package org.spout.vanilla.protocol.msg.entity;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import org.spout.api.math.Vector3;
 import org.spout.api.util.SpoutToStringStyle;
-
+import org.spout.nbt.CompoundMap;
 import org.spout.vanilla.protocol.msg.EntityMessage;
 
 public final class EntitySpawnItemMessage extends EntityMessage {
 	private final int x, y, z, rotation, pitch, roll;
-	private final int itemId, count;
-	private final short damage;
+    private final CompoundMap item;
 
-	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, Vector3 pos, int rotation, int pitch, int roll) {
-		this(id, itemId, count, damage, (int) pos.getX(), (int) pos.getY(), (int) pos.getZ(), rotation, pitch, roll);
+	public EntitySpawnItemMessage(int id, CompoundMap item, Vector3 pos, int rotation, int pitch, int roll) {
+		this(id, item, (int) pos.getX(), (int) pos.getY(), (int) pos.getZ(), rotation, pitch, roll);
 	}
 
-	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, int x, int y, int z, int rotation, int pitch, int roll) {
+	public EntitySpawnItemMessage(int id, CompoundMap item, int x, int y, int z, int rotation, int pitch, int roll) {
 		super(id);
+        this.item = item;
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.rotation = rotation;
 		this.pitch = pitch;
 		this.roll = roll;
-		this.itemId = itemId;
-		this.count = count;
-		this.damage = damage;
 	}
 
 	public int getX() {
@@ -78,18 +74,10 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 	public int getRoll() {
 		return roll;
 	}
-
-	public int getItemId() {
-		return itemId;
-	}
-
-	public int getCount() {
-		return count;
-	}
-
-	public short getDamage() {
-		return damage;
-	}
+	
+	public CompoundMap getItem() {
+        return item;
+    }
 
 	@Override
 	public String toString() {
@@ -101,9 +89,7 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 				.append("rotation", rotation)
 				.append("pitch", pitch)
 				.append("roll", roll)
-				.append("itemId", itemId)
-				.append("count", count)
-				.append("damage", damage)
+				.append("item", item)
 				.toString();
 	}
 
@@ -124,9 +110,7 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 				.append(this.rotation, other.rotation)
 				.append(this.pitch, other.pitch)
 				.append(this.roll, other.roll)
-				.append(this.itemId, other.itemId)
-				.append(this.count, other.count)
-				.append(this.damage, other.damage)
+				.append(this.item, other.item)
 				.isEquals();
 	}
 }

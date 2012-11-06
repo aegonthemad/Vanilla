@@ -28,6 +28,7 @@ package org.spout.vanilla.protocol.msg.window;
 
 import org.spout.api.inventory.ItemStack;
 
+import org.spout.nbt.CompoundMap;
 import org.spout.vanilla.protocol.msg.WindowMessage;
 import org.spout.vanilla.window.Window;
 
@@ -35,30 +36,24 @@ public final class WindowClickMessage extends WindowMessage {
 	private final int slot;
 	private final boolean rightClick, shift;
 	private final int transaction;
-	private final ItemStack item;
+	private final CompoundMap item;
 
-	public WindowClickMessage(Window window, int slot, boolean rightClick, int transaction, boolean shift) {
-		this(window.getInstanceId(), slot, rightClick, transaction, shift);
-	}
+	public WindowClickMessage(
+	        int windowInstanceId, 
+	        int slot, 
+	        boolean rightClick,
+            int transaction, 
+            boolean shift, 
+            CompoundMap item) {     
+	    super(windowInstanceId);
+        this.slot = slot;
+        this.rightClick = rightClick;
+        this.transaction = transaction;
+        this.shift = shift;
+        this.item = item;
+    }
 
-	public WindowClickMessage(int windowInstanceId, int slot, boolean rightClick, int transaction, boolean shift) {
-		this(windowInstanceId, slot, rightClick, transaction, shift, null);
-	}
-
-	public WindowClickMessage(Window window, int slot, boolean rightClick, int transaction, boolean shift, ItemStack item) {
-		this(window.getInstanceId(), slot, rightClick, transaction, shift, item);
-	}
-
-	public WindowClickMessage(int windowInstanceId, int slot, boolean rightClick, int transaction, boolean shift, ItemStack item) {
-		super(windowInstanceId);
-		this.slot = slot;
-		this.rightClick = rightClick;
-		this.transaction = transaction;
-		this.shift = shift;
-		this.item = item;
-	}
-
-	public int getSlot() {
+    public int getSlot() {
 		return slot;
 	}
 
@@ -74,7 +69,7 @@ public final class WindowClickMessage extends WindowMessage {
 		return transaction;
 	}
 
-	public ItemStack getItem() {
+	public CompoundMap getItem() {
 		return item;
 	}
 

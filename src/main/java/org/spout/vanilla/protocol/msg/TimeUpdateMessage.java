@@ -32,20 +32,27 @@ import org.spout.api.protocol.Message;
 import org.spout.api.util.SpoutToStringStyle;
 
 public final class TimeUpdateMessage implements Message {
-	private final long time;
+    private final long ageOfWorld;
+    private final long timeOfDay;
 
-	public TimeUpdateMessage(long time) {
-		this.time = time;
+	public TimeUpdateMessage(long ageOfWorld, long timeOfDay) {
+		this.ageOfWorld = ageOfWorld;
+        this.timeOfDay = timeOfDay;
 	}
-
-	public long getTime() {
-		return time;
-	}
+	
+	public long getAgeOfWorld() {
+        return ageOfWorld;
+    }
+	
+	public long getTimeOfDay() {
+        return timeOfDay;
+    }
 
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)
-				.append("time", time)
+				.append("age", ageOfWorld)
+				.append("time", timeOfDay)
 				.toString();
 	}
 
@@ -58,6 +65,6 @@ public final class TimeUpdateMessage implements Message {
 			return false;
 		}
 		final TimeUpdateMessage other = (TimeUpdateMessage) obj;
-		return this.time == other.time;
+		return this.ageOfWorld == other.ageOfWorld && this.timeOfDay == other.timeOfDay;
 	}
 }

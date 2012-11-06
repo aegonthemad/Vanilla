@@ -33,6 +33,8 @@ import org.jboss.netty.buffer.ChannelBuffers;
 
 import org.spout.api.protocol.MessageCodec;
 
+import org.spout.nbt.CompoundMap;
+import org.spout.vanilla.protocol.ChannelBufferUtils;
 import org.spout.vanilla.protocol.msg.entity.EntitySpawnItemMessage;
 
 public final class EntitySpawnItemCodec extends MessageCodec<EntitySpawnItemMessage> {
@@ -43,25 +45,21 @@ public final class EntitySpawnItemCodec extends MessageCodec<EntitySpawnItemMess
 	@Override
 	public EntitySpawnItemMessage decode(ChannelBuffer buffer) throws IOException {
 		int id = buffer.readInt();
-		int itemId = buffer.readUnsignedShort();
-		int count = buffer.readUnsignedByte();
-		int damage = buffer.readUnsignedShort();
+		CompoundMap item = ChannelBufferUtils.readCompound(buffer);
 		int x = buffer.readInt();
 		int y = buffer.readInt();
 		int z = buffer.readInt();
 		int rotation = buffer.readUnsignedByte();
 		int pitch = buffer.readUnsignedByte();
 		int roll = buffer.readUnsignedByte();
-		return new EntitySpawnItemMessage(id, itemId, count, (short) damage, x, y, z, rotation, pitch, roll);
+		return new EntitySpawnItemMessage(id, item, x, y, z, rotation, pitch, roll);
 	}
 
 	@Override
 	public ChannelBuffer encode(EntitySpawnItemMessage message) throws IOException {
 		ChannelBuffer buffer = ChannelBuffers.buffer(24);
 		buffer.writeInt(message.getEntityId());
-		buffer.writeShort(message.getItemId());
-		buffer.writeByte(message.getCount());
-		buffer.writeShort(message.getDamage());
+		ChannelBufferUtils.writeCompound(buffer, message.getItem());
 		buffer.writeInt(message.getX());
 		buffer.writeInt(message.getY());
 		buffer.writeInt(message.getZ());
