@@ -27,23 +27,25 @@
 package org.spout.vanilla.protocol.msg.entity;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.spout.api.math.Vector3;
 import org.spout.api.util.SpoutToStringStyle;
-
+import org.spout.nbt.CompoundMap;
 import org.spout.vanilla.protocol.msg.EntityMessage;
 
 public final class EntitySpawnItemMessage extends EntityMessage {
 	private final int x, y, z, rotation, pitch, roll;
 	private final int itemId, count;
 	private final short damage;
+	private final CompoundMap NBTtags;
 
-	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, Vector3 pos, int rotation, int pitch, int roll) {
-		this(id, itemId, count, damage, (int) pos.getX(), (int) pos.getY(), (int) pos.getZ(), rotation, pitch, roll);
+	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, CompoundMap NBTtags, Vector3 pos, int rotation, int pitch, int roll) {
+		this(id, itemId, count, damage, NBTtags, (int) pos.getX(), (int) pos.getY(), (int) pos.getZ(), rotation, pitch, roll);
 	}
 
-	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, int x, int y, int z, int rotation, int pitch, int roll) {
+	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, CompoundMap nbtTags, int x, int y, int z, int rotation, int pitch, int roll) {
 		super(id);
+		this.NBTtags = nbtTags;
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -86,6 +88,10 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 	public int getCount() {
 		return count;
 	}
+	
+    public CompoundMap getNBTTags() {
+        return NBTtags;
+    }
 
 	public short getDamage() {
 		return damage;
@@ -104,6 +110,7 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 				.append("itemId", itemId)
 				.append("count", count)
 				.append("damage", damage)
+				.append("NBTtags",NBTtags)
 				.toString();
 	}
 
@@ -127,6 +134,8 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 				.append(this.itemId, other.itemId)
 				.append(this.count, other.count)
 				.append(this.damage, other.damage)
+				.append(this.NBTtags, other.NBTtags)
 				.isEquals();
 	}
+
 }

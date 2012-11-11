@@ -467,7 +467,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (y < 0 || y > 255) {
 			return null; // don't play effects outside the byte range
 		}
-		return new PlayEffectMessage(event.getEffect().getId(), x, y, z, event.getData());
+		//FIXME Nicks hack method of hard coding
+		return new PlayEffectMessage(event.getEffect().getId(), x, y, z, event.getData(), false);
 	}
 
 	@EventHandler
@@ -549,7 +550,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@EventHandler
 	public Message onTimeUpdate(TimeUpdateEvent event) {
-		return new TimeUpdateMessage(event.getNewTime());
+	    //FIXME This is a hack! Need a repair...
+		return new TimeUpdateMessage(event.getNewTime(), event.getNewTime());
 	}
 
 	@EventHandler

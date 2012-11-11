@@ -35,12 +35,14 @@ public class ClientSettingsMessage implements Message {
 	public static byte VIEW_FAR = 0, VIEW_NORMAL = 1, VIEW_SHORT = 2, VIEW_TINY = 3;
 	private String locale;
 	private byte viewDistance, chatFlags, difficulty;
+	private boolean showCape;
 
-	public ClientSettingsMessage(String locale, byte viewDistance, byte chatFlags, byte difficulty) {
+	public ClientSettingsMessage(String locale, byte viewDistance, byte chatFlags, byte difficulty, boolean showCape) {
 		this.locale = locale;
 		this.viewDistance = viewDistance;
 		this.chatFlags = chatFlags;
 		this.difficulty = difficulty;
+		this.showCape = showCape;
 	}
 
 	@Override
@@ -50,6 +52,7 @@ public class ClientSettingsMessage implements Message {
 				.append("viewdistance", viewDistance)
 				.append("chatflags", chatFlags)
 				.append("difficulty", difficulty)
+				.append("showCape", showCape)
 				.toString();
 	}
 
@@ -67,8 +70,17 @@ public class ClientSettingsMessage implements Message {
 				.append(this.viewDistance, other.viewDistance)
 				.append(this.chatFlags, other.chatFlags)
 				.append(this.difficulty, other.difficulty)
+				.append(this.showCape, other.showCape)
 				.isEquals();
 	}
+	
+	public boolean isShowCape() {
+        return showCape;
+    }
+	
+	public void setShowCape(boolean showCape) {
+        this.showCape = showCape;
+    }
 
 	public String getLocale() {
 		return locale;

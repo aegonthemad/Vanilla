@@ -36,17 +36,19 @@ public final class PlayEffectMessage implements Message {
 	private final int id;
 	private final int x, y, z;
 	private final int data;
+	private boolean volumeDecrease;
 
-	public PlayEffectMessage(int id, Block block, int data) {
-		this(id, block.getX(), block.getY(), block.getZ(), data);
+	public PlayEffectMessage(int id, Block block, int data, boolean volumeDecrease) {
+		this(id, block.getX(), block.getY(), block.getZ(), data, volumeDecrease);
 	}
 
-	public PlayEffectMessage(int id, int x, int y, int z, int data) {
+	public PlayEffectMessage(int id, int x, int y, int z, int data, boolean volumeDecrease) {
 		this.id = id;
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.data = data;
+		this.volumeDecrease = volumeDecrease;
 	}
 
 	public int getId() {
@@ -56,6 +58,10 @@ public final class PlayEffectMessage implements Message {
 	public int getX() {
 		return x;
 	}
+	
+    public boolean isVolumeDecrease() {
+        return volumeDecrease;
+    }
 
 	public int getY() {
 		return y;
@@ -77,6 +83,7 @@ public final class PlayEffectMessage implements Message {
 				.append("y", y)
 				.append("z", z)
 				.append("data", data)
+				.append("volumeDecrease", volumeDecrease)
 				.toString();
 	}
 
@@ -95,6 +102,9 @@ public final class PlayEffectMessage implements Message {
 				.append(this.y, other.y)
 				.append(this.z, other.z)
 				.append(this.data, other.data)
+				.append(this.volumeDecrease, other.volumeDecrease)
 				.isEquals();
 	}
+
+
 }

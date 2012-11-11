@@ -47,7 +47,8 @@ public class ClientSettingsCodec extends MessageCodec<ClientSettingsMessage> {
 		byte viewDistance = buffer.readByte();
 		byte chatFlags = buffer.readByte();
 		byte difficulty = buffer.readByte();
-		return new ClientSettingsMessage(locale, viewDistance, chatFlags, difficulty);
+		boolean showCape = buffer.readByte() != 0;
+		return new ClientSettingsMessage(locale, viewDistance, chatFlags, difficulty, showCape);
 	}
 
 	@Override
@@ -57,6 +58,7 @@ public class ClientSettingsCodec extends MessageCodec<ClientSettingsMessage> {
 		buffer.writeByte(message.getViewDistance());
 		buffer.writeByte(message.getChatFlags());
 		buffer.writeByte(message.getDifficulty());
+		buffer.writeByte(message.isShowCape() ? 1:0);
 		return buffer;
 	}
 }

@@ -26,20 +26,20 @@
  */
 package org.spout.vanilla.material;
 
+import gnu.trove.map.hash.TShortObjectHashMap;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-
-import gnu.trove.map.hash.TShortObjectHashMap;
 
 import org.spout.api.Spout;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.Material;
 import org.spout.api.material.MaterialRegistry;
 import org.spout.api.util.map.concurrent.AtomicShortArray;
-
 import org.spout.vanilla.entity.component.effect.food.FoodSaturation;
 import org.spout.vanilla.entity.component.effect.food.Hunger;
 import org.spout.vanilla.entity.component.effect.food.Poisoning;
+import org.spout.vanilla.material.block.Wall;
 import org.spout.vanilla.material.block.controlled.BrewingStandBlock;
 import org.spout.vanilla.material.block.controlled.ChestBlock;
 import org.spout.vanilla.material.block.controlled.CraftingTableBlock;

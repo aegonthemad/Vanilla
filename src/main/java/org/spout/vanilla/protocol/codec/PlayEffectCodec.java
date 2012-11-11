@@ -47,7 +47,8 @@ public final class PlayEffectCodec extends MessageCodec<PlayEffectMessage> {
 		int y = buffer.readUnsignedByte();
 		int z = buffer.readInt();
 		int data = buffer.readInt();
-		return new PlayEffectMessage(id, x, y, z, data);
+		boolean volumeDecrease = buffer.readByte() != 0;
+		return new PlayEffectMessage(id, x, y, z, data, volumeDecrease);
 	}
 
 	@Override
@@ -58,6 +59,7 @@ public final class PlayEffectCodec extends MessageCodec<PlayEffectMessage> {
 		buffer.writeByte(message.getY());
 		buffer.writeInt(message.getZ());
 		buffer.writeInt(message.getData());
+		buffer.writeByte(message.isVolumeDecrease() ? 1:0);
 		return buffer;
 	}
 }
