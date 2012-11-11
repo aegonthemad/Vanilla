@@ -40,12 +40,12 @@ public final class TimeUpdateMessage implements Message {
 		this.timeOfDay = timeOfDay;
 	}
 
-	public long getTimeOfDay() {
-		return timeOfDay;
-	}
-	
 	public long getAgeOfWorld() {
         return ageOfWorld;
+    }
+	
+	public long getTimeOfDay() {
+        return timeOfDay;
     }
 
 	@Override

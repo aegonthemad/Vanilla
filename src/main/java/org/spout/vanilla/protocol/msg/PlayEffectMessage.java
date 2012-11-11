@@ -74,6 +74,10 @@ public final class PlayEffectMessage implements Message {
 	public int getData() {
 		return data;
 	}
+	
+	public boolean isNoVolumeDecrease() {
+        return volumeDecrease;
+    }
 
 	@Override
 	public String toString() {

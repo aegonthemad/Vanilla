@@ -27,7 +27,6 @@
 package org.spout.vanilla.protocol.msg.entity;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.spout.api.math.Vector3;
 import org.spout.api.util.SpoutToStringStyle;
 import org.spout.nbt.CompoundMap;
@@ -43,18 +42,18 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 		this(id, itemId, count, damage, NBTtags, (int) pos.getX(), (int) pos.getY(), (int) pos.getZ(), rotation, pitch, roll);
 	}
 
-	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, CompoundMap nbtTags, int x, int y, int z, int rotation, int pitch, int roll) {
+	public EntitySpawnItemMessage(int id, int itemId, int count, short damage, CompoundMap NBTtags, int x, int y, int z, int rotation, int pitch, int roll) {
 		super(id);
-		this.NBTtags = nbtTags;
+		this.itemId = itemId;
+		this.NBTtags = NBTtags;
+		this.damage = damage;
+		this.count = count;
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.rotation = rotation;
 		this.pitch = pitch;
 		this.roll = roll;
-		this.itemId = itemId;
-		this.count = count;
-		this.damage = damage;
 	}
 
 	public int getX() {
@@ -96,7 +95,7 @@ public final class EntitySpawnItemMessage extends EntityMessage {
 	public short getDamage() {
 		return damage;
 	}
-
+	
 	@Override
 	public String toString() {
 		return new ToStringBuilder(this, SpoutToStringStyle.INSTANCE)

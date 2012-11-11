@@ -45,27 +45,39 @@ public final class EntitySpawnItemCodec extends MessageCodec<EntitySpawnItemMess
 	@Override
 	public EntitySpawnItemMessage decode(ChannelBuffer buffer) throws IOException {
 		int id = buffer.readInt();
+<<<<<<< HEAD
 		int itemId = buffer.readUnsignedShort();
 		int count = buffer.readUnsignedByte();
 		int damage = buffer.readUnsignedShort();
 		CompoundMap nbtTags = ChannelBufferUtils.readCompound(buffer);
+=======
+		CompoundMap item = ChannelBufferUtils.readCompound(buffer);
+>>>>>>> 5eefa5ca2f82ce4c9f10cce05a3b20421643a279
 		int x = buffer.readInt();
 		int y = buffer.readInt();
 		int z = buffer.readInt();
 		int rotation = buffer.readUnsignedByte();
 		int pitch = buffer.readUnsignedByte();
 		int roll = buffer.readUnsignedByte();
+<<<<<<< HEAD
 		return new EntitySpawnItemMessage(id, itemId, count, (short) damage, nbtTags, x, y, z, rotation, pitch, roll);
+=======
+		return new EntitySpawnItemMessage(id, item, x, y, z, rotation, pitch, roll);
+>>>>>>> 5eefa5ca2f82ce4c9f10cce05a3b20421643a279
 	}
 
 	@Override
 	public ChannelBuffer encode(EntitySpawnItemMessage message) throws IOException {
 		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
 		buffer.writeInt(message.getEntityId());
+<<<<<<< HEAD
 		buffer.writeShort(message.getItemId());
 		buffer.writeByte(message.getCount());
 		buffer.writeShort(message.getDamage());
 		ChannelBufferUtils.writeCompound(buffer, message.getNBTTags());
+=======
+		ChannelBufferUtils.writeCompound(buffer, message.getItem());
+>>>>>>> 5eefa5ca2f82ce4c9f10cce05a3b20421643a279
 		buffer.writeInt(message.getX());
 		buffer.writeInt(message.getY());
 		buffer.writeInt(message.getZ());

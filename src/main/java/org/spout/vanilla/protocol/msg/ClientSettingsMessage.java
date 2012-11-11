@@ -42,7 +42,7 @@ public class ClientSettingsMessage implements Message {
 		this.viewDistance = viewDistance;
 		this.chatFlags = chatFlags;
 		this.difficulty = difficulty;
-		this.showCape = showCape;
+        this.showCape = showCape;
 	}
 
 	@Override
@@ -113,4 +113,5 @@ public class ClientSettingsMessage implements Message {
 	public void setDifficulty(byte difficulty) {
 		this.difficulty = difficulty;
 	}
+	
 }

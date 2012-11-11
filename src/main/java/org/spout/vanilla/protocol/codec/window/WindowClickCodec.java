@@ -34,6 +34,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.protocol.MessageCodec;
 
+import org.spout.nbt.CompoundMap;
 import org.spout.vanilla.protocol.ChannelBufferUtils;
 import org.spout.vanilla.protocol.msg.window.WindowClickMessage;
 
@@ -49,7 +50,7 @@ public final class WindowClickCodec extends MessageCodec<WindowClickMessage> {
 		boolean rightClick = buffer.readUnsignedByte() != 0;
 		int transaction = buffer.readUnsignedShort();
 		boolean shift = buffer.readUnsignedByte() != 0;
-		ItemStack item = ChannelBufferUtils.readItemStack(buffer);
+		CompoundMap item = ChannelBufferUtils.readCompound(buffer);
 		return new WindowClickMessage(id, slot, rightClick, transaction, shift, item);
 	}
 
@@ -61,7 +62,7 @@ public final class WindowClickCodec extends MessageCodec<WindowClickMessage> {
 		buffer.writeByte(message.isRightClick() ? 1 : 0);
 		buffer.writeShort(message.getTransaction());
 		buffer.writeByte(message.isShift() ? 1 : 0);
-		ChannelBufferUtils.writeItemStack(buffer, message.getItem());
+		ChannelBufferUtils.writeCompound(buffer, message.getItem());
 		return buffer;
 	}
 }

@@ -42,9 +42,9 @@ public final class TimeUpdateCodec extends MessageCodec<TimeUpdateMessage> {
 
 	@Override
 	public TimeUpdateMessage decode(ChannelBuffer buffer) throws IOException {
-	    long age = buffer.readLong();
-	    long time = buffer.readLong();
-		return new TimeUpdateMessage(age, time);
+		long ageOfWorld = buffer.readLong();
+		long timeOfDay = buffer.readLong();
+        return new TimeUpdateMessage(ageOfWorld, timeOfDay);
 	}
 
 	@Override
