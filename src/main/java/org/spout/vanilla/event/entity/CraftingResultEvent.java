@@ -26,7 +26,7 @@
  */
 package org.spout.vanilla.event.entity;
 
-import org.spout.api.entity.Controller;
+import org.spout.api.entity.Player;
 import org.spout.api.event.Cancellable;
 import org.spout.api.event.HandlerList;
 import org.spout.api.event.entity.EntityEvent;
@@ -34,25 +34,25 @@ import org.spout.api.inventory.ItemStack;
 
 /**
  * Event which is called when a furnace finishes smelting an object, or a CraftingTable finishes crafting, or a player finishes crafting
- * todo implement event in CraftingInventory
+ * TODO implement event in CraftingInventory
  */
 public class CraftingResultEvent extends EntityEvent implements Cancellable {
 	private static HandlerList handlers = new HandlerList();
-	private Controller controller;
+	private Player player;
 	private ItemStack result;
 
-	public CraftingResultEvent(Controller controller, ItemStack result) {
-		super(controller.getParent());
-		this.controller = controller;
+	public CraftingResultEvent(Player player, ItemStack result) {
+		super(player);
+		this.player = player;
 		this.result = result;
 	}
 
 	/**
-	 * Returns the entity of this CraftingResultEvent
-	 * @return entity
+	 * Returns the player of this CraftingResultEvent
+	 * @return player
 	 */
-	public Controller getController() {
-		return controller;
+	public Player getPlayer() {
+		return player;
 	}
 
 	/**

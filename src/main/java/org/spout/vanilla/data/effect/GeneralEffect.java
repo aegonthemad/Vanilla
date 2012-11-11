@@ -28,7 +28,6 @@ package org.spout.vanilla.data.effect;
 
 import java.util.List;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 
@@ -88,7 +87,7 @@ public class GeneralEffect extends Effect {
 		this.playGlobal(position, data, null);
 	}
 
-	public void playGlobal(Point position, int data, Entity ignore) {
+	public void playGlobal(Point position, int data, Player ignore) {
 		this.play(getNearbyPlayers(position, ignore), position, data);
 	}
 }

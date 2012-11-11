@@ -28,19 +28,23 @@ package org.spout.vanilla.event.player;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
-import org.spout.api.entity.controller.PlayerController;
 import org.spout.api.event.HandlerList;
 import org.spout.api.event.entity.EntitySpawnEvent;
 import org.spout.api.exception.InvalidControllerException;
 import org.spout.api.geo.discrete.Point;
 
+import org.spout.vanilla.component.living.Human;
+
+/**
+ * Event which is called when a player respawns
+ */
 public class PlayerRespawnEvent extends EntitySpawnEvent {
 	private static HandlerList handlers = new HandlerList();
 	private Point point;
 
 	public PlayerRespawnEvent(Entity e, Point point) {
 		super(e, point);
-		if (!(e.getController() instanceof PlayerController)) {
+		if (!e.has(Human.class)) {
 			throw new InvalidControllerException();
 		}
 		this.point = point;

@@ -26,6 +26,7 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
 import org.spout.api.material.BlockMaterial;
@@ -35,18 +36,18 @@ import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.EffectRange;
 import org.spout.api.material.range.PlusEffectRange;
 
+import org.spout.vanilla.data.RedstonePowerMode;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Toggleable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.AttachedRedstoneSource;
-import org.spout.vanilla.util.RedstonePowerMode;
 
 public class TripWireHook extends AttachedRedstoneSource implements Toggleable, DynamicMaterial {
 	private static final EffectRange dynamicRange = new PlusEffectRange(TripWire.MAX_DISTANCE, false);
 	private static final long TICK_DELAY = 500;
 
 	public TripWireHook(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setAttachable(BlockFaces.NESW);
 		this.setHardness(0.0f).setResistance(0.0f).setTransparent();
 	}
@@ -84,7 +85,7 @@ public class TripWireHook extends AttachedRedstoneSource implements Toggleable, 
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
 		block.setDataField(0x3, BlockFaces.ESWN.indexOf(attachedFace, 0));
 	}
 
@@ -118,5 +119,10 @@ public class TripWireHook extends AttachedRedstoneSource implements Toggleable, 
 				this.setToggled(block, false);
 			}
 		}
+	}
+
+	@Override
+	public short getRedstonePowerStrength(short data) {
+		return ((data & 0x8) == 1) ? REDSTONE_POWER_MAX : REDSTONE_POWER_MIN;
 	}
 }

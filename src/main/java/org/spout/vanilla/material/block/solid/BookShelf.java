@@ -29,20 +29,20 @@ package org.spout.vanilla.material.block.solid;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.data.Instrument;
+import org.spout.vanilla.data.tool.ToolLevel;
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.ToolLevel;
-import org.spout.vanilla.util.ToolType;
 
 public class BookShelf extends Solid implements Fuel, InitializableMaterial, Burnable {
-	public final float BURN_TIME = 15.f;
+	public final float BURN_TIME = 15;
 
 	public BookShelf(String name, int id) {
-		super(name, id);
+		super(name, id,"model://Vanilla/resources/materials/block/solid/bookshelf/bookshelf.spm");
 		this.setHardness(1.5F).setResistance(2.5F).addMiningType(ToolType.AXE).setMiningLevel(ToolLevel.WOOD);
 	}
 
@@ -68,7 +68,7 @@ public class BookShelf extends Solid implements Fuel, InitializableMaterial, Bur
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
+		return Instrument.BASS_GUITAR;
 	}
 
 	@Override

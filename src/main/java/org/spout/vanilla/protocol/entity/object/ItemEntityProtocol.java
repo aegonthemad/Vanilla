@@ -30,34 +30,35 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.spout.api.entity.Controller;
 import org.spout.api.entity.Entity;
+import org.spout.api.inventory.ItemStack;
 import org.spout.api.protocol.Message;
 
-import org.spout.vanilla.entity.object.moving.Item;
+import org.spout.vanilla.component.substance.Item;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.protocol.entity.VanillaEntityProtocol;
-import org.spout.vanilla.protocol.msg.entity.EntitySpawnItemMessage;
+import org.spout.vanilla.protocol.msg.entity.spawn.EntityItemMessage;
 
 public class ItemEntityProtocol extends VanillaEntityProtocol {
 	@Override
 	public List<Message> getSpawnMessages(Entity entity) {
-		final Controller c = entity.getController();
-		if (!(c instanceof Item)) {
-			return Collections.emptyList();
-		}
-		Item pi = (Item) c;
+		Item item = entity.add(Item.class);
 		int id = entity.getId();
-		int x = (int) (entity.getPosition().getX() * 32);
-		int y = (int) (entity.getPosition().getY() * 32);
-		int z = (int) (entity.getPosition().getZ() * 32);
-		int r = (int) (entity.getYaw() * 32);
-		int p = (int) (entity.getPitch() * 32);
-		if (pi.getMaterial() == null) {
-			int typeId = VanillaMaterials.getMinecraftId(pi.getMaterial());
+		int x = (int) (entity.getTransform().getPosition().getX() * 32);
+		int y = (int) (entity.getTransform().getPosition().getY() * 32);
+		int z = (int) (entity.getTransform().getPosition().getZ() * 32);
+		int r = (int) (entity.getTransform().getYaw() * 32);
+		int p = (int) (entity.getTransform().getPitch() * 32);
+		ItemStack stack = item.getItemStack();
+		if (stack.getMaterial() != null) {
+			int typeId = VanillaMaterials.getMinecraftId(stack.getMaterial());
 			if (typeId > 0) {
+<<<<<<< HEAD
 			    //FIXME Nick's hack attempt at temp fixing this issue...
 				return Arrays.<Message>asList(new EntitySpawnItemMessage(id, typeId, pi.getAmount(), pi.getData(),null, x, y, z, r, p, (int) pi.getParent().getRoll()));
+=======
+				return Arrays.<Message>asList(new EntityItemMessage(id, typeId, stack.getAmount(), stack.getData(), x, y, z, r, p, (int) entity.getTransform().getRoll()));
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 			}
 		}
 		return Collections.emptyList();

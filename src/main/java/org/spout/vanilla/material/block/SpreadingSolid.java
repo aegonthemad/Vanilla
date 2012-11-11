@@ -29,8 +29,9 @@ package org.spout.vanilla.material.block;
 import java.util.Random;
 
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.RandomBlockMaterial;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.range.CubicEffectRange;
 import org.spout.api.material.range.EffectRange;
@@ -41,20 +42,20 @@ import org.spout.vanilla.material.VanillaBlockMaterial;
 /**
  * A solid material that can spread to other materials nearby
  */
-public abstract class SpreadingSolid extends Solid implements Spreading, RandomBlockMaterial {
+public abstract class SpreadingSolid extends Solid implements Spreading, DynamicMaterial {
 	private BlockMaterial replacedMaterial;
 	private static final EffectRange DEFAULT_SPREAD_RANGE = new CubicEffectRange(2);
 
-	public SpreadingSolid(short dataMask, String name, int id) {
-		super(dataMask, name, id);
+	public SpreadingSolid(short dataMask, String name, int id, String model) {
+		super(dataMask, name, id, model);
 	}
 
-	public SpreadingSolid(String name, int id, int data, VanillaBlockMaterial parent) {
-		super(name, id, data, parent);
+	public SpreadingSolid(String name, int id, int data, VanillaBlockMaterial parent, String model) {
+		super(name, id, data, parent, model);
 	}
 
-	public SpreadingSolid(String name, int id) {
-		super(name, id);
+	public SpreadingSolid(String name, int id, String model) {
+		super(name, id, model);
 	}
 
 	/**
@@ -140,7 +141,20 @@ public abstract class SpreadingSolid extends Solid implements Spreading, RandomB
 	}
 
 	@Override
-	public void onRandomTick(Block block) {
+	public EffectRange getDynamicRange() {
+		return EffectRange.NEIGHBORS;
+	}
+
+	public abstract long getSpreadingTime(Block b);
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		//TODO : Delay before dynamic update
+		b.dynamicUpdate(currentTime + getSpreadingTime(b));
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
 		// Attempt to decay or spread this material
 		if (this.canDecayAt(block)) {
 			this.onDecay(block);

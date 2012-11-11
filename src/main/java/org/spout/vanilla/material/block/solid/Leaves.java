@@ -35,21 +35,21 @@ import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.block.controlled.SignBase;
+import org.spout.vanilla.material.block.component.SignBase;
 
 public class Leaves extends Solid implements Burnable, InitializableMaterial {
-	public static final Leaves DEFAULT = new Leaves("Leaves");
-	public static final Leaves SPRUCE = new Leaves("Spruce Leaves", 1, DEFAULT);
-	public static final Leaves BIRCH = new Leaves("Birch Leaves", 2, DEFAULT);
-	public static final Leaves JUNGLE = new Leaves("Jungle Leaves", 3, DEFAULT);
+	public static final Leaves DEFAULT = new Leaves("Leaves", "model://Vanilla/resources/materials/block/solid/oakleaves/oakleaves.spm");
+	public static final Leaves SPRUCE = new Leaves("Spruce Leaves", 1, DEFAULT, "model://Vanilla/resources/materials/block/solid/spruceleaves/spruceleaves.spm");
+	public static final Leaves BIRCH = new Leaves("Birch Leaves", 2, DEFAULT, "model://Vanilla/resources/materials/block/solid/birchleaves/birchleaves.spm");
+	public static final Leaves JUNGLE = new Leaves("Jungle Leaves", 3, DEFAULT, "model://Vanilla/resources/materials/block/solid/jungleleaves/jungleleaves.spm");
 
-	private Leaves(String name) {
-		super((short) 0x0003, name, 18);
+	private Leaves(String name, String model) {
+		super((short) 0x0003, name, 18, model);
 		this.setHardness(0.2F).setResistance(0.3F).setTransparent();
 	}
 
-	private Leaves(String name, int data, Leaves parent) {
-		super(name, 18, data, parent);
+	private Leaves(String name, int data, Leaves parent, String model) {
+		super(name, 18, data, parent, model);
 		this.setHardness(0.2F).setResistance(0.3F).setTransparent();
 	}
 

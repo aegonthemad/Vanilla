@@ -32,33 +32,37 @@ import java.util.Set;
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventorySlot;
-import org.spout.api.material.RandomBlockMaterial;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.material.range.EffectRange;
 import org.spout.api.util.flag.Flag;
 
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.drops.flag.BlockFlags;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
 import org.spout.vanilla.material.InitializableMaterial;
+import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Crop;
 import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.item.misc.Dye;
-import org.spout.vanilla.util.VanillaBlockUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class WheatCrop extends GroundAttachable implements Growing, Crop, RandomBlockMaterial, InitializableMaterial {
+public class WheatCrop extends GroundAttachable implements Growing, Crop, DynamicMaterial, InitializableMaterial {
 	public WheatCrop(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setResistance(0.0F).setHardness(0.0F).setTransparent();
 	}
 
 	@Override
 	public void initialize() {
 		getDrops().DEFAULT.clear();
-		getDrops().DEFAULT.add(VanillaMaterials.WHEAT).addFlags(BlockFlags.FULLY_GROWN);
-		getDrops().DEFAULT.add(VanillaMaterials.SEEDS).addFlags(BlockFlags.SEEDS);
+		getDrops().DEFAULT.add(VanillaMaterials.WHEAT, 1, 4).addFlags(BlockFlags.FULLY_GROWN);
+		getDrops().DEFAULT.add(VanillaMaterials.SEEDS, 0, 3).addFlags(BlockFlags.SEEDS);
 	}
 
 	@Override
@@ -106,12 +110,12 @@ public class WheatCrop extends GroundAttachable implements Growing, Crop, Random
 	@Override
 	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, type, clickedFace);
-		InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
-		ItemStack current = inv.getItem();
+		PlayerQuickbar inv = entity.get(Human.class).getInventory().getQuickbar();
+		ItemStack current = inv.getCurrentItem();
 		if (current != null && current.isMaterial(Dye.BONE_MEAL)) {
 			if (this.getGrowthStage(block) != 0x7) {
-				if (VanillaPlayerUtil.isSurvival(entity)) {
-					inv.addItemAmount(0, -1);
+				if (entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
+					inv.addAmount(0, -1);
 				}
 				this.setGrowthStage(block, 0x7);
 			}
@@ -121,14 +125,33 @@ public class WheatCrop extends GroundAttachable implements Growing, Crop, Random
 	// TODO: Trampling
 
 	@Override
-	public void onRandomTick(Block block) {
-		if (!this.isFullyGrown(block) && block.translate(BlockFace.TOP).getLight() >= this.getMinimumLightToGrow()) {
-			// Grow using a calculated chance of growing
-			Random rand = new Random(block.getWorld().getAge());
-			int chance = VanillaBlockUtil.getCropGrowthChance(block);
-			if (rand.nextInt(chance + 1) == 0) {
-				this.setGrowthStage(block, this.getGrowthStage(block));
+	public EffectRange getDynamicRange() {
+		return EffectRange.THIS_AND_ABOVE;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		//TODO : delay before update
+		b.dynamicUpdate(currentTime + getGrowthTime(b));
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
+		if (!this.isFullyGrown(block)) {
+			if (block.translate(BlockFace.TOP).getLight() >= this.getMinimumLightToGrow()) {
+				// Grow using a calculated chance of growing
+				Random rand = new Random(block.getWorld().getAge());
+				int chance = VanillaBlockMaterial.getCropGrowthChance(block);
+				if (rand.nextInt(chance + 1) == 0) {
+					this.setGrowthStage(block, this.getGrowthStage(block));
+				}
 			}
+			//TODO : delay before update
+			block.dynamicUpdate(updateTime + getGrowthTime(block));
 		}
+	}
+
+	private long getGrowthTime(Block block) {
+		return 60000L + new Random(block.getWorld().getAge()).nextInt(60000);
 	}
 }

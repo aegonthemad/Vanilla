@@ -62,7 +62,11 @@ public final class WindowClickCodec extends MessageCodec<WindowClickMessage> {
 		buffer.writeByte(message.isRightClick() ? 1 : 0);
 		buffer.writeShort(message.getTransaction());
 		buffer.writeByte(message.isShift() ? 1 : 0);
+<<<<<<< HEAD
 		ChannelBufferUtils.writeCompound(buffer, message.getItem());
+=======
+		ChannelBufferUtils.writeItemStack(buffer, message.get());
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 		return buffer;
 	}
 }

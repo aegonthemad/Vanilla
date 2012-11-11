@@ -28,19 +28,20 @@ package org.spout.vanilla.material.block.rail;
 
 import org.spout.api.collision.BoundingBox;
 import org.spout.api.collision.CollisionStrategy;
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.RailsState;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.util.MinecartTrackLogic;
-import org.spout.vanilla.util.RailsState;
 
 public abstract class RailBase extends GroundAttachable {
 	public RailBase(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false).setHardness(0.7F).setResistance(1.2F).setTransparent().setCollision(CollisionStrategy.NOCOLLIDE);
 		//TODO: Fix this up so we can set this area ourselves in the volume!
 		BoundingBox bb = (BoundingBox) this.getBoundingArea();
@@ -140,13 +141,14 @@ public abstract class RailBase extends GroundAttachable {
 		RailsState state = this.getState(block);
 		if (state.isSloped()) {
 			// Check if the facing side is still supporting
-			BlockMaterial att = block.translate(state.getDirections()[0]).getMaterial();
+			Block facing = block.translate(state.getDirections()[0]);
+			BlockMaterial att = facing.getMaterial();
 			if (att instanceof VanillaBlockMaterial) {
 				if (((VanillaBlockMaterial) att).canSupport(this, BlockFace.TOP)) {
 					return;
 				}
 			}
-			this.onDestroy(block);
+			this.onDestroy(block, toCause(facing));
 		}
 	}
 
@@ -158,8 +160,8 @@ public abstract class RailBase extends GroundAttachable {
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
-		if (!super.onPlacement(block, data, against, clickedPos, isClickedBlock)) {
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock, Cause<?> cause) {
+		if (!super.onPlacement(block, data, against, clickedPos, isClickedBlock, cause)) {
 			return false;
 		}
 

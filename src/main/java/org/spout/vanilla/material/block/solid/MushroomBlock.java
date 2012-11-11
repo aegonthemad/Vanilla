@@ -26,17 +26,17 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import org.spout.vanilla.data.Instrument;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.Instrument;
 
 public class MushroomBlock extends Solid implements Fuel, InitializableMaterial {
-	public final float BURN_TIME = 15.f;
+	public final float BURN_TIME = 15;
 
 	public MushroomBlock(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setHardness(0.2F).setResistance(0.3F);
 	}
 
@@ -59,6 +59,6 @@ public class MushroomBlock extends Solid implements Fuel, InitializableMaterial 
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
+		return Instrument.BASS_GUITAR;
 	}
 }

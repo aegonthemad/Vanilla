@@ -31,6 +31,7 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
+import org.spout.vanilla.data.RedstonePowerMode;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
@@ -56,16 +57,28 @@ public class RedstoneUtil {
 
 	/**
 	 * Gets if the given block receives Redstone power or not
+	 * 
 	 * @param block to get it of
 	 * @return True if it receives power, False if not
 	 */
 	public static boolean isReceivingPower(Block block) {
+		return getReceivingPowerLocation(block) != null;
+	}
+
+	/**
+	 * Gets the block that is powering this block, or null if none
+	 * 
+	 * @param block to get source of power of 
+	 * @return Source of redstone power, or null if none
+	 */
+	public static Block getReceivingPowerLocation(Block block) {
 		for (BlockFace face : BlockFaces.NESWBT) {
-			if (isEmittingPower(block.translate(face), face.getOpposite())) {
-				return true;
+			Block b = block.translate(face);
+			if (isEmittingPower(b, face.getOpposite())) {
+				return b;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	/**

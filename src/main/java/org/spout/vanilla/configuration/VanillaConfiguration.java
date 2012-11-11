@@ -34,6 +34,7 @@ import org.spout.api.util.config.ConfigurationHolderConfiguration;
 import org.spout.api.util.config.yaml.YamlConfiguration;
 
 import org.spout.vanilla.VanillaPlugin;
+import org.spout.vanilla.world.generator.biome.VanillaBiomes;
 
 public class VanillaConfiguration extends ConfigurationHolderConfiguration {
 	// General
@@ -47,8 +48,8 @@ public class VanillaConfiguration extends ConfigurationHolderConfiguration {
 	public static final ConfigurationHolder SPAWN_PROTECTION_RADIUS = new ConfigurationHolder(10, "general", "spawn-protection-radius");
 	public static final ConfigurationHolder CHUNK_INIT = new ConfigurationHolder("client", "general", "chunk-init");
 	public static final ConfigurationHolder HARDCORE_MODE = new ConfigurationHolder(false, "general", "hardcore-mode");
-	public static final ConfigurationHolder OUTDATED_SERVER_MESSAGE = new ConfigurationHolder("Outdated server!","general","outdated-server");
-	public static final ConfigurationHolder OUTDATED_CLIENT_MESSAGE = new ConfigurationHolder("Outdated client!","general","outdated-client");
+	public static final ConfigurationHolder OUTDATED_SERVER_MESSAGE = new ConfigurationHolder("Outdated server!", "general", "outdated-server");
+	public static final ConfigurationHolder OUTDATED_CLIENT_MESSAGE = new ConfigurationHolder("Outdated client!", "general", "outdated-client");
 	// Physics
 	public static final ConfigurationHolder GRAVEL_PHYSICS = new ConfigurationHolder(true, "physics", "gravel");
 	public static final ConfigurationHolder FIRE_PHYSICS = new ConfigurationHolder(true, "physics", "fire");
@@ -65,25 +66,26 @@ public class VanillaConfiguration extends ConfigurationHolderConfiguration {
 	public static final ConfigurationHolder PLAYER_SURVIVAL_ENABLE_HEALTH = new ConfigurationHolder(true, "player", "survival", "enable-health");
 	public static final ConfigurationHolder PLAYER_SURVIVAL_ENABLE_HUNGER = new ConfigurationHolder(true, "player", "survival", "enable-hunger");
 	public static final ConfigurationHolder PLAYER_SURVIVAL_ENABLE_XP = new ConfigurationHolder(true, "player", "survival", "enable-xp");
-	public static final ConfigurationHolder PLAYER_TIMEOUT_MS = new ConfigurationHolder(5000, "player", "timeout-ms");
 	public static final ConfigurationHolder PLAYER_SPEEDMINING_PREVENTION_ENABLED = new ConfigurationHolder(true, "player", "speedmining-prevention-enabled");
 	public static final ConfigurationHolder PLAYER_SPEEDMINING_PREVENTION_ALLOWANCE = new ConfigurationHolder(5, "player", "speedmining-prevention-allowance");
 	public static final ConfigurationHolder PLAYER_SPEEDMINING_PREVENTION_PERIOD = new ConfigurationHolder(50, "player", "speedmining-prevention-period");
-	// Controller-specific
-	public static final ConfigurationHolder ITEM_PICKUP_RANGE = new ConfigurationHolder(2, "controller", "item-pickup-range");
+	// Component-specific
+	public static final ConfigurationHolder ITEM_PICKUP_RANGE = new ConfigurationHolder(2, "component", "item-pickup-range");
 	// Redstone-specific
 	public static final ConfigurationHolder REDSTONE_MIN_RANGE = new ConfigurationHolder(0, "redstone", "redstone-min-power-range");
 	public static final ConfigurationHolder REDSTONE_MAX_RANGE = new ConfigurationHolder(15, "redstone", "redstone-max-power-range");
-	public static final OpConfiguration OPS = new OpConfiguration(VanillaPlugin.getInstance().getDataFolder());
-	public static final WorldConfiguration WORLDS = new WorldConfiguration(VanillaPlugin.getInstance().getDataFolder());
-	public static final BiomeConfiguration BIOMES = new BiomeConfiguration(VanillaPlugin.getInstance().getDataFolder());
 	// Encryption
 	public static final ConfigurationHolder ENCRYPT_KEY_ALGORITHM = new ConfigurationHolder("RSA", "encrypt", "key-algorithm");
 	public static final ConfigurationHolder ENCRYPT_KEY_SIZE = new ConfigurationHolder(1024, "encrypt", "key-size");
 	public static final ConfigurationHolder ENCRYPT_KEY_PADDING = new ConfigurationHolder("PKCS1", "encrypt", "key-padding");
 	public static final ConfigurationHolder ENCRYPT_STREAM_ALGORITHM = new ConfigurationHolder("AES", "encrypt", "stream-algorithm");
 	public static final ConfigurationHolder ENCRYPT_STREAM_WRAPPER = new ConfigurationHolder("CFB8", "encrypt", "stream-wrapper");
-
+	// Chunk Cache
+	public static final ConfigurationHolder USE_CHUNK_CACHE = new ConfigurationHolder(true, "cache", "chunks");
+	// sub-configs
+	public static final OpConfiguration OPS = new OpConfiguration(VanillaPlugin.getInstance().getDataFolder());
+	public static final WorldConfiguration WORLDS = new WorldConfiguration(VanillaPlugin.getInstance().getDataFolder());
+	public static final YamlConfiguration BIOMES = new YamlConfiguration(new File(VanillaPlugin.getInstance().getDataFolder(), "biomes.yml"));
 
 	public VanillaConfiguration(File dataFolder) {
 		super(new YamlConfiguration(new File(dataFolder, "config.yml")));
@@ -91,7 +93,7 @@ public class VanillaConfiguration extends ConfigurationHolderConfiguration {
 
 	@Override
 	public void load() throws ConfigurationException {
-		BIOMES.load();
+		VanillaBiomes.load(BIOMES);
 		BIOMES.save();
 		OPS.load();
 		OPS.save();
@@ -103,7 +105,7 @@ public class VanillaConfiguration extends ConfigurationHolderConfiguration {
 
 	@Override
 	public void save() throws ConfigurationException {
-		BIOMES.save();
+		VanillaBiomes.save(BIOMES);
 		OPS.save();
 		WORLDS.save();
 		super.save();

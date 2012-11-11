@@ -39,7 +39,7 @@ import org.spout.api.material.block.BlockFaces;
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.material.block.controlled.FurnaceBlock;
+import org.spout.vanilla.material.block.component.FurnaceBlock;
 import org.spout.vanilla.material.item.misc.Dye;
 
 public class Cactus extends StackGrowingBase implements TimedCraftable {
@@ -53,7 +53,8 @@ public class Cactus extends StackGrowingBase implements TimedCraftable {
 
 	@Override
 	public long getGrowTime(Block block) {
-		return (150 * 1000) + new Random(block.getWorld().getAge()).nextInt(21000) - 10000;
+		//Requires 16 minutes
+		return (16 * 60 * 1000) + new Random(block.getWorld().getAge()).nextInt(21000) - 10000;
 	}
 
 	@Override
@@ -66,7 +67,7 @@ public class Cactus extends StackGrowingBase implements TimedCraftable {
 	@Override
 	public boolean canAttachTo(Block block, BlockFace face) {
 		if (super.canAttachTo(block, face)) {
-			return block.isMaterial(VanillaMaterials.SAND, VanillaMaterials.CACTUS);
+			return block.isMaterial(VanillaMaterials.SAND, VanillaMaterials.CACTUS, VanillaMaterials.FLOWER_POT_BLOCK);
 		}
 		return false;
 	}

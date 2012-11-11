@@ -28,13 +28,13 @@ package org.spout.vanilla.material.block.solid;
 
 import org.spout.api.geo.cuboid.Block;
 
+import org.spout.vanilla.data.Instrument;
+import org.spout.vanilla.data.MoveReaction;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.MoveReaction;
 
 public class Bedrock extends Solid {
 	public Bedrock(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/bedrock/bedrock.spm");
 		this.setResistance(6000000.0F).setHardness(-1.0F);
 		getDrops().DEFAULT.clear();
 	}
@@ -46,6 +46,6 @@ public class Bedrock extends Solid {
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSDRUM;
+		return Instrument.BASS_DRUM;
 	}
 }

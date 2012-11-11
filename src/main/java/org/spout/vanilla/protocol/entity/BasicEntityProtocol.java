@@ -26,14 +26,24 @@
  */
 package org.spout.vanilla.protocol.entity;
 
-public abstract class BasicEntityProtocol extends VanillaEntityProtocol {
-	private final int spawnID;
+import java.util.Collections;
+import java.util.List;
 
-	public BasicEntityProtocol(int spawnID) {
-		this.spawnID = spawnID;
+import org.spout.api.entity.Entity;
+import org.spout.api.util.Parameter;
+
+public abstract class BasicEntityProtocol extends VanillaEntityProtocol {
+	protected final int typeId;
+
+	public BasicEntityProtocol(int typeId) {
+		this.typeId = typeId;
 	}
 
-	public int getSpawnID() {
-		return this.spawnID;
+	public int getTypeId() {
+		return typeId;
+	}
+
+	public List<Parameter<?>> getSpawnParameters(Entity entity) {
+		return Collections.emptyList();
 	}
 }

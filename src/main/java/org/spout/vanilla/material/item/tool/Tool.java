@@ -31,21 +31,21 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.spout.api.entity.Entity;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.util.flag.Flag;
 
+import org.spout.vanilla.component.living.hostile.Silverfish;
+import org.spout.vanilla.component.living.hostile.Skeleton;
+import org.spout.vanilla.component.living.hostile.Spider;
+import org.spout.vanilla.component.living.hostile.Zombie;
 import org.spout.vanilla.data.drops.flag.ToolEnchantFlags;
-import org.spout.vanilla.entity.VanillaEntityController;
-import org.spout.vanilla.entity.creature.hostile.Silverfish;
-import org.spout.vanilla.entity.creature.hostile.Skeleton;
-import org.spout.vanilla.entity.creature.hostile.Spider;
-import org.spout.vanilla.entity.creature.hostile.Zombie;
+import org.spout.vanilla.data.tool.ToolType;
+import org.spout.vanilla.material.enchantment.Enchantment;
 import org.spout.vanilla.material.enchantment.Enchantments;
 import org.spout.vanilla.material.item.Enchantable;
 import org.spout.vanilla.material.item.VanillaItemMaterial;
-import org.spout.vanilla.util.EnchantmentUtil;
-import org.spout.vanilla.util.ToolType;
 
 public abstract class Tool extends VanillaItemMaterial implements Enchantable {
 	private final Random rand = new Random();
@@ -61,9 +61,9 @@ public abstract class Tool extends VanillaItemMaterial implements Enchantable {
 	}
 
 	public short getDurabilityPenalty(ItemStack item) {
-		if (EnchantmentUtil.hasEnchantment(item, Enchantments.UNBREAKING)) {
+		if (Enchantment.hasEnchantment(item, Enchantments.UNBREAKING)) {
 			// Level 1 = 50%, Level 2 = 67%, Level 3 = 75% chance to not consume durability
-			if (100 - (100 / (EnchantmentUtil.getEnchantmentLevel(item, Enchantments.UNBREAKING) + 1)) > rand.nextInt(100)) {
+			if (100 - (100 / (Enchantment.getEnchantmentLevel(item, Enchantments.UNBREAKING) + 1)) > rand.nextInt(100)) {
 				return (short) 0;
 			}
 		}
@@ -122,23 +122,23 @@ public abstract class Tool extends VanillaItemMaterial implements Enchantable {
 	public void getItemFlags(ItemStack item, Set<Flag> flags) {
 		super.getItemFlags(item, flags);
 		flags.add(this.toolType.getToolFlag());
-		if (EnchantmentUtil.hasEnchantment(item, Enchantments.SILK_TOUCH)) {
+		if (Enchantment.hasEnchantment(item, Enchantments.SILK_TOUCH)) {
 			flags.add(ToolEnchantFlags.SILK_TOUCH);
 		}
 	}
 
-	public int getDamageBonus(VanillaEntityController damaged, ItemStack heldItem) {
+	public int getDamageBonus(Entity damaged, ItemStack heldItem) {
 		// These enchantments conflict with each other, so only one is possible per item
 		int damage = 0;
-		if (EnchantmentUtil.hasEnchantment(heldItem, Enchantments.BANE_OF_ARTHROPODS)) {
-			if (damaged instanceof Spider || damaged instanceof Silverfish) {
-				damage = rand.nextInt(EnchantmentUtil.getEnchantmentLevel(heldItem, Enchantments.BANE_OF_ARTHROPODS) * 4);
+		if (Enchantment.hasEnchantment(heldItem, Enchantments.BANE_OF_ARTHROPODS)) {
+			if (damaged.has(Spider.class) || damaged.has(Silverfish.class)) {
+				damage = rand.nextInt(Enchantment.getEnchantmentLevel(heldItem, Enchantments.BANE_OF_ARTHROPODS) * 4);
 			}
-		} else if (EnchantmentUtil.hasEnchantment(heldItem, Enchantments.SHARPNESS)) {
-			damage = rand.nextInt(EnchantmentUtil.getEnchantmentLevel(heldItem, Enchantments.SHARPNESS) * 3);
-		} else if (EnchantmentUtil.hasEnchantment(heldItem, Enchantments.SMITE)) {
-			if (damaged instanceof Skeleton || damaged instanceof Zombie) {
-				damage = rand.nextInt(EnchantmentUtil.getEnchantmentLevel(heldItem, Enchantments.SMITE) * 4);
+		} else if (Enchantment.hasEnchantment(heldItem, Enchantments.SHARPNESS)) {
+			damage = rand.nextInt(Enchantment.getEnchantmentLevel(heldItem, Enchantments.SHARPNESS) * 3);
+		} else if (Enchantment.hasEnchantment(heldItem, Enchantments.SMITE)) {
+			if (damaged.has(Skeleton.class) || damaged.has(Zombie.class)) {
+				damage = rand.nextInt(Enchantment.getEnchantmentLevel(heldItem, Enchantments.SMITE) * 4);
 			}
 		}
 

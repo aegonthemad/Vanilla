@@ -28,7 +28,6 @@ package org.spout.vanilla.data.effect.type;
 
 import java.util.List;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.material.BlockMaterial;
@@ -61,7 +60,7 @@ public class BreakBlockEffect extends GeneralEffect {
 		this.playGlobal(position, material, null);
 	}
 
-	public void playGlobal(Point position, BlockMaterial material, Entity ignore) {
+	public void playGlobal(Point position, BlockMaterial material, Player ignore) {
 		this.play(getNearbyPlayers(position, ignore), position, material);
 	}
 }

@@ -27,61 +27,45 @@
 package org.spout.vanilla.inventory.block;
 
 import org.spout.api.inventory.Inventory;
-import org.spout.api.inventory.special.InventorySlot;
+import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.entity.block.Furnace;
-import org.spout.vanilla.inventory.VanillaInventory;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.TimedCraftable;
 
 /**
  * Represents a furnace inventory belonging to a furnace entity.
  */
-public class FurnaceInventory extends Inventory implements VanillaInventory {
+public class FurnaceInventory extends Inventory {
 	private static final long serialVersionUID = 1L;
-	private final Furnace owner;
-	private final InventorySlot output;
-	private final InventorySlot fuel;
-	private final InventorySlot ingredient;
+	public static final int SIZE = 3;
+	public static final int OUTPUT_SLOT = 2, FUEL_SLOT = 0, INGREDIENT_SLOT = 1;
 
-	public FurnaceInventory(Furnace owner) {
-		super(3);
-		this.owner = owner;
-		this.output = this.createSlot(0);
-		this.fuel = this.createSlot(1);
-		this.ingredient = this.createSlot(2);
+	public FurnaceInventory() {
+		super(SIZE);
 	}
 
-	/**
-	 * Returns the furnace entity that this inventory belongs to.
-	 * @return owner the furnace entity
-	 */
-	public Furnace getOwner() {
-		return owner;
+	public ItemStack getOutput() {
+		return get(OUTPUT_SLOT);
 	}
 
-	/**
-	 * Returns the {@link InventorySlot} of the output slot (slot 37)
-	 * @return output slot
-	 */
-	public InventorySlot getOutput() {
-		return this.output;
+	public void setOutput(ItemStack item) {
+		set(OUTPUT_SLOT, item);
 	}
 
-	/**
-	 * Returns the {@link InventorySlot} of the fuel slot (slot 35)
-	 * @return fuel slot
-	 */
-	public InventorySlot getFuel() {
-		return this.fuel;
+	public ItemStack getFuel() {
+		return get(FUEL_SLOT);
 	}
 
-	/**
-	 * Returns the {@link InventorySlot} of the ingredient slot (slot 38)
-	 * @return ingredient slot
-	 */
-	public InventorySlot getIngredient() {
-		return this.ingredient;
+	public void setFuel(ItemStack item) {
+		set(FUEL_SLOT, item);
+	}
+
+	public ItemStack getIngredient() {
+		return get(INGREDIENT_SLOT);
+	}
+
+	public void setIngredient(ItemStack item) {
+		set(INGREDIENT_SLOT, item);
 	}
 
 	/**
@@ -89,7 +73,7 @@ public class FurnaceInventory extends Inventory implements VanillaInventory {
 	 * @return true if has fuel in slot.
 	 */
 	public boolean hasFuel() {
-		return getFuel().getItem() != null && getFuel().getItem().getMaterial() instanceof Fuel;
+		return getFuel() != null && getFuel().getMaterial() instanceof Fuel;
 	}
 
 	/**
@@ -97,6 +81,6 @@ public class FurnaceInventory extends Inventory implements VanillaInventory {
 	 * @return true if has ingredient in slot.
 	 */
 	public boolean hasIngredient() {
-		return getIngredient().getItem() != null && getIngredient().getItem().getMaterial() instanceof TimedCraftable;
+		return getIngredient() != null && getIngredient().getMaterial() instanceof TimedCraftable;
 	}
 }

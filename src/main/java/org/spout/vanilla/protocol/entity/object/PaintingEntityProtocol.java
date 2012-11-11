@@ -27,23 +27,18 @@
 package org.spout.vanilla.protocol.entity.object;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.protocol.Message;
 
-import org.spout.vanilla.entity.object.misc.Painting;
+import org.spout.vanilla.component.substance.Painting;
 import org.spout.vanilla.protocol.entity.VanillaEntityProtocol;
-import org.spout.vanilla.protocol.msg.entity.EntitySpawnPaintingMessage;
+import org.spout.vanilla.protocol.msg.entity.spawn.EntityPaintingMessage;
 
 public class PaintingEntityProtocol extends VanillaEntityProtocol {
 	@Override
 	public List<Message> getSpawnMessages(Entity entity) {
-		if (!(entity.getController() instanceof Painting)) {
-			return Collections.emptyList();
-		}
-		Painting painting = (Painting) entity.getController();
-		return Arrays.<Message>asList(new EntitySpawnPaintingMessage(entity.getId(), painting.getPaintingStyle().name(), entity.getPosition(), painting.getFace()));
+		return Arrays.<Message>asList(new EntityPaintingMessage(entity.add(Painting.class)));
 	}
 }

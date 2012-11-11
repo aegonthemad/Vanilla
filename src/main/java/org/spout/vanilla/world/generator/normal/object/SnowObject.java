@@ -29,7 +29,6 @@ package org.spout.vanilla.world.generator.normal.object;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.spout.api.Source;
 import org.spout.api.generator.biome.Biome;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
@@ -43,10 +42,10 @@ import org.spout.vanilla.data.Climate;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.liquid.Water;
-import org.spout.vanilla.world.generator.VanillaBiome;
+import org.spout.vanilla.world.generator.biome.VanillaBiome;
 import org.spout.vanilla.world.generator.object.RandomObject;
 
-public class SnowObject extends RandomObject implements Source {
+public class SnowObject extends RandomObject{
 	private static final int MAX_ITERATIONS = 10; // Endless loop prevention
 	private static final EffectRange NEIGHBORS = new CuboidEffectRange(-1, 0, -1, 1, 0, 1);
 
@@ -60,7 +59,7 @@ public class SnowObject extends RandomObject implements Source {
 
 	@Override
 	public boolean canPlaceObject(World w, int x, int y, int z) {
-		final Biome biome = w.getBiomeType(x, y, z);
+		final Biome biome = w.getBiome(x, y, z);
 		return biome instanceof VanillaBiome && ((VanillaBiome) biome).getClimate().hasSnowfall();
 	}
 
@@ -70,7 +69,7 @@ public class SnowObject extends RandomObject implements Source {
 	 * @returns if snow has been placed.
 	 */
 	public boolean fall(World world, IntVector3 position) {
-		final Block current = world.getBlock(position.getX(), position.getY(), position.getZ(), this);
+		final Block current = world.getBlock(position.getX(), position.getY(), position.getZ());
 		final Block under = current.translate(BlockFace.BOTTOM);
 		final BlockMaterial underMat = under.getMaterial();
 		if (underMat.equals(VanillaMaterials.ICE)) {

@@ -31,17 +31,16 @@ import java.util.List;
 import java.util.Random;
 
 import org.spout.api.geo.World;
-import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.Material;
-import org.spout.api.material.block.BlockFace;
+import org.spout.api.math.Vector3;
 
-import org.spout.vanilla.entity.block.Chest;
+import org.spout.vanilla.component.substance.material.chest.Chest;
 import org.spout.vanilla.inventory.block.ChestInventory;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.world.generator.object.RandomObject;
+import org.spout.vanilla.world.generator.object.RotatableObject;
 
-public class LootChestObject extends RandomObject {
+public class LootChestObject extends RotatableObject {
 	private int maxNumberOfStacks = 8;
 	private final List<LootProbability> loot = new ArrayList<LootProbability>();
 	private double currentPMax = 0.0;
@@ -56,19 +55,20 @@ public class LootChestObject extends RandomObject {
 
 	@Override
 	public boolean canPlaceObject(World w, int x, int y, int z) {
-		final Block block = w.getBlock(x, y, z, w);
-		final Block above = block.translate(BlockFace.TOP);
-		return block.isMaterial(VanillaMaterials.AIR) && above.isMaterial(VanillaMaterials.AIR);
+		center = new Vector3(x, y, z);
+		return getBlockMaterial(w, x, y, z).isMaterial(VanillaMaterials.AIR)
+				&& getBlockMaterial(w, x, y + 1, z).isMaterial(VanillaMaterials.AIR);
 	}
 
 	@Override
 	public void placeObject(World w, int x, int y, int z) {
-		w.setBlockMaterial(x, y, z, VanillaMaterials.CHEST, (short) 0, w);
-		final Chest chest = VanillaMaterials.CHEST.getController(w.getBlock(x, y, z, w));
+		center = new Vector3(x, y, z);
+		setBlockMaterial(w, x, y, z, VanillaMaterials.CHEST, (short) 0);
+		final Chest chest = (Chest) getBlock(w, x, y, z).getComponent();
 		final ChestInventory inv = chest.getInventory();
 		for (int i = 0; i < getMaxNumberOfStacks(); i++) {
-			final int slot = random.nextInt(inv.getSize());
-			inv.setItem(slot, getNextStack());
+			final int slot = random.nextInt(inv.size());
+			inv.set(slot, getNextStack());
 		}
 	}
 

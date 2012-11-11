@@ -28,7 +28,6 @@ package org.spout.vanilla.data.effect.type;
 
 import java.util.List;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 
@@ -65,7 +64,7 @@ public class PressBlockEffect extends Effect {
 		this.playGlobal(position, pressed, null);
 	}
 
-	public void playGlobal(Point position, boolean pressed, Entity ignore) {
+	public void playGlobal(Point position, boolean pressed, Player ignore) {
 		this.play(getNearbyPlayers(position, ignore), position, pressed);
 	}
 }

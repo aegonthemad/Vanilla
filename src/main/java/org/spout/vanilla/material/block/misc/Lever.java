@@ -26,23 +26,25 @@
  */
 package org.spout.vanilla.material.block.misc;
 
-import org.spout.api.Source;
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
+import org.spout.api.event.cause.EntityCause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.RedstonePowerMode;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.Toggleable;
 import org.spout.vanilla.material.block.AttachedRedstoneSource;
-import org.spout.vanilla.util.RedstonePowerMode;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class Lever extends AttachedRedstoneSource implements Toggleable {
 	public Lever(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setAttachable(BlockFaces.NESWB).setLiquidObstacle(false).setHardness(0.5F).setResistance(1.7F).setTransparent();
 	}
 
@@ -54,7 +56,7 @@ public class Lever extends AttachedRedstoneSource implements Toggleable {
 	@Override
 	public void onInteractBy(Entity entity, Block block, Action action, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, action, clickedFace);
-		if (action == Action.LEFT_CLICK && VanillaPlayerUtil.isCreative(block.getSource())) {
+		if (action == Action.LEFT_CLICK && entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.CREATIVE)) {
 			return;
 		}
 		this.toggle(block);
@@ -86,14 +88,13 @@ public class Lever extends AttachedRedstoneSource implements Toggleable {
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
 		short data;
 		if (attachedFace == BlockFace.BOTTOM) {
-			Source source = block.getSource();
 			data = (short) (5 + Math.random());
-			if (source instanceof Entity) {
+			if (cause instanceof EntityCause) {
 				// set data using direction
-				Vector3 direction = block.getPosition().subtract(((Entity) source).getPosition());
+				Vector3 direction = block.getPosition().subtract((((EntityCause) cause).getSource()).getTransform().getPosition());
 				direction = direction.abs();
 				if (direction.getX() > direction.getZ()) {
 					data = 6;
@@ -110,5 +111,10 @@ public class Lever extends AttachedRedstoneSource implements Toggleable {
 	@Override
 	public BlockFace getAttachedFace(short data) {
 		return BlockFaces.NSEWB.get((data & 0x7) - 1);
+	}
+
+	@Override
+	public short getRedstonePowerStrength(short data) {
+		return ((data & 0x8) == 1) ? REDSTONE_POWER_MAX : REDSTONE_POWER_MIN;
 	}
 }

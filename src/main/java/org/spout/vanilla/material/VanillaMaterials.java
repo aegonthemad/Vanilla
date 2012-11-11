@@ -36,6 +36,7 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.Material;
 import org.spout.api.material.MaterialRegistry;
 import org.spout.api.util.map.concurrent.AtomicShortArray;
+<<<<<<< HEAD
 import org.spout.vanilla.entity.component.effect.food.FoodSaturation;
 import org.spout.vanilla.entity.component.effect.food.Hunger;
 import org.spout.vanilla.entity.component.effect.food.Poisoning;
@@ -54,30 +55,58 @@ import org.spout.vanilla.material.block.controlled.PistonExtensionMoving;
 import org.spout.vanilla.material.block.controlled.SignBase;
 import org.spout.vanilla.material.block.controlled.SignPost;
 import org.spout.vanilla.material.block.controlled.WallSign;
+=======
+
+import org.spout.vanilla.data.Music;
+import org.spout.vanilla.data.tool.ToolLevel;
+import org.spout.vanilla.data.tool.ToolType;
+import org.spout.vanilla.material.block.component.BrewingStandBlock;
+import org.spout.vanilla.material.block.component.CraftingTableBlock;
+import org.spout.vanilla.material.block.component.DispenserBlock;
+import org.spout.vanilla.material.block.component.EnchantmentTableBlock;
+import org.spout.vanilla.material.block.component.FurnaceBlock;
+import org.spout.vanilla.material.block.component.JukeboxBlock;
+import org.spout.vanilla.material.block.component.MonsterSpawnerBlock;
+import org.spout.vanilla.material.block.component.NoteBlockBlock;
+import org.spout.vanilla.material.block.component.PistonExtensionMoving;
+import org.spout.vanilla.material.block.component.SignBase;
+import org.spout.vanilla.material.block.component.SignPost;
+import org.spout.vanilla.material.block.component.WallSign;
+import org.spout.vanilla.material.block.component.chest.ChestBlock;
+import org.spout.vanilla.material.block.component.chest.EnderChestBlock;
+import org.spout.vanilla.material.block.controlled.AnvilBlock;
+import org.spout.vanilla.material.block.controlled.BeaconBlock;
+import org.spout.vanilla.material.block.controlled.SkullBlock;
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 import org.spout.vanilla.material.block.door.IronDoorBlock;
 import org.spout.vanilla.material.block.door.WoodenDoorBlock;
 import org.spout.vanilla.material.block.fence.NetherBrickFence;
+import org.spout.vanilla.material.block.fence.Wall;
 import org.spout.vanilla.material.block.fence.WoodenFence;
 import org.spout.vanilla.material.block.liquid.Lava;
 import org.spout.vanilla.material.block.liquid.Water;
 import org.spout.vanilla.material.block.misc.BedBlock;
 import org.spout.vanilla.material.block.misc.CakeBlock;
+import org.spout.vanilla.material.block.misc.CommandBlock;
 import org.spout.vanilla.material.block.misc.DragonEgg;
 import org.spout.vanilla.material.block.misc.EndPortalFrame;
 import org.spout.vanilla.material.block.misc.FarmLand;
 import org.spout.vanilla.material.block.misc.FenceGate;
 import org.spout.vanilla.material.block.misc.Fire;
+import org.spout.vanilla.material.block.misc.FlowerPotBlock;
 import org.spout.vanilla.material.block.misc.GlassPane;
 import org.spout.vanilla.material.block.misc.Ladder;
 import org.spout.vanilla.material.block.misc.Lever;
 import org.spout.vanilla.material.block.misc.Slab;
 import org.spout.vanilla.material.block.misc.Snow;
 import org.spout.vanilla.material.block.misc.StoneButton;
+import org.spout.vanilla.material.block.misc.TntBlock;
 import org.spout.vanilla.material.block.misc.Torch;
 import org.spout.vanilla.material.block.misc.TrapDoor;
 import org.spout.vanilla.material.block.misc.TripWire;
 import org.spout.vanilla.material.block.misc.TripWireHook;
 import org.spout.vanilla.material.block.misc.Web;
+import org.spout.vanilla.material.block.misc.WoodButton;
 import org.spout.vanilla.material.block.ore.CoalOre;
 import org.spout.vanilla.material.block.ore.DiamondBlock;
 import org.spout.vanilla.material.block.ore.DiamondOre;
@@ -92,9 +121,10 @@ import org.spout.vanilla.material.block.ore.LapisLazuliBlock;
 import org.spout.vanilla.material.block.ore.LapisLazuliOre;
 import org.spout.vanilla.material.block.ore.MelonBlock;
 import org.spout.vanilla.material.block.ore.RedstoneOre;
-import org.spout.vanilla.material.block.piston.Piston;
+import org.spout.vanilla.material.block.piston.PistonBlock;
 import org.spout.vanilla.material.block.piston.PistonExtension;
 import org.spout.vanilla.material.block.plant.Cactus;
+import org.spout.vanilla.material.block.plant.Carrots;
 import org.spout.vanilla.material.block.plant.CocoaPlant;
 import org.spout.vanilla.material.block.plant.DeadBush;
 import org.spout.vanilla.material.block.plant.Flower;
@@ -102,6 +132,7 @@ import org.spout.vanilla.material.block.plant.LilyPad;
 import org.spout.vanilla.material.block.plant.MelonStem;
 import org.spout.vanilla.material.block.plant.Mushroom;
 import org.spout.vanilla.material.block.plant.NetherWartBlock;
+import org.spout.vanilla.material.block.plant.Potatoes;
 import org.spout.vanilla.material.block.plant.PumpkinStem;
 import org.spout.vanilla.material.block.plant.Sapling;
 import org.spout.vanilla.material.block.plant.SugarCaneBlock;
@@ -152,7 +183,6 @@ import org.spout.vanilla.material.block.solid.SoulSand;
 import org.spout.vanilla.material.block.solid.Sponge;
 import org.spout.vanilla.material.block.solid.Stone;
 import org.spout.vanilla.material.block.solid.StoneBrick;
-import org.spout.vanilla.material.block.solid.TNT;
 import org.spout.vanilla.material.block.solid.Wool;
 import org.spout.vanilla.material.block.stair.BirchStairs;
 import org.spout.vanilla.material.block.stair.BrickStairs;
@@ -164,10 +194,7 @@ import org.spout.vanilla.material.block.stair.SpruceStairs;
 import org.spout.vanilla.material.block.stair.StoneBrickStairs;
 import org.spout.vanilla.material.block.stair.WoodenStairs;
 import org.spout.vanilla.material.item.BlockItem;
-import org.spout.vanilla.material.item.EmptyContainer;
 import org.spout.vanilla.material.item.Food;
-import org.spout.vanilla.material.item.FoodEffect;
-import org.spout.vanilla.material.item.FullContainer;
 import org.spout.vanilla.material.item.VanillaItemMaterial;
 import org.spout.vanilla.material.item.armor.chain.ChainBoots;
 import org.spout.vanilla.material.item.armor.chain.ChainChestplate;
@@ -189,6 +216,9 @@ import org.spout.vanilla.material.item.armor.leather.LeatherBoots;
 import org.spout.vanilla.material.item.armor.leather.LeatherCap;
 import org.spout.vanilla.material.item.armor.leather.LeatherPants;
 import org.spout.vanilla.material.item.armor.leather.LeatherTunic;
+import org.spout.vanilla.material.item.bucket.EmptyBucket;
+import org.spout.vanilla.material.item.bucket.FullBucket;
+import org.spout.vanilla.material.item.food.Potato;
 import org.spout.vanilla.material.item.food.RawBeef;
 import org.spout.vanilla.material.item.food.RawChicken;
 import org.spout.vanilla.material.item.food.RawFish;
@@ -200,14 +230,18 @@ import org.spout.vanilla.material.item.misc.BlazeRod;
 import org.spout.vanilla.material.item.misc.Clay;
 import org.spout.vanilla.material.item.misc.Coal;
 import org.spout.vanilla.material.item.misc.Dye;
-import org.spout.vanilla.material.item.misc.LavaBucket;
+import org.spout.vanilla.material.item.misc.FlowerPot;
+import org.spout.vanilla.material.item.bucket.LavaBucket;
 import org.spout.vanilla.material.item.misc.MusicDisc;
 import org.spout.vanilla.material.item.misc.PaintingItem;
 import org.spout.vanilla.material.item.misc.Potion;
 import org.spout.vanilla.material.item.misc.Sign;
+import org.spout.vanilla.material.item.misc.Skull;
+import org.spout.vanilla.material.item.misc.SnowballItem;
 import org.spout.vanilla.material.item.misc.SpawnEgg;
 import org.spout.vanilla.material.item.misc.Stick;
 import org.spout.vanilla.material.item.misc.StringItem;
+import org.spout.vanilla.material.item.tool.CarrotOnAStick;
 import org.spout.vanilla.material.item.tool.FishingRod;
 import org.spout.vanilla.material.item.tool.FlintAndSteel;
 import org.spout.vanilla.material.item.tool.Hoe;
@@ -215,9 +249,6 @@ import org.spout.vanilla.material.item.tool.MiningTool;
 import org.spout.vanilla.material.item.tool.Shears;
 import org.spout.vanilla.material.item.tool.weapon.Bow;
 import org.spout.vanilla.material.item.tool.weapon.Sword;
-import org.spout.vanilla.util.Music;
-import org.spout.vanilla.util.ToolLevel;
-import org.spout.vanilla.util.ToolType;
 
 // TODO: Remove all casts and separate remaining "set" methods out into each material's init() method
 public final class VanillaMaterials {
@@ -239,9 +270,10 @@ public final class VanillaMaterials {
 	public static final NoteBlockBlock NOTEBLOCK = new NoteBlockBlock("Note Block", 25);
 	public static final BedBlock BED_BLOCK = new BedBlock("Bed", 26);
 	public static final Web WEB = new Web("Cobweb", 30);
-	// == Piston ==
-	public static final Piston PISTON_STICKY_BASE = new Piston("Sticky Piston", 29, true);
-	public static final Piston PISTON_BASE = new Piston("Piston", 33, false);
+	public static final Wall COBBLESTONE_WALL = Wall.COBBLESTONE_WALL;
+	// == PistonBlock ==
+	public static final PistonBlock PISTON_STICKY_BASE = new PistonBlock("Sticky Piston", 29, true);
+	public static final PistonBlock PISTON_BASE = new PistonBlock("Piston", 33, false);
 	public static final PistonExtension PISTON_EXTENSION = new PistonExtension("Piston (Head)", 34);
 	public static final PistonExtensionMoving PISTON_MOVING = new PistonExtensionMoving("Moved By Piston", 36);
 	// == Rails ==
@@ -297,7 +329,7 @@ public final class VanillaMaterials {
 	public static final DoubleSlab WOODEN_DOUBLE_SLABS = DoubleSlab.OAK_WOOD;
 	public static final Wool WOOL = Wool.WHITE_WOOL;
 	public static final Brick BRICK = new Brick("Brick Block", 45);
-	public static final TNT TNT = new TNT("TNT", 46);
+	public static final TntBlock TNT = new TntBlock("TNT", 46);
 	public static final BookShelf BOOKSHELF = new BookShelf("Bookshelf", 47);
 	public static final MossStone MOSS_STONE = new MossStone("Moss Stone", 48);
 	public static final Obsidian OBSIDIAN = new Obsidian("Obsidian", 49);
@@ -305,7 +337,7 @@ public final class VanillaMaterials {
 	public static final Fire FIRE = new Fire("Fire", 51);
 	public static final MonsterSpawnerBlock MONSTER_SPAWNER = new MonsterSpawnerBlock("Monster Spawner", 52);
 	public static final ChestBlock CHEST = new ChestBlock("Chest", 54);
-	public static final EnderChest ENDER_CHEST = new EnderChest("Ender Chest", 130);
+	public static final EnderChestBlock ENDER_CHEST_BLOCK = new EnderChestBlock("Ender Chest", 130);
 	public static final RedstoneWire REDSTONE_WIRE = new RedstoneWire("Redstone Wire", 55);
 	public static final CraftingTableBlock CRAFTING_TABLE = new CraftingTableBlock("Crafting Table", 58);
 	public static final WheatCrop WHEATCROP = new WheatCrop("Wheat Crop", 59);
@@ -362,11 +394,19 @@ public final class VanillaMaterials {
 	public static final BrewingStandBlock BREWING_STAND_BLOCK = new BrewingStandBlock("Brewing Stand", 117);
 	public static final CauldronBlock CAULDRON_BLOCK = new CauldronBlock("Cauldron", 118);
 	public static final DragonEgg DRAGON_EGG = new DragonEgg("Dragon Egg", 122);
-	public static final RedstoneLamp REDSTONE_LAMP_OFF = new RedstoneLamp("Redstone Lamp", 123, false);
-	public static final RedstoneLamp REDSTONE_LAMP_ON = new RedstoneLamp("Redstone Lamp (On)", 124, true);
+	public static final RedstoneLamp REDSTONE_LAMP_OFF = new RedstoneLamp("Redstone Lamp", 123, false, "model://Vanilla/resources/materials/block/solid/redstonelampoff/redstonelampoff.spm");
+	public static final RedstoneLamp REDSTONE_LAMP_ON = new RedstoneLamp("Redstone Lamp (On)", 124, true, "model://Vanilla/resources/materials/block/solid/redstonelampon/redstonelampon.spm");
 	public static final TripWireHook TRIPWIRE_HOOK = new TripWireHook("Trip Wire Hook", 131);
 	public static final TripWire TRIPWIRE = new TripWire("Trip Wire", 132);
 	public static final CocoaPlant COCOA_PLANT = new CocoaPlant("Cocoa Plant", 127);
+	public static final CommandBlock COMMAND_BLOCK = new CommandBlock("Command Block", 137);
+	public static final BeaconBlock BEACON_BLOCK = new BeaconBlock("Beacon Block", 138);
+	public static final FlowerPotBlock FLOWER_POT_BLOCK = FlowerPotBlock.EMPTY;
+	public static final Carrots CARROTS = new Carrots("Carrots", 141);
+	public static final Potatoes POTATOES = new Potatoes("Potatoes", 142);
+	public static final WoodButton WOOD_BUTTON = new WoodButton("Wood Button", 143);
+	public static final SkullBlock SKELETON_SKULL_BLOCK = SkullBlock.SKELETON_SKULL;
+	public static final AnvilBlock ANVIL = new AnvilBlock("Anvil", 145); // Anvil actually has 3 states, handled by data.
 	/*
 	 * Items
 	 */
@@ -429,10 +469,11 @@ public final class VanillaMaterials {
 	public static final Bow BOW = new Bow("Bow", 261, (short) 385);
 	public static final VanillaItemMaterial ARROW = new VanillaItemMaterial("Arrow", 262);
 	public static final FishingRod FISHING_ROD = new FishingRod("Fishing Rod", 346, (short) 65);
+	public static final CarrotOnAStick CARROT_ON_A_STICK = new CarrotOnAStick("Carrot on a Stick", 398, (short) 25); //TODO: Check dur value
 	// == Buckets=
-	public static final EmptyContainer BUCKET = new EmptyContainer("Bucket", 325);
-	public static final FullContainer WATER_BUCKET = new FullContainer("Water Bucket", 326, WATER, BUCKET);
-	public static final LavaBucket LAVA_BUCKET = new LavaBucket("Lava Bucket", 327, LAVA, BUCKET);
+	public static final EmptyBucket BUCKET = new EmptyBucket("Bucket", 325);
+	public static final FullBucket WATER_BUCKET = new FullBucket("Water Bucket", 326, WATER);
+	public static final LavaBucket LAVA_BUCKET = new LavaBucket("Lava Bucket", 327);
 	public static final VanillaItemMaterial MILK_BUCKET = new VanillaItemMaterial("Milk", 335);
 	// == Minecarts ==
 	public static final MinecartItem MINECART = new MinecartItem("Minecart", 328);
@@ -459,7 +500,7 @@ public final class VanillaMaterials {
 	public static final BlockItem WOODEN_DOOR = new BlockItem("Wooden Door", 324, WOODEN_DOOR_BLOCK);
 	public static final BlockItem IRON_DOOR = new BlockItem("Iron Door", 330, IRON_DOOR_BLOCK);
 	public static final VanillaItemMaterial SADDLE = new VanillaItemMaterial("Saddle", 329);
-	public static final VanillaItemMaterial SNOWBALL = new VanillaItemMaterial("Snowball", 332);
+	public static final SnowballItem SNOWBALL = new SnowballItem("Snowball", 332);
 	public static final VanillaItemMaterial BOAT = new VanillaItemMaterial("Boat", 333);
 	public static final VanillaItemMaterial LEATHER = new VanillaItemMaterial("Leather", 334);
 	public static final VanillaItemMaterial CLAY_BRICK = new VanillaItemMaterial("Brick", 336);
@@ -473,8 +514,6 @@ public final class VanillaMaterials {
 	public static final VanillaItemMaterial COMPASS = new VanillaItemMaterial("Compass", 345);
 	public static final VanillaItemMaterial CLOCK = new VanillaItemMaterial("Clock", 347);
 	public static final VanillaItemMaterial GLOWSTONE_DUST = new VanillaItemMaterial("Glowstone Dust", 348);
-	public static final RawFish RAW_FISH = new RawFish("Raw Fish", 349, new FoodEffect(2, Hunger.class), new FoodEffect(1.2f, FoodSaturation.class));
-	public static final Food COOKED_FISH = new Food("Cooked Fish", 350, new FoodEffect(5, Hunger.class), new FoodEffect(6, FoodSaturation.class));
 	public static final Dye DYE = Dye.INK_SAC;
 	public static final VanillaItemMaterial BONE = new VanillaItemMaterial("Bone", 352);
 	public static final VanillaItemMaterial SUGAR = new VanillaItemMaterial("Sugar", 353);
@@ -482,36 +521,49 @@ public final class VanillaMaterials {
 	public static final BlockItem BED = new BlockItem("Bed", 355, VanillaMaterials.BED_BLOCK);
 	public static final BlockItem REDSTONE_REPEATER = new BlockItem("Redstone Repeater", 356, VanillaMaterials.REDSTONE_REPEATER_OFF);
 	public static final VanillaItemMaterial MAP = new VanillaItemMaterial("Map", 358);
+	public static final VanillaItemMaterial EMPTY_MAP = new VanillaItemMaterial("Empty Map", 395);
 	public static final Shears SHEARS = new Shears("Shears", 359, (short) 238);
 	public static final VanillaItemMaterial PUMPKIN_SEEDS = new VanillaItemMaterial("Pumpkin Seeds", 361);
 	public static final VanillaItemMaterial MELON_SEEDS = new VanillaItemMaterial("MelonBlock Seeds", 362);
+	public static final FlowerPot FLOWER_POT = new FlowerPot("Flower Pot", 390);
+	public static final VanillaItemMaterial ITEM_FRAME = new VanillaItemMaterial("Item Frame", 389);
+	public static final Skull SKELETON_SKULL = Skull.SKELETON_SKULL;
 	// == Food ==
-	public static final Food RED_APPLE = new Food("Apple", 260, new FoodEffect(4, Hunger.class), new FoodEffect(2.4f, FoodSaturation.class));
-	public static final Food MUSHROOM_SOUP = new Food("Mushroom Soup", 282, new FoodEffect(8, Hunger.class), new FoodEffect(9.6f, FoodSaturation.class));
-	public static final Food BREAD = new Food("Bread", 297, new FoodEffect(5, Hunger.class), new FoodEffect(6, FoodSaturation.class));
-	public static final RawPorkchop RAW_PORKCHOP = new RawPorkchop("Raw Porkchop", 319, new FoodEffect(3, Hunger.class), new FoodEffect(1.8f, FoodSaturation.class));
-	public static final Food COOKED_PORKCHOP = new Food("Cooked Porkchop", 320, new FoodEffect(8, Hunger.class), new FoodEffect(12.8f, FoodSaturation.class));
-	// TODO : Regen health for 4 secs
-	public static final Food GOLDEN_APPLE = new Food("Golden Apple", 322, new FoodEffect(10, Hunger.class), new FoodEffect(9.6f, FoodSaturation.class));
-	public static final Food MELON_SLICE = new Food("MelonBlock Slice", 360, new FoodEffect(2, Hunger.class), new FoodEffect(1.2f, FoodSaturation.class));
-	public static final Food COOKIE = new Food("Cookie", 357, new FoodEffect(2, Hunger.class), new FoodEffect(0.4f, FoodSaturation.class));
-	public static final RawBeef RAW_BEEF = new RawBeef("Raw Beef", 363, new FoodEffect(3, Hunger.class), new FoodEffect(1.8f, FoodSaturation.class));
-	public static final Food STEAK = new Food("Steak", 364, new FoodEffect(8, Hunger.class), new FoodEffect(12.8f, FoodSaturation.class));
-	public static final RawChicken RAW_CHICKEN = new RawChicken("Raw Chicken", 365, new FoodEffect(2, Hunger.class), new FoodEffect(1.2f, FoodSaturation.class), new FoodEffect(30, Poisoning.class));
-	public static final Food COOKED_CHICKEN = new Food("Cooked Chicken", 366, new FoodEffect(6, Hunger.class), new FoodEffect(7.2f, FoodSaturation.class));
-	public static final Food ROTTEN_FLESH = new Food("Rotten Flesh", 367, new FoodEffect(4, Hunger.class), new FoodEffect(0.8f, FoodSaturation.class), new FoodEffect(80, Poisoning.class));
+	public static final RawFish RAW_FISH = new RawFish("Raw Fish", 349);
+	public static final Food COOKED_FISH = new Food("Cooked Fish", 350);
+	public static final Food RED_APPLE = new Food("Apple", 260);
+	public static final Food MUSHROOM_SOUP = new Food("Mushroom Soup", 282);
+	public static final Food BREAD = new Food("Bread", 297);
+	public static final RawPorkchop RAW_PORKCHOP = new RawPorkchop("Raw Porkchop", 319);
+	public static final Food COOKED_PORKCHOP = new Food("Cooked Porkchop", 320);
+	//	// TODO : Regen health for 4 secs
+	public static final Food GOLDEN_APPLE = new Food("Golden Apple", 322);
+	public static final Food MELON_SLICE = new Food("MelonBlock Slice", 360);
+	public static final Food COOKIE = new Food("Cookie", 357);
+	public static final RawBeef RAW_BEEF = new RawBeef("Raw Beef", 363);
+	public static final Food STEAK = new Food("Steak", 364);
+	public static final RawChicken RAW_CHICKEN = new RawChicken("Raw Chicken", 365);
+	public static final Food COOKED_CHICKEN = new Food("Cooked Chicken", 366);
+	public static final Food ROTTEN_FLESH = new Food("Rotten Flesh", 367);
+	public static final Food CARROT = new Food("Carrot", 391);
+	public static final Potato POTATO = new Potato("Potato", 392);
+	public static final Food BAKED_POTATO = new Food("Baked Potato", 393);
+	public static final Food POISONOUS_POTATO = new Food("Poisonous Potato", 394);
+	public static final Food GOLDEN_CARROT = new Food("Golden Carrot", 396);
+	public static final Food PUMPKIN_PIE = new Food("Pumpkin Pie", 400);
 	// == Music Discs ==
-	public static final MusicDisc GOLD_MUSIC_DISC = new MusicDisc("Music Disc - 13", 2256).setMusic(Music.THIRTEEN);
-	public static final MusicDisc GREEN_MUSIC_DISC = new MusicDisc("Music Disc - cat", 2257).setMusic(Music.CAT);
-	public static final MusicDisc ORANGE_MUSIC_DISC = new MusicDisc("Music Disc - blocks", 2258).setMusic(Music.BLOCKS);
-	public static final MusicDisc RED_MUSIC_DISC = new MusicDisc("Music Disc - chirp", 2259).setMusic(Music.CHIRP);
-	public static final MusicDisc CYAN_MUSIC_DISC = new MusicDisc("Music Disc - far", 2260).setMusic(Music.FAR);
-	public static final MusicDisc BLUE_MUSIC_DISC = new MusicDisc("Music Disc - mall", 2261).setMusic(Music.MALL);
-	public static final MusicDisc PURPLE_MUSIC_DISC = new MusicDisc("Music Disc - mellohi", 2262).setMusic(Music.MELLOHI);
-	public static final MusicDisc BLACK_MUSIC_DISC = new MusicDisc("Music Disc - stal", 2263).setMusic(Music.STAL);
-	public static final MusicDisc WHITE_MUSIC_DISC = new MusicDisc("Music Disc - strad", 2264).setMusic(Music.STRAD);
-	public static final MusicDisc FOREST_GREEN_MUSIC_DISC = new MusicDisc("Music Disc - ward", 2265).setMusic(Music.WARD);
-	public static final MusicDisc BROKEN_MUSIC_DISC = new MusicDisc("Music Disc - 11", 2266).setMusic(Music.ELEVEN);
+	public static final MusicDisc MUSIC_DISK_13 = new MusicDisc("Music Disc - 13", 2256).setMusic(Music.THIRTEEN);
+	public static final MusicDisc MUSIC_DISK_CAT = new MusicDisc("Music Disc - cat", 2257).setMusic(Music.CAT);
+	public static final MusicDisc MUSIC_DISK_BLOCKS = new MusicDisc("Music Disc - blocks", 2258).setMusic(Music.BLOCKS);
+	public static final MusicDisc MUSIC_DISK_CHIRP = new MusicDisc("Music Disc - chirp", 2259).setMusic(Music.CHIRP);
+	public static final MusicDisc MUSIC_DISK_FAR = new MusicDisc("Music Disc - far", 2260).setMusic(Music.FAR);
+	public static final MusicDisc MUSIC_DISK_MALL = new MusicDisc("Music Disc - mall", 2261).setMusic(Music.MALL);
+	public static final MusicDisc MUSIC_DISK_MELLOHI = new MusicDisc("Music Disc - mellohi", 2262).setMusic(Music.MELLOHI);
+	public static final MusicDisc MUSIC_DISK_STAL = new MusicDisc("Music Disc - stal", 2263).setMusic(Music.STAL);
+	public static final MusicDisc MUSIC_DISK_STRAD = new MusicDisc("Music Disc - strad", 2264).setMusic(Music.STRAD);
+	public static final MusicDisc MUSIC_DISK_WARD = new MusicDisc("Music Disc - ward", 2265).setMusic(Music.WARD);
+	public static final MusicDisc MUSIC_DISK_11 = new MusicDisc("Music Disc - 11", 2266).setMusic(Music.ELEVEN);
+	public static final MusicDisc MUSIC_DISK_WAIT = new MusicDisc("Music Disk - wait", 2267).setMusic(Music.WAIT);
 	// == Potions and special items ==
 	public static final VanillaItemMaterial ENDER_PEARL = new VanillaItemMaterial("Ender Pearl", 368);
 	public static final BlazeRod BLAZE_ROD = new BlazeRod("Blaze Rod", 369);
@@ -519,7 +571,8 @@ public final class VanillaMaterials {
 	public static final VanillaItemMaterial GOLD_NUGGET = new VanillaItemMaterial("Gold Nugget", 371);
 	public static final VanillaItemMaterial NETHER_WART = new VanillaItemMaterial("Nether Wart", 372);
 	public static final VanillaItemMaterial GLASS_BOTTLE = new VanillaItemMaterial("Glass Bottle", 374);
-	public static final Food SPIDER_EYE = new Food("Spider Eye", 375, new FoodEffect(2, Hunger.class), new FoodEffect(3.2f, FoodSaturation.class), new FoodEffect(100, Poisoning.class));
+	public static final VanillaItemMaterial NETHER_STAR = new VanillaItemMaterial("Nether Star", 399);
+	public static final Food SPIDER_EYE = new Food("Spider Eye", 375);
 	public static final VanillaItemMaterial FERMENTED_SPIDER_EYE = new VanillaItemMaterial("Fermented Spider Eye", 376);
 	public static final VanillaItemMaterial BLAZE_POWDER = new VanillaItemMaterial("Blaze Powder", 377);
 	public static final VanillaItemMaterial MAGMA_CREAM = new VanillaItemMaterial("Magma Cream", 378);

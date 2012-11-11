@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
@@ -44,7 +45,7 @@ public class TripWire extends GroundAttachable implements InitializableMaterial 
 	public static final int MAX_DISTANCE_SQUARED = MAX_DISTANCE * MAX_DISTANCE;
 
 	public TripWire(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setHardness(0.0f).setResistance(0.0f).setTransparent();
 	}
 
@@ -64,9 +65,9 @@ public class TripWire extends GroundAttachable implements InitializableMaterial 
 	}
 
 	@Override
-	public void onDestroy(Block block) {
+	public void onDestroy(Block block, Cause<?> cause) {
 		this.trample(block);
-		super.onDestroy(block);
+		super.onDestroy(block, cause);
 	}
 
 	@Override

@@ -30,30 +30,35 @@ import java.util.Random;
 import java.util.Set;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventorySlot;
-import org.spout.api.material.RandomBlockMaterial;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.material.range.EffectRange;
 import org.spout.api.util.flag.Flag;
 
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.drops.flag.BlockFlags;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.attachable.AbstractAttachable;
 import org.spout.vanilla.material.block.solid.Log;
 import org.spout.vanilla.material.item.misc.Dye;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public class CocoaPlant extends AbstractAttachable implements Plant, Growing, RandomBlockMaterial, InitializableMaterial {
+public class CocoaPlant extends AbstractAttachable implements Plant, Growing, DynamicMaterial, InitializableMaterial {
 	private static final int DIRECTION_MASK = 0x3;
 	private static final int GROWTH_MASK = 0xC;
 
 	public CocoaPlant(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setAttachable(BlockFaces.NESW);
 	}
 
@@ -70,7 +75,7 @@ public class CocoaPlant extends AbstractAttachable implements Plant, Growing, Ra
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
 		block.setDataField(DIRECTION_MASK, BlockFaces.WNES.indexOf(attachedFace, 0));
 	}
 
@@ -113,24 +118,45 @@ public class CocoaPlant extends AbstractAttachable implements Plant, Growing, Ra
 	}
 
 	@Override
-	public void onRandomTick(Block block) {
+	public EffectRange getDynamicRange() {
+		return EffectRange.NEIGHBORS;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		b.dynamicUpdate(getGrowthTime(b) + currentTime);
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
 		if (new Random().nextInt(5) != 0) {
+			block.dynamicUpdate(updateTime + getGrowthTime(block));
 			return;
 		}
+
 		int growthStage = getGrowthStage(block);
+
 		if (growthStage < getGrowthStageCount() - 1) {
 			setGrowthStage(block, ++growthStage);
 		}
+
+		if (growthStage < getGrowthStageCount() - 1) {
+			block.dynamicUpdate(updateTime + getGrowthTime(block));
+		}
+	}
+	
+	private long getGrowthTime(Block block) {
+		return 60000L + new Random(block.getWorld().getAge()).nextInt(60000);
 	}
 
 	@Override
 	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
-		final InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
-		final ItemStack current = inv.getItem();
+		final PlayerQuickbar inv = entity.get(Human.class).getInventory().getQuickbar();
+		final ItemStack current = inv.getCurrentItem();
 		if (current != null && current.isMaterial(Dye.BONE_MEAL) && type == Action.RIGHT_CLICK) {
 			if (!isFullyGrown(block)) {
-				if (VanillaPlayerUtil.isSurvival(entity)) {
-					inv.addItemAmount(0, -1);
+				if (entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
+					inv.addAmount(0, -1);
 				}
 				setGrowthStage(block, 2);
 			}

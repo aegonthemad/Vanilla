@@ -26,38 +26,56 @@
  */
 package org.spout.vanilla.command;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import org.spout.api.Server;
+import org.spout.api.Client;
 import org.spout.api.Spout;
-import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.command.CommandContext;
 import org.spout.api.command.CommandSource;
 import org.spout.api.command.annotated.Command;
-import org.spout.api.entity.Controller;
+import org.spout.api.command.annotated.CommandPermissions;
+import org.spout.api.component.Component;
+import org.spout.api.component.components.HitBlockComponent;
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.EntityPrefab;
 import org.spout.api.entity.Player;
-import org.spout.api.entity.controller.BlockController;
-import org.spout.api.entity.controller.PlayerController;
-import org.spout.api.entity.controller.type.ControllerRegistry;
-import org.spout.api.entity.controller.type.ControllerType;
-import org.spout.api.entity.spawn.DiscSpawnArrangement;
-import org.spout.api.entity.spawn.SpawnArrangement;
-import org.spout.api.entity.spawn.SpiralSpawnArrangement;
 import org.spout.api.exception.CommandException;
 import org.spout.api.generator.WorldGeneratorObject;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
+import org.spout.api.material.Material;
+import org.spout.api.material.MaterialRegistry;
 import org.spout.api.plugin.Platform;
+import org.spout.api.protocol.NetworkSynchronizer;
+import org.spout.api.util.BlockIterator;
 
 import org.spout.vanilla.VanillaPlugin;
-import org.spout.vanilla.entity.component.effect.potion.Speed;
-import org.spout.vanilla.entity.VanillaEntityController;
-import org.spout.vanilla.entity.VanillaPlayerController;
-import org.spout.vanilla.entity.creature.neutral.Human;
-import org.spout.vanilla.entity.source.HealthChangeReason;
+import org.spout.vanilla.component.inventory.window.block.BrewingStandWindow;
+import org.spout.vanilla.component.inventory.window.block.CraftingTableWindow;
+import org.spout.vanilla.component.inventory.window.block.DispenserWindow;
+import org.spout.vanilla.component.inventory.window.block.EnchantmentTableWindow;
+import org.spout.vanilla.component.inventory.window.block.FurnaceWindow;
+import org.spout.vanilla.component.inventory.window.block.chest.ChestWindow;
+import org.spout.vanilla.component.inventory.window.entity.VillagerWindow;
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.component.living.LivingComponent;
+import org.spout.vanilla.component.living.hostile.EnderDragon;
+import org.spout.vanilla.component.living.neutral.Enderman;
+import org.spout.vanilla.component.misc.HealthComponent;
+import org.spout.vanilla.component.player.HUDComponent;
+import org.spout.vanilla.component.substance.material.chest.Chest;
+import org.spout.vanilla.component.substance.object.FallingBlock;
+import org.spout.vanilla.inventory.block.BrewingStandInventory;
+import org.spout.vanilla.inventory.block.DispenserInventory;
+import org.spout.vanilla.inventory.block.EnchantmentTableInventory;
+import org.spout.vanilla.inventory.block.FurnaceInventory;
+import org.spout.vanilla.inventory.entity.VillagerInventory;
+import org.spout.vanilla.inventory.window.WindowType;
+import org.spout.vanilla.material.VanillaBlockMaterial;
+import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.util.explosion.ExplosionModels;
 import org.spout.vanilla.world.generator.object.RandomizableObject;
 import org.spout.vanilla.world.generator.object.VanillaObjects;
@@ -65,27 +83,118 @@ import org.spout.vanilla.world.generator.object.VanillaObjects;
 public class TestCommands {
 	@SuppressWarnings("unused")
 	private final VanillaPlugin plugin;
+	private final EntityPrefab human = (EntityPrefab) Spout.getFilesystem().getResource("entity://Vanilla/resources/mob/prefabs/human.sep");
 
 	public TestCommands(VanillaPlugin instance) {
 		plugin = instance;
 	}
 
+	@Command(aliases = "traceray", desc = "Set all blocks that cross your view to stone.")
+	@CommandPermissions("vanilla.command.debug")
+	public void traceray(CommandContext args, CommandSource source) throws CommandException {
+		if (!(source instanceof Player) && Spout.getPlatform()!=Platform.CLIENT) {
+			throw new CommandException("You must be a player to trace a ray!");
+		}
+		Player player;
+		if (Spout.getPlatform()!=Platform.CLIENT) {
+			player = (Player) source;
+		} else {
+			player = ((Client)Spout.getEngine()).getActivePlayer();
+		}
+		
+		BlockIterator blockIt = player.get(HitBlockComponent.class).getAlignedBlocks();
+		
+		Block block = null;
+		while (blockIt.hasNext()) {
+			block = blockIt.next();
+			if (block.getMaterial().isPlacementObstacle()) {
+				break;
+			}
+			block.setMaterial(VanillaMaterials.STONE);
+		}
+	}
+	
+	@Command(aliases = "window", usage = "<type>", desc = "Open a window.", min = 1, max = 1)
+	@CommandPermissions("vanilla.command.debug")
+	public void window(CommandContext args, CommandSource source) throws CommandException {
+		if (!(source instanceof Player)) {
+			throw new CommandException("You must be a player to open a window.");
+		}
+
+		WindowType type;
+		try {
+			type = WindowType.valueOf(args.getString(0).toUpperCase());
+		} catch (IllegalArgumentException e) {
+			throw new CommandException("Window not found.");
+		}
+
+		Player player = (Player) source;
+		switch (type) {
+			case CHEST:
+				player.add(ChestWindow.class).init(new Chest()).open();
+				break;
+			case CRAFTING_TABLE:
+				player.add(CraftingTableWindow.class).open();
+				break;
+			case FURNACE:
+				player.add(FurnaceWindow.class).init(new FurnaceInventory()).open();
+				break;
+			case DISPENSER:
+				player.add(DispenserWindow.class).init(new DispenserInventory()).open();
+				break;
+			case ENCHANTMENT_TABLE:
+				player.add(EnchantmentTableWindow.class).init(new EnchantmentTableInventory()).open();
+				break;
+			case BREWING_STAND:
+				player.add(BrewingStandWindow.class).init(new BrewingStandInventory()).open();
+				break;
+			case VILLAGER:
+				player.add(VillagerWindow.class).init(new VillagerInventory()).open();
+				break;
+			default:
+				throw new CommandException("Window not supported.");
+		}
+	}
+
+	@Command(aliases = "damage", usage = "<amount>", desc = "Damage yourself")
+	@CommandPermissions("vanilla.command.debug")
+	public void damage(CommandContext args, CommandSource source) throws CommandException {
+		if (!(source instanceof Player) && Spout.getPlatform()!=Platform.CLIENT) {
+			throw new CommandException("You must be a player to damage yourself!");
+		}
+		Player player;
+		if (Spout.getPlatform()!=Platform.CLIENT) {
+			player = (Player) source;
+		} else {
+			player = ((Client)Spout.getEngine()).getActivePlayer();
+		}
+		player.get(HealthComponent.class).damage(args.getInteger(0));
+	}
+	
+	@Command(aliases = "hunger", usage = "<amount> <hungry>", desc = "Modify your hunger", min = 2, max = 2)
+	@CommandPermissions("vanilla.command.debug")
+	public void hunger(CommandContext args, CommandSource source) throws CommandException {
+		if(Spout.getPlatform() != Platform.CLIENT) {
+			throw new CommandException("Only clients can modify the hunger bar.");
+		}
+		((Client) Spout.getEngine()).getActivePlayer().get(HUDComponent.class).setHunger(args.getInteger(0), Boolean.valueOf(args.getString(1)));
+	}
+
 	@Command(aliases = {"explode"}, usage = "<explode>", desc = "Create an explosion")
+	@CommandPermissions("vanilla.command.debug")
 	public void explode(CommandContext args, CommandSource source) throws CommandException {
 		if (!(source instanceof Player)) {
 			throw new CommandException("You must be a player to cause an explosion");
 		}
 
 		Entity entity = (Player) source;
-		Point position = entity.getPosition();
-		if (entity.getController() instanceof VanillaPlayerController) {
-			position = position.add(((VanillaPlayerController) entity.getController()).getHead().getLookingAt());
-		}
+		Point position = entity.getTransform().getPosition();
 
 		ExplosionModels.SPHERICAL.execute(position, 4.0f);
 	}
 
 	@Command(aliases = {"tpworld", "tpw"}, usage = "<world name>", desc = "Teleport to a world's spawn.", min = 1, max = 1)
+	@CommandPermissions("vanilla.command.debug")
 	public void tpWorld(CommandContext args, CommandSource source) throws CommandException {
 		if (!(source instanceof Player)) {
 			throw new CommandException("You must be a player to teleport");
@@ -95,118 +204,16 @@ public class TestCommands {
 		if (world != null) {
 			final Point loc = world.getSpawnPoint().getPosition();
 			world.getChunkFromBlock(loc);
-			player.setPosition(loc);
-			player.getNetworkSynchronizer().setPositionDirty();
+			player.teleport(loc);
 		} else {
 			throw new CommandException("Please enter a valid world");
 		}
 	}
 
-	@Command(aliases = {"spawn"}, usage = "<spiral or disk> <number> <controller> ... <number> <controller>", desc = "Spawn up to 50 controllers!", min = 1, max = 10)
-	public void spawn(CommandContext args, CommandSource source) throws CommandException {
-		if (!(source instanceof Player)) {
-			throw new CommandException("You must be a player to spawn a controller");
-		}
-
-		Player player = (Player) source;
-		Point point = player.getPosition();
-
-		boolean disk = false;
-
-		ArrayList<ControllerType> types = new ArrayList<ControllerType>();
-		ArrayList<Integer> numbers = new ArrayList<Integer>();
-
-		for (int i = 0; i < args.length(); i++) {
-			try {
-				int number = Integer.parseInt(args.getString(i));
-				while (numbers.size() <= types.size()) {
-					numbers.add(1);
-				}
-				numbers.set(numbers.size() - 1, number);
-			} catch (NumberFormatException e) {
-				boolean match = false;
-				String lookupType = args.getString(i).replaceAll("[_\\- ]", "");
-				for (ControllerType testType : ControllerRegistry.getAll()) {
-					if (testType.getName().replaceAll("[_\\- ]", "").equalsIgnoreCase(lookupType) && testType.canCreateController()) {
-						while (numbers.size() <= types.size()) {
-							numbers.add(1);
-						}
-						types.add(testType);
-						match = true;
-						break;
-					}
-				}
-				if (match) {
-					continue;
-				} else if (args.getString(i).equals("disk") || args.getString(i).equals("disc")) {
-					disk = true;
-				} else if (args.getString(i).equals("spiral")) {
-					disk = false;
-				} else {
-					throw new CommandException("Unable to parse command argument " + args.getString(i));
-				}
-			}
-		}
-
-		if (types.size() == 0) {
-			throw new CommandException("Unable to find any types to spawn");
-		}
-
-		int toSpawn = 0;
-
-		for (int i = 0; i < types.size(); i++) {
-			if (numbers.get(i) < 0) {
-				source.sendMessage(ChatStyle.RED, "Increasing number of ", types.get(i).getName(), "s spawned to 0");
-				numbers.set(i, 0);
-			}
-			toSpawn += numbers.get(i);
-		}
-
-		ControllerType[] typeArray;
-
-		if (types.size() == 1) {
-			typeArray = new ControllerType[]{types.get(0)};
-		} else {
-			typeArray = new ControllerType[toSpawn];
-			int k = 0;
-			for (int i = 0; i < types.size(); i++) {
-				if (numbers.get(i) == 1) {
-					source.sendMessage(ChatStyle.YELLOW, "Spawning a ", types.get(i).getName());
-				} else {
-					source.sendMessage(ChatStyle.YELLOW, "Spawning ", numbers.get(i) + " ", types.get(i).getName() + "s");
-				}
-				for (int j = 0; j < numbers.get(i); j++) {
-					typeArray[k++] = types.get(i);
-				}
-			}
-		}
-
-		SpawnArrangement arrangement;
-		if (types.size() == 1) {
-			if (disk) {
-				arrangement = new DiscSpawnArrangement(point, typeArray[0], numbers.get(0), 1.5F);
-			} else {
-				arrangement = new SpiralSpawnArrangement(point, typeArray[0], numbers.get(0), 1.5F);
-			}
-		} else {
-			if (disk) {
-				arrangement = new DiscSpawnArrangement(point, typeArray, 1.5F);
-			} else {
-				arrangement = new SpiralSpawnArrangement(point, typeArray, 1.5F);
-			}
-		}
-
-		point.getWorld().createAndSpawnEntity(arrangement);
-	}
-
 	@Command(aliases = {"tppos"}, usage = "<name> <world> <x> <y> <z>", desc = "Teleport to coordinates!", min = 5, max = 5)
+	@CommandPermissions("vanilla.command.debug")
 	public void tppos(CommandContext args, CommandSource source) throws CommandException {
-		Platform platform = Spout.getPlatform();
-		if (platform != Platform.SERVER || platform != Platform.PROXY) {
-			return;
-		}
-
-		Player player = ((Server) Spout.getEngine()).getPlayer(args.getString(0), true);
+		Player player = Spout.getEngine().getPlayer(args.getString(0), true);
 		if (!(source instanceof Player) && player == null) {
 			throw new CommandException("Must specify a valid player to tppos from the console.");
 		}
@@ -221,14 +228,14 @@ public class TestCommands {
 			Point loc = new Point(world, args.getInteger(2), args.getInteger(3), args.getInteger(4));
 			//Make sure the chunk the player is teleported to is loaded.
 			world.getChunkFromBlock(loc);
-			player.setPosition(loc);
-			player.getNetworkSynchronizer().setPositionDirty();
+			player.teleport(loc);
 		} else {
 			throw new CommandException("Please enter a valid world");
 		}
 	}
 
 	@Command(aliases = {"object", "obj"}, usage = "<name>", flags = "f", desc = "Spawn a WorldGeneratorObject at your location. Use -f to ignore canPlace check", min = 1, max = 2)
+	@CommandPermissions("vanilla.command.debug")
 	public void generateObject(CommandContext args, CommandSource source) throws CommandException {
 		if (!(source instanceof Player)) {
 			throw new CommandException("The source must be a player.");
@@ -238,7 +245,7 @@ public class TestCommands {
 			throw new CommandException("Invalid object name.");
 		}
 		final Player player = (Player) source;
-		final Point loc = player.getPosition();
+		final Point loc = player.getTransform().getPosition();
 		final World world = loc.getWorld();
 		final int x = loc.getBlockX();
 		final int y = loc.getBlockY();
@@ -257,24 +264,8 @@ public class TestCommands {
 		}
 	}
 
-	@Command(aliases = {"block"}, desc = "Checks if the block below you has an entity", min = 0, max = 0)
-	public void checkBlock(CommandContext args, CommandSource source) throws CommandException {
-		if (!(source instanceof Player)) {
-			throw new CommandException("Source must be player");
-		}
-
-		Player player = (Player) source;
-		Block block = player.getWorld().getBlock(player.getPosition().subtract(0, 1, 0), player);
-		if (!block.hasController()) {
-			player.sendMessage("Block has no entity!");
-			return;
-		}
-
-		BlockController controller = block.getController();
-		player.sendMessage("Material: ", controller.getMaterial().getName());
-	}
-
 	@Command(aliases = {"killall", "ka"}, desc = "Kill all non-player or world entities within a world", min = 0, max = 1)
+	@CommandPermissions("vanilla.command.debug")
 	public void killall(CommandContext args, CommandSource source) throws CommandException {
 		World world = null;
 		boolean isConsole = false;
@@ -296,54 +287,112 @@ public class TestCommands {
 		List<Entity> entities = world.getAll();
 		int count = 0;
 		for (Entity entity : entities) {
-			if (entity.getController() instanceof PlayerController || (!(entity.getController() instanceof VanillaEntityController))) {
+			if (entity instanceof Player || !entity.has(LivingComponent.class)) {
 				continue;
 			}
 			count++;
-			((VanillaEntityController) entity.getController()).getHealth().setHealth(0, HealthChangeReason.COMMAND);
-			entity.kill();
-			Spout.log(entity.getController().toString() + " was killed");
+			entity.remove();
+			Spout.log(entity.get(LivingComponent.class) + " was killed");
 		}
 		if (count > 0) {
 			if (!isConsole) {
-				source.sendMessage(count, " entity(es) have been killed. The console has a listing of what controllers were killed.");
+				if (count == 1) {
+					source.sendMessage("1 entity has been killed.");
+				} else {
+					source.sendMessage(count, " entities have been killed.");
+				}
 			}
 		} else {
 			source.sendMessage("No valid entities found to kill");
 		}
 	}
 
-	@Command(aliases = "rollcredits", desc = "Rolls the end credits for the game.", min = 0, max = 0)
-	public void rollCredits(CommandContext args, CommandSource source) throws CommandException {
-		if (!(source instanceof Player)) {
-			throw new CommandException("You must be a player to view the credits.");
+	@Command(aliases = "debug", usage = "[type] (/resend /resendall)", desc = "Debug commands", max = 2)
+	@CommandPermissions("vanilla.command.debug")
+	public void debug(CommandContext args, CommandSource source) throws CommandException {
+		Player player;
+		if (source instanceof Player) {
+			player = (Player) source;
+		} else {
+			if (Spout.getEngine() instanceof Client) {
+				throw new CommandException("You cannot search for players unless you are in server mode.");
+			}
+			player = Spout.getEngine().getPlayer(args.getString(1, ""), true);
+			if (player == null) {
+				source.sendMessage("Must be a player or send player name in arguments");
+				return;
+			}
 		}
 
-		Controller controller = ((Player) source).getController();
-		if (controller instanceof VanillaPlayerController) {
-			((VanillaPlayerController) controller).rollCredits();
+		if (args.getString(0, "").contains("resendall")) {
+			NetworkSynchronizer network = player.getNetworkSynchronizer();
+			Set<Chunk> chunks = network.getActiveChunks();
+			for (Chunk c : chunks) {
+				network.sendChunk(c);
+			}
+
+			source.sendMessage("All chunks resent");
+		} else if (args.getString(0, "").contains("resend")) {
+			player.getNetworkSynchronizer().sendChunk(player.getChunk());
+			source.sendMessage("Chunk resent");
+		} else if (args.getString(0, "").contains("relight")) {
+			for (Chunk chunk : VanillaBlockMaterial.getChunkColumn(player.getChunk())) {
+				chunk.initLighting();
+			}
+			source.sendMessage("Chunk lighting is being initialized");
 		}
 	}
 
-	@Command(aliases = "speed", desc = "Applies speed", min = 2, max = 2)
-	public void speed(CommandContext args, CommandSource source) throws CommandException {
-		if (!(source instanceof Player)) {
-			throw new CommandException("You must be a player to apply speed");
+	@Command(aliases = "spawnmob", desc = "Spawns a LivingComponent at your location", min = 1, max = 2)
+	@CommandPermissions("vanilla.command.spawnmob")
+	public void spawnmob(CommandContext args, CommandSource source) throws CommandException {
+		if (!(source instanceof Player) && Spout.getPlatform()!=Platform.CLIENT) {
+			throw new CommandException("Only a player may spawn a LivingComponent!");
 		}
-
-		Controller controller = ((Player) source).getController();
-		controller.addComponent(new Speed((VanillaPlayerController) controller, args.getInteger(0), args.getInteger(1)));
-	}
-
-	@Command(aliases = "npc", desc = "Spawns an npc at your location", min = 1, max = 1)
-	public void npc(CommandContext args, CommandSource source) throws CommandException {
-		if (!(source instanceof Player)) {
-			throw new CommandException("Only a player may spawn an npc");
+		Player player;
+		if (Spout.getPlatform()!=Platform.CLIENT) {
+			player = (Player) source;
+		} else {
+			player = ((Client)Spout.getEngine()).getActivePlayer();
 		}
-		Player spawner = (Player) source;
-		Human npc = new Human();
-		String title = args.getString(0);
-		npc.setDisplayName(title.equals("") ? "Steve" : title);
-		spawner.getWorld().createAndSpawnEntity(spawner.getPosition(), npc);
+		
+		final Point pos = player.getTransform().getPosition();
+		final String name = args.getString(0);
+		Class<? extends Component> clazz;
+		// TODO: Make entity prefabs for all entities
+		if (name.isEmpty()) {
+			throw new CommandException("It appears that you forgot to enter in the name of the LivingComponent.");
+		} else if (name.equalsIgnoreCase("enderman")) {
+			clazz = Enderman.class;
+		} else if (name.equalsIgnoreCase("enderdragon")) {
+			clazz = EnderDragon.class;
+		} else if (name.equalsIgnoreCase("movingblock")) {
+			clazz = FallingBlock.class;
+		} else if (name.equalsIgnoreCase("npc")) {
+			clazz = Human.class;
+		} else {
+			throw new CommandException(name + " was not a valid name for a LivingComponent!");
+		}
+		Entity entity = pos.getWorld().createEntity(pos, clazz);
+		if (clazz.equals(FallingBlock.class)) {
+			if (args.length() == 2) {
+				final String materialName = args.getString(1);
+				final Material mat = MaterialRegistry.get(materialName);
+				if (mat instanceof VanillaBlockMaterial) {
+					entity.add(FallingBlock.class).setMaterial((VanillaBlockMaterial) mat);
+				}
+			} else {
+				entity.add(FallingBlock.class).setMaterial(VanillaMaterials.SAND);
+			}
+		} else if (clazz.equals(Human.class)) {
+			String npcName = "Steve";
+			if (args.length() == 2) {
+				npcName = args.getString(1);
+			}
+			entity = human.createEntity(pos);
+			entity.get(Human.class).setName(npcName);
+		}
+		entity.setSavable(false);
+		pos.getWorld().spawnEntity(entity);
 	}
 }

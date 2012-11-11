@@ -26,38 +26,44 @@
  */
 package org.spout.vanilla.material;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
 import org.spout.api.collision.CollisionStrategy;
 import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
-import org.spout.api.event.block.BlockChangeEvent;
+import org.spout.api.event.Cause;
+import org.spout.api.geo.LoadOption;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.geo.discrete.Point;
+import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
-import org.spout.api.material.block.BlockSnapshot;
+import org.spout.api.material.range.CuboidEffectRange;
+import org.spout.api.material.range.EffectRange;
+import org.spout.api.math.IntVector3;
 import org.spout.api.math.Vector3;
 import org.spout.api.util.flag.Flag;
 import org.spout.api.util.flag.FlagBundle;
 
+import org.spout.vanilla.component.substance.Item;
+import org.spout.vanilla.data.Instrument;
+import org.spout.vanilla.data.MoveReaction;
+import org.spout.vanilla.data.RedstonePowerMode;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.drops.flag.DropFlags;
 import org.spout.vanilla.data.drops.flag.PlayerFlags;
 import org.spout.vanilla.data.drops.type.block.BlockDrops;
 import org.spout.vanilla.data.effect.SoundEffect;
 import org.spout.vanilla.data.effect.store.SoundEffects;
+import org.spout.vanilla.data.tool.ToolLevel;
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.event.block.BlockActionEvent;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.ItemUtil;
-import org.spout.vanilla.util.MoveReaction;
-import org.spout.vanilla.util.RedstonePowerMode;
-import org.spout.vanilla.util.ToolLevel;
-import org.spout.vanilla.util.ToolType;
 
 public abstract class VanillaBlockMaterial extends BlockMaterial implements VanillaMaterial {
 	public static short REDSTONE_POWER_MAX = 15;
@@ -71,12 +77,12 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 	private Set<ToolType> miningTypes = new HashSet<ToolType>();
 	private ToolLevel miningLevel = ToolLevel.NONE;
 
-	public VanillaBlockMaterial(String name, int id) {
-		this((short) 0, name, id);
+	public VanillaBlockMaterial(String name, int id, String model) {
+		this((short) 0, name, id, model);
 	}
 
-	public VanillaBlockMaterial(short dataMask, String name, int id) {
-		super(dataMask, name);
+	public VanillaBlockMaterial(short dataMask, String name, int id, String model) {
+		super(dataMask, name, model);
 		this.minecraftId = id;
 		this.setCollision(CollisionStrategy.NOCOLLIDE);
 		this.setTransparent();
@@ -84,8 +90,8 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		this.getDrops().DEFAULT.add(this);
 	}
 
-	public VanillaBlockMaterial(String name, int id, int data, VanillaBlockMaterial parent) {
-		super(name, data, parent);
+	public VanillaBlockMaterial(String name, int id, int data, VanillaBlockMaterial parent, String model) {
+		super(name, data, parent, model);
 		this.minecraftId = id;
 		this.setCollision(CollisionStrategy.NOCOLLIDE);
 		this.setTransparent();
@@ -105,23 +111,16 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 
 	/**
 	 * Called when this block is destroyed because of an explosion
-	 * @param block that got ignited
+	 * 
+	 * @param block that got ignition
+	 * @param the cause of the ignition
 	 */
-	public void onIgnite(Block block) {
+	public void onIgnite(Block block, Cause<?> cause) {
 		HashSet<Flag> dropFlags = new HashSet<Flag>();
 		if (Math.random() > 0.3) {
 			dropFlags.add(DropFlags.NO_DROPS);
 		}
-		this.destroy(block, dropFlags);
-	}
-
-	@Override
-	public boolean destroy(Block block, Set<Flag> flags) {
-		BlockChangeEvent event = new BlockChangeEvent(block, new BlockSnapshot(block, this, block.getData()), block.getSource());
-		if (event.isCancelled()) {
-			return false;
-		}
-		return super.destroy(block, flags);
+		this.destroy(block, dropFlags, cause);
 	}
 
 	@Override
@@ -129,7 +128,7 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		//TODO stack items together for more performance
 		Random random = new Random(block.getWorld().getAge());
 		for (ItemStack item : this.getDrops().getDrops(random, flags)) {
-			ItemUtil.dropItemNaturally(block.getPosition(), item);
+			Item.dropNaturally(block.getPosition(), item);
 		}
 	}
 
@@ -398,18 +397,107 @@ public abstract class VanillaBlockMaterial extends BlockMaterial implements Vani
 		return this.drops;
 	}
 
+	// Utilities
+	private static final EffectRange FARMLAND_CHECK_RANGE = new CuboidEffectRange(-1, -1, -1, 1, -1, 1);
+
 	/**
 	 * Plays a block action for this type of Block Material
-	 * 
 	 * @param block to play at
 	 * @param arg1 for the action
 	 * @param arg2 for the action
 	 */
-	public void playBlockAction(Block block, byte arg1, byte arg2) {
-		BlockActionEvent event = new BlockActionEvent(block, this, arg1, arg2);
-		Point position = block.getPosition();
-		for (Player player : position.getWorld().getNearbyPlayers(position, 48)) {
+	public static void playBlockAction(Block block, byte arg1, byte arg2) {
+		BlockActionEvent event = new BlockActionEvent(block, block.getMaterial(), arg1, arg2);
+		for (Player player : block.getChunk().getObservingPlayers()) {
 			player.getNetworkSynchronizer().callProtocolEvent(event);
 		}
+	}
+
+	/**
+	 * Gets if rain is falling nearby the block specified
+	 * @param block to check it nearby of
+	 * @return True if it is raining, False if not
+	 */
+	public static boolean hasRainNearby(Block block) {
+		if (block.getWorld().getComponentHolder().getData().get(VanillaData.WEATHER).isRaining()) {
+			for (BlockFace face : BlockFaces.NESW) {
+				if (block.translate(face).isAtSurface()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Gets if rain is falling on top of the block specified
+	 * @param block to check
+	 * @return True if rain is falling on the Block, false if not
+	 */
+	public static boolean isRaining(Block block) {
+		return block.getWorld().getComponentHolder().getData().get(VanillaData.WEATHER).isRaining() && block.isAtSurface();
+	}
+
+	/**
+	 * Gets the chance of a crop block growing<br>
+	 * The higher the value, the lower the chance.
+	 * @param block to check
+	 * @return the growth chance
+	 */
+	public static int getCropGrowthChance(Block block) {
+		BlockMaterial material = block.getMaterial();
+		float rate = 1.0f;
+		float farmLandRate;
+		Block rel;
+		for (IntVector3 coord : FARMLAND_CHECK_RANGE) {
+			rel = block.translate(coord);
+			if (rel.isMaterial(VanillaMaterials.FARMLAND)) {
+				if (VanillaMaterials.FARMLAND.isWet(rel)) {
+					farmLandRate = 3.0f;
+				} else {
+					farmLandRate = 1.0f;
+				}
+				if (rel.getX() != 0 && rel.getZ() != 0) {
+					// this is farmland at a neighbor
+					farmLandRate /= 4.0f;
+				}
+				rate += farmLandRate;
+			}
+		}
+
+		// Half, yes or no? Check for neighboring crops
+		if (block.translate(-1, 0, -1).isMaterial(material) || block.translate(1, 0, 1).isMaterial(material)
+				|| block.translate(-1, 0, 1).isMaterial(material) || block.translate(1, 0, -1).isMaterial(material)) {
+			return (int) (50f / rate);
+		}
+		if ((block.translate(-1, 0, 0).isMaterial(material) || block.translate(1, 0, 0).isMaterial(material))
+				&& (block.translate(0, 0, -1).isMaterial(material) || block.translate(0, 0, 1).isMaterial(material))) {
+			return (int) (50f / rate);
+		}
+		return (int) (25f / rate);
+	}
+
+	/**
+	 * Gets a vertical column of chunks
+	 * @param middle chunk
+	 * @return list of chunks in the column
+	 */
+	public static List<Chunk> getChunkColumn(Chunk middle) {
+		Chunk top = middle;
+		Chunk tmp;
+		while (true) {
+			tmp = top.getRelative(BlockFace.TOP, LoadOption.NO_LOAD);
+			if (tmp != null && tmp.isLoaded()) {
+				top = tmp;
+			} else {
+				break;
+			}
+		}
+		List<Chunk> rval = new ArrayList<Chunk>();
+		while (top != null && top.isLoaded()) {
+			rval.add(top);
+			top = top.getRelative(BlockFace.BOTTOM, LoadOption.NO_LOAD);
+		}
+		return rval;
 	}
 }

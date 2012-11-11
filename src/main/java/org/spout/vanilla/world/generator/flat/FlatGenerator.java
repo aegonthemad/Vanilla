@@ -28,9 +28,8 @@ package org.spout.vanilla.world.generator.flat;
 
 import java.util.Random;
 
+import org.spout.api.generator.GeneratorPopulator;
 import org.spout.api.generator.Populator;
-import org.spout.api.generator.biome.BiomeManager;
-import org.spout.api.generator.biome.EmptyBiomeManager;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
@@ -47,7 +46,7 @@ public class FlatGenerator implements VanillaGenerator {
 	}
 
 	@Override
-	public BiomeManager generate(CuboidShortBuffer blockData, int chunkX, int chunkY, int chunkZ) {
+	public void generate(CuboidShortBuffer blockData, int chunkX, int chunkY, int chunkZ, World world) {
 		int x = chunkX << 4, z = chunkZ << 4;
 		for (int dx = x; dx < x + 16; ++dx) {
 			for (int dz = z; dz < z + 16; ++dz) {
@@ -64,12 +63,16 @@ public class FlatGenerator implements VanillaGenerator {
 				}
 			}
 		}
-		return new EmptyBiomeManager(chunkX, chunkY, chunkZ);
 	}
 
 	@Override
 	public Populator[] getPopulators() {
 		return new Populator[0];
+	}
+
+	@Override
+	public GeneratorPopulator[] getGeneratorPopulators() {
+		return new GeneratorPopulator[0];
 	}
 
 	@Override
@@ -83,7 +86,8 @@ public class FlatGenerator implements VanillaGenerator {
 		final int x = 16 - random.nextInt(32);
 		final int z = 16 - random.nextInt(32);
 		int y = world.getHeight();
-		for (; !world.getBlockMaterial(x, y, z).isSolid(); y--);
+		for (; !world.getBlockMaterial(x, y, z).isSolid(); y--) {
+		}
 		return new Point(world, x, y + 1.5f, z);
 	}
 

@@ -28,19 +28,19 @@ package org.spout.vanilla.material.block.ore;
 
 import org.spout.api.inventory.ItemStack;
 
+import org.spout.vanilla.data.tool.ToolLevel;
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Ore;
-import org.spout.vanilla.material.block.controlled.FurnaceBlock;
-import org.spout.vanilla.util.ToolLevel;
-import org.spout.vanilla.util.ToolType;
+import org.spout.vanilla.material.block.component.FurnaceBlock;
 
 public class RedstoneOre extends Ore implements TimedCraftable, InitializableMaterial {
 	private final boolean glowing;
 
 	public RedstoneOre(String name, int id, boolean glowing) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/redstoneore/redstoneore.spm");
 		this.glowing = glowing;
 		this.setHardness(3.0F).setResistance(5.0F).addMiningType(ToolType.PICKAXE).setMiningLevel(ToolLevel.STONE);
 	}

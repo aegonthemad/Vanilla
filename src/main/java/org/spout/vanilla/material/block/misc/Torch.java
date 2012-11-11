@@ -26,6 +26,7 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
@@ -35,13 +36,13 @@ import org.spout.vanilla.material.block.attachable.PointAttachable;
 
 public class Torch extends AbstractAttachable implements PointAttachable {
 	public Torch(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setAttachable(BlockFaces.NSEWB).setLiquidObstacle(false).setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
-		block.setData((short) (BlockFaces.NSEWB.indexOf(attachedFace, 4) + 1));
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
+		block.setData((short) (BlockFaces.NSEWB.indexOf(attachedFace, 4) + 1), cause);
 	}
 
 	@Override

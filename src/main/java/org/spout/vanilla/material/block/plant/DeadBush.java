@@ -37,19 +37,19 @@ import org.spout.vanilla.material.block.attachable.GroundAttachable;
 
 public class DeadBush extends GroundAttachable implements Plant {
 	public DeadBush(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	public DeadBush(short dataMask, String name, int id) {
-		super(dataMask, name, id);
+		super(dataMask, name, id, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	public DeadBush(String name, int id, int data, VanillaBlockMaterial parent) {
-		super(name, id, data, parent);
+		super(name, id, data, parent, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
@@ -67,7 +67,7 @@ public class DeadBush extends GroundAttachable implements Plant {
 	@Override
 	public boolean canAttachTo(Block block, BlockFace face) {
 		if (super.canAttachTo(block, face)) {
-			return block.isMaterial(VanillaMaterials.SAND);
+			return block.isMaterial(VanillaMaterials.SAND, VanillaMaterials.FLOWER_POT_BLOCK);
 		}
 		return false;
 	}

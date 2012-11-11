@@ -26,15 +26,27 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import org.spout.api.geo.cuboid.Block;
+import org.spout.api.material.BlockMaterial;
+import org.spout.api.material.block.BlockFace;
+import org.spout.api.material.block.BlockFaces;
+import org.spout.api.material.range.CubicEffectRange;
+import org.spout.api.material.range.EffectRange;
+
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
+import org.spout.vanilla.material.block.redstone.RedstoneTarget;
+import org.spout.vanilla.util.RedstoneUtil;
 
-public class RedstoneLamp extends Solid implements InitializableMaterial {
+public class RedstoneLamp extends Solid implements InitializableMaterial, RedstoneTarget {
 	private final boolean on;
+	private final static EffectRange effectRange = new CubicEffectRange(2);
+	private static final int HAS_REDSTONE_POWER = 1;
+	private static final int HAS_NO_REDSTONE_POWER = 0;
 
-	public RedstoneLamp(String name, int id, boolean on) {
-		super(name, id);
+	public RedstoneLamp(String name, int id, boolean on, String model) {
+		super(name, id, model);
 		this.on = on;
 		// TODO: The resistance is not correct (?)
 		this.setHardness(0.3F).setResistance(0.5F);
@@ -42,7 +54,7 @@ public class RedstoneLamp extends Solid implements InitializableMaterial {
 
 	@Override
 	public void initialize() {
-		this.getDrops().DEFAULT.clear().add(VanillaMaterials.REDSTONE_LAMP_ON);
+		this.getDrops().DEFAULT.clear().add(VanillaMaterials.REDSTONE_LAMP_OFF);
 	}
 
 	/**
@@ -56,5 +68,52 @@ public class RedstoneLamp extends Solid implements InitializableMaterial {
 	@Override
 	public byte getLightLevel(short data) {
 		return on ? (byte) 15 : (byte) 0;
+	}
+
+	@Override
+	public boolean isReceivingPower(Block block) {
+		return RedstoneUtil.isReceivingPower(block);
+	}
+
+	@Override
+	public boolean isRedstoneConductor() {
+		return false;
+	}
+
+	@Override
+	public void onUpdate(BlockMaterial oldMaterial, Block block) {
+		super.onUpdate(oldMaterial, block);
+		boolean power = isReceivingPower(block);
+		if (power) {
+			block.setData(HAS_REDSTONE_POWER);
+		} else {
+			block.setData(HAS_NO_REDSTONE_POWER);
+			for (BlockFace face : BlockFaces.BTEWNS) {
+				Block other = block.translate(face);
+				if (other.getMaterial() instanceof RedstoneLamp) {
+					if (other.getData() == HAS_REDSTONE_POWER) {
+						power = true;
+						break;
+					}
+				}
+			}
+		}
+		if (on != power) {
+			if (power) {
+				block.setMaterial(VanillaMaterials.REDSTONE_LAMP_ON);
+			} else {
+				block.setMaterial(VanillaMaterials.REDSTONE_LAMP_OFF);
+			}
+		}
+	}
+
+	@Override
+	public boolean hasPhysics() {
+		return true;
+	}
+
+	@Override
+	public EffectRange getPhysicsRange(short data) {
+		return effectRange;
 	}
 }

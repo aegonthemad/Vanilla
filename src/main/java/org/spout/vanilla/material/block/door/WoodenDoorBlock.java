@@ -27,20 +27,21 @@
 package org.spout.vanilla.material.block.door;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.data.Instrument;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.DoorBlock;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class WoodenDoorBlock extends DoorBlock implements InitializableMaterial {
 	public WoodenDoorBlock(String name, int id) {
-		super(name, id);
+		super(name, id, (String) null);
 		this.setHardness(3.0F).setResistance(5.0F).setOpacity((byte) 1);
 	}
 
@@ -52,15 +53,19 @@ public class WoodenDoorBlock extends DoorBlock implements InitializableMaterial 
 	@Override
 	public void onInteractBy(Entity entity, Block block, Action action, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, action, clickedFace);
-		if (action == Action.LEFT_CLICK && VanillaPlayerUtil.isCreative(block.getSource())) {
+		if (action == Action.LEFT_CLICK && entity.get(Human.class).isCreative()) {
 			return;
 		}
 		this.toggleOpen(block);
-		GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block), entity);
+		if (entity instanceof Player) {
+			GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block), (Player) entity);
+		} else {
+			GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block));
+		}
 	}
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
+		return Instrument.BASS_GUITAR;
 	}
 }

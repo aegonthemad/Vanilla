@@ -26,20 +26,20 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import org.spout.vanilla.data.Instrument;
 import org.spout.vanilla.data.drops.flag.ToolLevelFlags;
 import org.spout.vanilla.data.drops.flag.ToolTypeFlags;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.Instrument;
 
 public class Endstone extends Solid {
 	public Endstone(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/endstone/endstone.spm");
 		this.setHardness(3.0F).setResistance(15.0F);
 		getDrops().NOT_CREATIVE.addFlags(ToolTypeFlags.PICKAXE, ToolLevelFlags.WOOD_UP);
 	}
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSDRUM;
+		return Instrument.BASS_DRUM;
 	}
 }

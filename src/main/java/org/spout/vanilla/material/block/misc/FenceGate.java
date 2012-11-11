@@ -28,6 +28,8 @@ package org.spout.vanilla.material.block.misc;
 
 import org.spout.api.collision.CollisionStrategy;
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
+import org.spout.api.event.Cause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
@@ -35,17 +37,19 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.Instrument;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.block.Openable;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
-import org.spout.vanilla.util.Instrument;
+import org.spout.vanilla.util.PlayerUtil;
 import org.spout.vanilla.util.RedstoneUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class FenceGate extends VanillaBlockMaterial implements Openable, RedstoneTarget {
 	public FenceGate(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setHardness(2.0F).setResistance(3.0F).setTransparent();
 		this.setCollision(CollisionStrategy.SOLID);
 	}
@@ -58,11 +62,15 @@ public class FenceGate extends VanillaBlockMaterial implements Openable, Redston
 	@Override
 	public void onInteractBy(Entity entity, Block block, Action action, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, action, clickedFace);
-		if (action == Action.LEFT_CLICK && VanillaPlayerUtil.isCreative(block.getSource())) {
+		if (action == Action.LEFT_CLICK && entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.CREATIVE)) {
 			return;
 		}
 		this.toggleOpen(block);
-		GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block), entity);
+		if (entity instanceof Player) {
+			GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block), (Player) entity);
+		} else {
+			GeneralEffects.DOOR.playGlobal(block.getPosition(), isOpen(block));
+		}
 	}
 
 	@Override
@@ -72,7 +80,7 @@ public class FenceGate extends VanillaBlockMaterial implements Openable, Redston
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
+		return Instrument.BASS_GUITAR;
 	}
 
 	@Override
@@ -108,9 +116,9 @@ public class FenceGate extends VanillaBlockMaterial implements Openable, Redston
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
-		block.setMaterial(this);
-		this.setFacing(block, VanillaPlayerUtil.getFacing(block.getSource()));
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock, Cause<?> cause) {
+		block.setMaterial(this, cause);
+		this.setFacing(block, PlayerUtil.getFacing(cause));
 		return true;
 	}
 

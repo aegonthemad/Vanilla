@@ -30,31 +30,31 @@ import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.DataSource;
 
+import org.spout.vanilla.data.Instrument;
 import org.spout.vanilla.data.effect.store.SoundEffects;
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.ToolType;
 
 public class Plank extends Solid implements Fuel, Burnable {
-	public static final Plank PLANK = new Plank("Oak Plank");
-	public static final Plank PINE = new Plank("Pine Plank", WoodType.PINE, PLANK);
-	public static final Plank BIRCH = new Plank("Birch Plank", WoodType.BIRCH, PLANK);
-	public static final Plank JUNGLE = new Plank("Jungle Plank", WoodType.JUNGLE, PLANK);
+	public static final Plank PLANK = new Plank("Oak Plank", "model://Vanilla/resources/materials/block/solid/oakplanks/oakplanks.spm");
+	public static final Plank PINE = new Plank("Pine Plank", WoodType.PINE, PLANK, "model://Vanilla/resources/materials/block/solid/spruceplanks/spruceplanks.spm");
+	public static final Plank BIRCH = new Plank("Birch Plank", WoodType.BIRCH, PLANK, "model://Vanilla/resources/materials/block/solid/birchplanks/birchplanks.spm");
+	public static final Plank JUNGLE = new Plank("Jungle Plank", WoodType.JUNGLE, PLANK, "model://Vanilla/resources/materials/block/solid/jungleplanks/jungleplanks.spm");
 	private final WoodType type;
-	public final float BURN_TIME = 15.f;
+	public final float BURN_TIME = 15;
 
-	public Plank(String name) {
-		super((short) 0x0003, name, 05);
+	public Plank(String name, String model) {
+		super((short) 0x0003, name, 5, model);
 		this.type = WoodType.OAK;
 		this.setHardness(0.8F).setResistance(1.3F).setStepSound(SoundEffects.STEP_WOOD);
 		this.addMiningType(ToolType.AXE);
 	}
 
-	public Plank(String name, WoodType type, Plank parent) {
-		super(name, 05, type.getData(), parent);
+	public Plank(String name, WoodType type, Plank parent, String model) {
+		super(name, 5, type.getData(), parent, model);
 		this.type = type;
 		this.setHardness(0.8F).setResistance(1.3F).setStepSound(SoundEffects.STEP_WOOD);
 		this.addMiningType(ToolType.AXE);
@@ -62,7 +62,7 @@ public class Plank extends Solid implements Fuel, Burnable {
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
+		return Instrument.BASS_GUITAR;
 	}
 
 	@Override

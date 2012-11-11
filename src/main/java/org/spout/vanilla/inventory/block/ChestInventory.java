@@ -28,23 +28,39 @@ package org.spout.vanilla.inventory.block;
 
 import org.spout.api.inventory.Inventory;
 
-import org.spout.vanilla.entity.block.Chest;
-import org.spout.vanilla.inventory.VanillaInventory;
-
-public class ChestInventory extends Inventory implements VanillaInventory {
+/**
+ * Represents the inventory of a
+ * {@link org.spout.vanilla.component.substance.material.chest.Chest}.
+ */
+public class ChestInventory extends Inventory {
 	private static final long serialVersionUID = 1L;
-	private final Chest owner;
+	public static final int SINGLE_SIZE = 27;
+	public static final int DOUBLE_SIZE = SINGLE_SIZE * 2;
 
-	public ChestInventory(Chest owner) {
-		super(27);
-		this.owner = owner;
+	public ChestInventory(int size) {
+		super(size);
 	}
 
-	/**
-	 * Gets the {@link Chest} associated with the inventory.
-	 * @return chest
-	 */
-	public Chest getOwner() {
-		return owner;
+	public ChestInventory(boolean d) {
+		this(d ? DOUBLE_SIZE : SINGLE_SIZE);
+	}
+
+	public ChestInventory() {
+		this(false);
+	}
+
+	public String getTitle(String def) {
+		switch (size()) {
+			case SINGLE_SIZE:
+				return "Chest";
+			case DOUBLE_SIZE:
+				return "Large chest";
+			default:
+				return def;
+		}
+	}
+
+	public String getTitle() {
+		return getTitle("Unknown chest");
 	}
 }

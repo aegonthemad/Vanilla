@@ -30,7 +30,12 @@ import org.spout.api.event.Cancellable;
 import org.spout.api.event.Event;
 import org.spout.api.event.HandlerList;
 import org.spout.api.inventory.ItemStack;
+<<<<<<< HEAD
 import org.spout.vanilla.entity.block.Furnace;
+=======
+
+import org.spout.vanilla.component.substance.material.Furnace;
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 
 /**
  * Event which is called when an fuel in the furnace is being burned.

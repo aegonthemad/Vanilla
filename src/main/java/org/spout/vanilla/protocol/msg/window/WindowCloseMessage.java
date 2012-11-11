@@ -30,8 +30,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import org.spout.api.util.SpoutToStringStyle;
 
-import org.spout.vanilla.protocol.msg.WindowMessage;
-import org.spout.vanilla.window.Window;
+import org.spout.vanilla.component.inventory.window.Window;
 
 public final class WindowCloseMessage extends WindowMessage {
 	public WindowCloseMessage(Window window) {

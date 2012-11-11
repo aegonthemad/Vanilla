@@ -30,48 +30,46 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import org.spout.api.entity.Controller;
+import org.spout.api.component.components.PhysicsComponent;
 import org.spout.api.entity.Entity;
 import org.spout.api.geo.discrete.Transform;
+import org.spout.api.math.Vector3;
 import org.spout.api.protocol.EntityProtocol;
 import org.spout.api.protocol.Message;
+import org.spout.api.util.Parameter;
 
-import org.spout.vanilla.entity.VanillaEntityController;
-import org.spout.vanilla.entity.component.HeadOwner;
-import org.spout.vanilla.entity.component.PositionUpdateOwner;
-import org.spout.vanilla.entity.component.network.PositionUpdateComponent;
-import org.spout.vanilla.protocol.msg.DestroyEntitiesMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityHeadYawMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityRelativePositionMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityRelativePositionRotationMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityRotationMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityTeleportMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityVelocityMessage;
+import org.spout.vanilla.component.misc.HeadComponent;
+import org.spout.vanilla.protocol.msg.entity.EntityDestroyMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityMetadataMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityHeadYawMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityRelativePositionMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityRelativePositionYawMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityTeleportMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityVelocityMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityYawMessage;
 
 import static org.spout.vanilla.protocol.ChannelBufferUtils.protocolifyPosition;
 import static org.spout.vanilla.protocol.ChannelBufferUtils.protocolifyRotation;
 
 public abstract class VanillaEntityProtocol implements EntityProtocol {
-	@Override
-	public List<Message> getDestroyMessages(Entity entity) {
-		return Arrays.<Message>asList(new DestroyEntitiesMessage(new int[]{entity.getId()}));
+	private List<Parameter<?>> lastMeta;
+
+	public List<Parameter<?>> getUpdateParameters(Entity entity) {
+		return Collections.emptyList();
 	}
 
 	@Override
-	public List<Message> getUpdateMessages(Entity entity) {
-		Controller controller = entity.getController();
-		if (!(controller instanceof PositionUpdateOwner)) {
-			return Collections.emptyList();
-		}
-		PositionUpdateComponent<?> network = ((PositionUpdateOwner) controller).getNetworkComponent();
+	public final List<Message> getDestroyMessages(Entity entity) {
+		return Arrays.<Message>asList(new EntityDestroyMessage(new int[]{entity.getId()}));
+	}
 
-		// You have to use the last known CLIENT transform
-		// The last tick transform delta is not enough to properly send update messages
-		// For most entities, an update takes more than one tick before an update message is ready
-		// Do NOT use entity.getLastTransform() because it is not a delta since last tick!
-		Transform prevTransform = network.getLastClientTransform();
-		Transform newTransform = entity.getTransform();
+	@Override
+	public final List<Message> getUpdateMessages(Entity entity) {
+
+		// Movement
+
+		Transform prevTransform = entity.getTransform().getTransform();
+		Transform newTransform = entity.getTransform().getTransformLive();
 
 		int lastX = protocolifyPosition(prevTransform.getPosition().getX());
 		int lastY = protocolifyPosition(prevTransform.getPosition().getY());
@@ -87,37 +85,57 @@ public abstract class VanillaEntityProtocol implements EntityProtocol {
 		int deltaY = newY - lastY;
 		int deltaZ = newZ - lastZ;
 
-		List<Message> messages = new ArrayList<Message>(3);
-		if (network.needsPositionUpdate() || deltaX > 128 || deltaX < -128 || deltaY > 128 || deltaY < -128 || deltaZ > 128 || deltaZ < -128) {
+		List<Message> messages = new ArrayList<Message>();
+
+		boolean looked = !entity.getTransform().isRotationDirty();
+
+		/*
+		 * Two scenarios:
+		 * - The entity moves more than 4 blocks and maybe changes rotation.
+		 * - The entity moves less than 4 blocks and maybe changes rotation.
+		 */
+		if (deltaX > 4 || deltaX < -4 || deltaY > 4 || deltaY < -4 || deltaZ > 4 || deltaZ < -4) {
 			messages.add(new EntityTeleportMessage(entity.getId(), newX, newY, newZ, newYaw, newPitch));
-			network.setLastClientTransform(newTransform);
+			if (looked) {
+				messages.add(new EntityYawMessage(entity.getId(), newYaw, newPitch));
+			}
 		} else {
-			boolean moved = !prevTransform.getPosition().equals(newTransform.getPosition());
-			boolean looked = !prevTransform.getRotation().equals(newTransform.getRotation());
-			if (moved) {
-				if (looked) {
-					messages.add(new EntityRelativePositionRotationMessage(entity.getId(), deltaX, deltaY, deltaZ, newYaw, newPitch));
-					network.setLastClientTransform(newTransform);
-				} else {
-					messages.add(new EntityRelativePositionMessage(entity.getId(), deltaX, deltaY, deltaZ));
-					network.getLastClientTransform().setPosition(newTransform.getPosition());
-				}
-			} else if (looked) {
-				messages.add(new EntityRotationMessage(entity.getId(), newYaw, newPitch));
-				network.getLastClientTransform().setRotation(newTransform.getRotation());
+			if (looked) {
+				messages.add(new EntityRelativePositionYawMessage(entity.getId(), deltaX, deltaY, deltaZ, newYaw, newPitch));
+			} else {
+				messages.add(new EntityRelativePositionMessage(entity.getId(), deltaX, deltaY, deltaZ));
 			}
 		}
 
-		if (controller instanceof VanillaEntityController && network.needsVelocityUpdate()) {
-			messages.add(new EntityVelocityMessage(entity.getId(), ((VanillaEntityController) controller).getVelocity()));
+		// Head movement
+
+		HeadComponent head = entity.get(HeadComponent.class);
+		if (head != null && head.isDirty()) {
+			messages.add(new EntityHeadYawMessage(entity.getId(), head.getProtocolYaw()));
 		}
 
-		if (controller instanceof HeadOwner) {
-			HeadOwner headOwner = (HeadOwner) controller;
-			if (headOwner.getHead().yawChanged()) {
-				messages.add(new EntityHeadYawMessage(entity.getId(), protocolifyRotation(headOwner.getHead().getYaw())));
-			}
+		// Physics
+
+		PhysicsComponent physics = entity.get(PhysicsComponent.class);
+		if (physics != null && physics.isVelocityDirty()) {
+			messages.add(new EntityVelocityMessage(entity.getId(), getProtocolVelocity(physics.getLinearVelocity())));
 		}
+
+		// Extra metadata
+
+		List<Parameter<?>> params = getUpdateParameters(entity);
+		if (lastMeta == null || !lastMeta.equals(params)) {
+			messages.add(new EntityMetadataMessage(entity.getId(), params));
+			lastMeta = params;
+		}
+
 		return messages;
+	}
+
+	public static Vector3 getProtocolVelocity(Vector3 velocity) {
+		final float x = velocity.getX() * 32000;
+		final float y = velocity.getY() * 32000;
+		final float z = velocity.getZ() * 32000;
+		return new Vector3(x, y, z);
 	}
 }

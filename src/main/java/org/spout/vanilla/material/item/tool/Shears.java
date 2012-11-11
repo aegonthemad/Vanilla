@@ -30,13 +30,17 @@ import java.util.Random;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
+import org.spout.api.geo.LoadOption;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.entity.creature.passive.Sheep;
-import org.spout.vanilla.entity.object.moving.Item;
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.component.living.passive.Sheep;
+import org.spout.vanilla.component.substance.Item;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.data.tool.ToolType;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.util.ToolType;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class Shears extends Tool {
 	private Random rand = new Random();
@@ -48,23 +52,27 @@ public class Shears extends Tool {
 	@Override
 	public void onInteract(Entity entity, Entity other, Action action) {
 		if (action == Action.RIGHT_CLICK) {
-			if (!(other.getController() instanceof Sheep)) {
+			Sheep sheep = other.get(Sheep.class);
+
+			if (sheep == null) {
 				return;
 			}
 
-			Sheep sheep = (Sheep) other.getController();
-			if (sheep.isSheared() || sheep.getGrowing().isBaby()) {
-				System.out.println("Debug");
+			if (sheep.isSheared()) {
+				//TODO: Also return if this is a baby sheep
 				return;
 			}
 
 			sheep.setSheared(true);
 			short col = sheep.getColor().getData();
 
-			other.getWorld().createAndSpawnEntity(other.getPosition(), new Item(new ItemStack(VanillaMaterials.WOOL, col, rand.nextInt(3) + 1), other.getPosition().normalize()));
+			other.getWorld().createAndSpawnEntity(other.getTransform().getPosition(), Item.class, LoadOption.NO_LOAD);
+			Item item = entity.add(Item.class);
+			item.setItemStack(new ItemStack(VanillaMaterials.WOOL, col, rand.nextInt(3) + 1));
 
-			if (VanillaPlayerUtil.isSurvival(entity)) {
-				VanillaPlayerUtil.getCurrentSlot(entity).addItemData(0, 1);
+			if (entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
+				PlayerQuickbar quickbar = entity.get(Human.class).getInventory().getQuickbar();
+				quickbar.addData(quickbar.getCurrentSlot(), 1);
 			}
 		}
 	}

@@ -28,17 +28,17 @@ package org.spout.vanilla.material.block.solid;
 
 import org.spout.api.inventory.ItemStack;
 
+import org.spout.vanilla.data.Instrument;
+import org.spout.vanilla.data.tool.ToolLevel;
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.TimedCraftable;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.material.block.controlled.FurnaceBlock;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.ToolLevel;
-import org.spout.vanilla.util.ToolType;
+import org.spout.vanilla.material.block.component.FurnaceBlock;
 
 public class Cobblestone extends Solid implements TimedCraftable {
 	public Cobblestone(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/cobblestone/cobblestone.spm");
 		this.setHardness(2.0F).setResistance(10.0F).addMiningType(ToolType.PICKAXE).setMiningLevel(ToolLevel.WOOD);
 	}
 
@@ -54,6 +54,6 @@ public class Cobblestone extends Solid implements TimedCraftable {
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSDRUM;
+		return Instrument.BASS_DRUM;
 	}
 }

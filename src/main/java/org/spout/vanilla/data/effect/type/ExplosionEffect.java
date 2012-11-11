@@ -28,7 +28,6 @@ package org.spout.vanilla.data.effect.type;
 
 import java.util.List;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 
@@ -72,7 +71,7 @@ public class ExplosionEffect extends Effect {
 		this.playGlobal(position, size, null);
 	}
 
-	public void playGlobal(Point position, float size, Entity ignore) {
+	public void playGlobal(Point position, float size, Player ignore) {
 		this.play(getNearbyPlayers(position, ignore), position, size);
 	}
 }

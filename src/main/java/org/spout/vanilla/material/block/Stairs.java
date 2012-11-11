@@ -26,6 +26,7 @@
  */
 package org.spout.vanilla.material.block;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
@@ -33,17 +34,21 @@ import org.spout.api.math.Vector3;
 import org.spout.api.util.bytebit.ByteBitSet;
 
 import org.spout.vanilla.material.VanillaBlockMaterial;
+<<<<<<< HEAD
 import org.spout.vanilla.material.block.misc.Slab;
 import org.spout.vanilla.util.ToolLevel;
 import org.spout.vanilla.util.ToolType;
 import org.spout.vanilla.util.VanillaPlayerUtil;
+=======
+import org.spout.vanilla.util.PlayerUtil;
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 
 public abstract class Stairs extends VanillaBlockMaterial implements Directional {
 	
 	private final ByteBitSet[] occlusion;
 
-	public Stairs(String name, int id) {
-		super(name, id);
+	public Stairs(String name, int id, String model) {
+		super(name, id, model);
 		this.occlusion = new ByteBitSet[8];
 		for (int i = 0; i < 4; i++) {
 			this.occlusion[i] = new ByteBitSet(BlockFaces.NSEW.get(i).getOpposite(), BlockFace.BOTTOM);
@@ -80,9 +85,9 @@ public abstract class Stairs extends VanillaBlockMaterial implements Directional
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedMaterial) {
-		block.setMaterial(this);
-		this.setFacing(block, VanillaPlayerUtil.getFacing(block.getSource()).getOpposite());
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedMaterial, Cause<?> cause) {
+		block.setMaterial(this, cause);
+		this.setFacing(block, PlayerUtil.getFacing(cause).getOpposite());
 		this.setTop(block, against == BlockFace.TOP || (BlockFaces.NESW.contains(against) && clickedPos.getY() > 0.5f));
 		return true;
 	}

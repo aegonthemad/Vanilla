@@ -30,15 +30,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import org.spout.api.util.SpoutToStringStyle;
 
-import org.spout.vanilla.protocol.msg.WindowMessage;
-import org.spout.vanilla.window.Window;
+import org.spout.vanilla.component.inventory.window.Window;
 
 public final class WindowTransactionMessage extends WindowMessage {
 	private final int transaction;
 	private final boolean accepted;
 
 	public WindowTransactionMessage(Window window, int transaction, boolean accepted) {
-		this(window.getInstanceId(), transaction, accepted);
+		this(window.getId(), transaction, accepted);
 	}
 
 	public WindowTransactionMessage(int windowInstanceId, int transaction, boolean accepted) {

@@ -28,7 +28,6 @@ package org.spout.vanilla.data.effect.type;
 
 import java.util.List;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 
@@ -73,7 +72,7 @@ public class ToggleSoundEffect extends SoundEffect {
 		this.playGlobal(position, open, null);
 	}
 
-	public void playGlobal(Point position, boolean open, Entity ignore) {
+	public void playGlobal(Point position, boolean open, Player ignore) {
 		this.play(getNearbyPlayers(position, ignore), position, open);
 	}
 }

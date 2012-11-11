@@ -33,9 +33,9 @@ import org.jboss.netty.buffer.ChannelBuffers;
 
 import org.spout.api.protocol.MessageCodec;
 
+import org.spout.vanilla.inventory.window.WindowType;
 import org.spout.vanilla.protocol.ChannelBufferUtils;
 import org.spout.vanilla.protocol.msg.window.WindowOpenMessage;
-import org.spout.vanilla.window.WindowType;
 
 public final class WindowOpenCodec extends MessageCodec<WindowOpenMessage> {
 	public WindowOpenCodec() {
@@ -45,7 +45,7 @@ public final class WindowOpenCodec extends MessageCodec<WindowOpenMessage> {
 	@Override
 	public WindowOpenMessage decode(ChannelBuffer buffer) throws IOException {
 		int id = buffer.readUnsignedByte();
-		WindowType type = WindowType.getById(buffer.readUnsignedByte());
+		WindowType type = WindowType.get(buffer.readUnsignedByte());
 		if (type == null) {
 			throw new IOException("Read Window Type is invalid");
 		}

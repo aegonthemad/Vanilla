@@ -27,20 +27,27 @@
 package org.spout.vanilla.material.block.plant;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
+import org.spout.api.event.Cause;
+import org.spout.api.event.cause.EntityCause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.util.BlockIterator;
 
-import org.spout.vanilla.entity.component.HeadOwner;
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.component.misc.HeadComponent;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.event.cause.PlayerBreakCause;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.liquid.Water;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class LilyPad extends GroundAttachable {
 	public LilyPad(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setHardness(0.0F).setResistance(0.3F).setTransparent();
 	}
 
@@ -59,22 +66,29 @@ public class LilyPad extends GroundAttachable {
 	@Override
 	public void onInteract(Entity entity, Action type) {
 		super.onInteract(entity, type);
-		if (type == Action.RIGHT_CLICK && entity.getController() instanceof HeadOwner) {
-			Block block = ((HeadOwner) entity.getController()).getHead().hitTest();
-			if (block == null) {
+		if (type == Action.RIGHT_CLICK && entity.has(HeadComponent.class)) {
+			BlockIterator iterator = entity.get(HeadComponent.class).getBlockView();
+			if (iterator == null || !iterator.hasNext()) {
 				return;
 			}
-			block = block.translate(BlockFace.TOP);
+			Block block = iterator.next().translate(BlockFace.TOP);
 			if (this.canPlace(block, (short) 0)) {
-				this.onPlacement(block, (short) 0);
+				Cause<Entity> cause;
+				if (entity instanceof Player) {
+					cause = new PlayerBreakCause((Player)entity, block);
+				} else {
+					cause = new EntityCause(entity);
+				}
+				this.onPlacement(block, (short) 0, cause);
 
+				//TODO Subtract from inventory component
 				// Subtract item
-				if (!VanillaPlayerUtil.isSurvival(entity)) {
+				if (!entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
 					return;
 				}
-				InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
+				PlayerQuickbar inv = entity.get(Human.class).getInventory().getQuickbar();
 				if (inv != null) {
-					inv.addItemAmount(-1);
+					inv.addAmount(inv.getCurrentSlot(), -1);
 				}
 			}
 		}

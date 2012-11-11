@@ -27,22 +27,19 @@
 package org.spout.vanilla.protocol.entity.object;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.spout.api.entity.Entity;
 import org.spout.api.protocol.Message;
 
-import org.spout.vanilla.entity.object.misc.Lightning;
+import org.spout.vanilla.component.substance.Lightning;
 import org.spout.vanilla.protocol.entity.VanillaEntityProtocol;
-import org.spout.vanilla.protocol.msg.entity.EntitySpawnLightningStrikeMessage;
+import org.spout.vanilla.protocol.msg.entity.spawn.EntityThunderboltMessage;
 
 public class LightningEntityProtocol extends VanillaEntityProtocol {
 	@Override
 	public List<Message> getSpawnMessages(Entity entity) {
-		if (!(entity.getController() instanceof Lightning)) {
-			return Collections.emptyList();
-		}
-		return Arrays.<Message>asList(new EntitySpawnLightningStrikeMessage(entity.getId(), entity.getPosition().getBlockX(), entity.getPosition().getBlockY(), entity.getPosition().getBlockZ()));
+		Lightning light = entity.add(Lightning.class);
+		return Arrays.<Message>asList(new EntityThunderboltMessage(entity.getId(), entity.getTransform().getPosition().getBlockX(), entity.getTransform().getPosition().getBlockY(), entity.getTransform().getPosition().getBlockZ()));
 	}
 }

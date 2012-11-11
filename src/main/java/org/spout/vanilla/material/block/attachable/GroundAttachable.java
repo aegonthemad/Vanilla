@@ -26,24 +26,25 @@
  */
 package org.spout.vanilla.material.block.attachable;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 
 import org.spout.vanilla.material.VanillaBlockMaterial;
 
 public class GroundAttachable extends AbstractAttachable {
-	public GroundAttachable(short dataMask, String name, int id) {
-		super(dataMask, name, id);
+	public GroundAttachable(short dataMask, String name, int id, String model) {
+		super(dataMask, name, id, model);
 		this.setAttachable(BlockFace.BOTTOM);
 	}
 
-	public GroundAttachable(String name, int id) {
-		super(name, id);
+	public GroundAttachable(String name, int id, String model) {
+		super(name, id, model);
 		this.setAttachable(BlockFace.BOTTOM);
 	}
 
-	public GroundAttachable(String name, int id, int data, VanillaBlockMaterial parent) {
-		super(name, id, data, parent);
+	public GroundAttachable(String name, int id, int data, VanillaBlockMaterial parent, String model) {
+		super(name, id, data, parent, model);
 		this.setAttachable(BlockFace.BOTTOM);
 	}
 
@@ -53,7 +54,7 @@ public class GroundAttachable extends AbstractAttachable {
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
 		block.setData(0);
 	}
 

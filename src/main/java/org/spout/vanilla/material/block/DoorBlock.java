@@ -27,6 +27,7 @@
 package org.spout.vanilla.material.block;
 
 import org.spout.api.collision.CollisionStrategy;
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
@@ -37,12 +38,12 @@ import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneTarget;
+import org.spout.vanilla.util.PlayerUtil;
 import org.spout.vanilla.util.RedstoneUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public abstract class DoorBlock extends GroundAttachable implements Openable, RedstoneTarget {
-	public DoorBlock(String name, int id) {
-		super(name, id);
+	public DoorBlock(String name, int id, String model) {
+		super(name, id, model);
 		this.setCollision(CollisionStrategy.SOLID);
 	}
 
@@ -69,11 +70,11 @@ public abstract class DoorBlock extends GroundAttachable implements Openable, Re
 	}
 
 	@Override
-	public void onDestroy(Block block) {
+	public void onDestroy(Block block, Cause<?> cause) {
 		Block top = getCorrectHalf(block, true);
 		Block bottom = getCorrectHalf(block, false);
-		top.setMaterial(VanillaMaterials.AIR);
-		bottom.setMaterial(VanillaMaterials.AIR);
+		top.setMaterial(VanillaMaterials.AIR, cause);
+		bottom.setMaterial(VanillaMaterials.AIR, cause);
 	}
 
 	@Override
@@ -164,8 +165,8 @@ public abstract class DoorBlock extends GroundAttachable implements Openable, Re
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace face, Vector3 clickedPos, boolean isClicked) {
-		BlockFace facing = VanillaPlayerUtil.getFacing(block.getSource()).getOpposite();
+	public boolean onPlacement(Block block, short data, BlockFace face, Vector3 clickedPos, boolean isClicked, Cause<?> cause) {
+		BlockFace facing = PlayerUtil.getFacing(cause).getOpposite();
 		Block above = block.translate(BlockFace.TOP);
 		if (!above.getMaterial().isPlacementObstacle()) {
 			Block left = block.translate(BlockFaces.NESW.previous(facing, 1));

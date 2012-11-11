@@ -37,7 +37,9 @@ import org.junit.Test;
 import org.spout.api.protocol.CodecLookupService;
 import org.spout.api.protocol.Message;
 import org.spout.api.protocol.MessageCodec;
+import org.spout.vanilla.EngineFaker;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +49,7 @@ public abstract class BaseProtocolTest {
 	private final Message[] testMessages;
 
 	protected BaseProtocolTest(CodecLookupService codecLookup, Message[] testMessages) {
+		EngineFaker.setupEngine();
 		this.codecLookup = codecLookup;
 		this.testMessages = testMessages;
 	}
@@ -66,9 +69,30 @@ public abstract class BaseProtocolTest {
 	public void testMessageEncoding() throws IOException {
 		for (Message message : testMessages) {
 			MessageCodec codec = codecLookup.find(message.getClass());
+<<<<<<< HEAD
 			ChannelBuffer encoded = codec.encode(message);
 			Message decoded = codec.decode(encoded);
 			assertEquals("Failed for: " + message.getClass().getName(), message, decoded);
+=======
+			ChannelBuffer encoded;
+			Message decoded;
+			try {
+				encoded = codec.encodeToServer(message);
+				decoded = codec.decodeFromClient(encoded);
+			} catch (Throwable t) {
+				fail("Failed (C -> S) for: " + message.getClass().getName() + ", " + message);
+				return;
+			}
+			assertEquals("Failed (C -> S) for: " + message.getClass().getName(), message, decoded);
+			try {
+				encoded = codec.encodeToClient(message);
+				decoded = codec.decodeFromServer(encoded);
+			} catch (Throwable t) {
+				fail("Failed (S -> C) for: " + message.getClass().getName() + ", " + message);
+				return;
+			}
+			assertEquals("Failed (S -> C) for: " + message.getClass().getName(), message, decoded);
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 		}
 	}
 

@@ -37,7 +37,7 @@ import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Liquid;
 import org.spout.vanilla.world.generator.normal.biome.grassy.GrassyBiome;
 import org.spout.vanilla.world.generator.normal.biome.sandy.SandyBiome;
-import org.spout.vanilla.world.generator.normal.biome.icy.IcyBiome;
+import org.spout.vanilla.world.generator.normal.biome.snowy.SnowyBiome;
 import org.spout.vanilla.world.generator.object.RandomObject;
 import org.spout.vanilla.world.generator.object.RandomizableObject;
 
@@ -96,29 +96,28 @@ public class PondObject extends RandomObject implements RandomizableObject {
 	public void placeObject(World world, int x, int y, int z) {
 		x -= 8;
 		z -= 8;
-		Biome biome = world.getBiomeType(x, y, z);
-		boolean sandy = biome instanceof SandyBiome;
+		final boolean sandy = world.getBiome(x, y, z) instanceof SandyBiome;
 		for (byte px = 0; px < 16; px++) {
 			for (byte pz = 0; pz < 16; pz++) {
 				boolean columnHasWater = false;
 				for (byte py = (byte) -holeHeightMap[16 * px + pz]; py < 0; py++) {
-					world.setBlockMaterial(px + x, py + y, pz + z, liquid, (short) 0, world);
+					world.setBlockMaterial(px + x, py + y, pz + z, liquid, (short) 0, null);
 					columnHasWater = true;
 				}
 				if (stoneWalls) {
 					for (byte py = 1; py < 5; py++) {
 						if (isWallBlock(px, py, pz, holeHeightMap)) {
-							world.setBlockMaterial(x + px, y - py, z + pz, VanillaMaterials.STONE, (short) 0, world);
+							world.setBlockMaterial(x + px, y - py, z + pz, VanillaMaterials.STONE, (short) 0, null);
 						}
 					}
 				}
 				for (byte py = 0; py < topHeightMap[16 * px + pz]; py++) {
-					world.setBlockMaterial(px + x, py + y, pz + z, VanillaMaterials.AIR, (short) 0, world);
+					world.setBlockMaterial(px + x, py + y, pz + z, VanillaMaterials.AIR, (short) 0, null);
 				}
 				if (stonyTop) {
 					for (byte py = 1; py < 5; py++) {
 						if (isWallBlock(px, py, pz, topHeightMap)) {
-							final Block block = world.getBlock(px + x, py + y - 1, pz + z, world);
+							final Block block = world.getBlock(px + x, py + y - 1, pz + z);
 							if (random.nextBoolean() && block.getMaterial().isOpaque()) {
 								block.setMaterial(VanillaMaterials.STONE);
 							}
@@ -128,7 +127,7 @@ public class PondObject extends RandomObject implements RandomizableObject {
 				if (sandy && columnHasWater) {
 					int ty = topHeightMap[16 * px + pz] + y;
 					if (world.getBlockMaterial(x + px, ty, z + pz).equals(VanillaMaterials.SAND)) {
-						world.setBlockMaterial(x + px, ty, z + pz, VanillaMaterials.SANDSTONE, (short) 0, world);
+						world.setBlockMaterial(x + px, ty, z + pz, VanillaMaterials.SANDSTONE, (short) 0, null);
 					}
 				}
 			}
@@ -142,21 +141,21 @@ public class PondObject extends RandomObject implements RandomizableObject {
 		for (byte px = 0; px < 16; px++) {
 			for (byte pz = 0; pz < 16; pz++) {
 				for (byte py = -1; py < 4; py++) {
-					final Block block = world.getBlock(x + px, y + py, z + pz, world);
+					final Block block = world.getBlock(x + px, y + py, z + pz);
 					if (block.isAtSurface()) {
 						final BlockMaterial material = block.getMaterial();
 						if (material == VanillaMaterials.DIRT) {
 							final BlockMaterial top;
 							final Biome biome = block.getBiomeType();
 							if (biome instanceof GrassyBiome) {
-								top = ((GrassyBiome) biome).getTopCover();
+								top = ((GrassyBiome) biome).getGroundCover()[0].getMaterial(true);
 							} else {
 								top = VanillaMaterials.GRASS;
 							}
 							block.setMaterial(top);
 						} else if (material == VanillaMaterials.STATIONARY_WATER
 								&& block.translate(0, 1, 0).isMaterial(VanillaMaterials.AIR)) {
-							if (block.getBiomeType() instanceof IcyBiome) {
+							if (block.getBiomeType() instanceof SnowyBiome) {
 								block.setMaterial(VanillaMaterials.ICE);
 							}
 						}

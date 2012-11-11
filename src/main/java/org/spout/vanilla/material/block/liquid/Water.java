@@ -26,19 +26,22 @@
  */
 package org.spout.vanilla.material.block.liquid;
 
+import java.util.Random;
+
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.Material;
-import org.spout.api.material.RandomBlockMaterial;
-import org.spout.api.material.block.BlockFace;
-import org.spout.api.material.block.BlockFaces;
+import org.spout.api.material.range.EffectIterator;
+import org.spout.api.material.range.EffectRange;
 
 import org.spout.vanilla.data.Climate;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Liquid;
 
-public class Water extends Liquid implements RandomBlockMaterial {
+public class Water extends Liquid implements DynamicMaterial {
 	public Water(String name, int id, boolean flowing) {
-		super(name, id, flowing);
+		super(name, id, flowing, "model://Vanilla/resources/materials/block/liquid/water/water.spm");
 		this.setFlowDelay(250);
 		//TODO: Allow this to get past the tests
 		//this.setFlowDelay(VanillaConfiguration.WATER_DELAY.getInt());
@@ -96,8 +99,20 @@ public class Water extends Liquid implements RandomBlockMaterial {
 	}
 
 	@Override
-	public void onRandomTick(Block block) {
-		//TODO: This should really be in the tick task of the sky entity
+	public EffectRange getDynamicRange() {
+		return EffectRange.NEIGHBORS;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		b.dynamicUpdate(60000 + new Random(b.getWorld().getAge()).nextInt(60000) + currentTime);
+		super.onPlacement(b, r, currentTime);
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
+		super.onDynamicUpdate(block, region, updateTime, data);
+		
 		// Water freezing
 		if (!isSource(block)) {
 			return;
@@ -111,11 +126,16 @@ public class Water extends Liquid implements RandomBlockMaterial {
 		if (VanillaMaterials.ICE.canDecayAt(block)) {
 			return;
 		}
+
 		// Has nearby non-water blocks?
-		for (BlockFace face : BlockFaces.NESW) {
-			if (!(block.translate(face).getMaterial() instanceof Water)) {
-				block.setMaterial(VanillaMaterials.ICE);
-				return;
+		Random rand = new Random(block.getWorld().getAge());
+		if (rand.nextInt(1000) == 0) {
+			EffectIterator iterator = EffectRange.NEIGHBORS.iterator();
+			while (iterator.hasNext()) {
+				if (!(block.translate(iterator.next()).getMaterial() instanceof Water)) {
+					block.setMaterial(VanillaMaterials.ICE);
+					return;
+				}
 			}
 		}
 	}

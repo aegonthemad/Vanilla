@@ -27,20 +27,23 @@
 package org.spout.vanilla.material.item.misc;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.Placeable;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.DataSource;
 import org.spout.api.math.Vector3;
 
-import org.spout.vanilla.entity.creature.passive.Sheep;
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.component.living.passive.Sheep;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.solid.Wool.WoolColor;
 import org.spout.vanilla.material.item.VanillaItemMaterial;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class Dye extends VanillaItemMaterial implements Placeable {
 	public static final Dye INK_SAC = new Dye("Ink Sac");
@@ -111,31 +114,31 @@ public class Dye extends VanillaItemMaterial implements Placeable {
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
-		return this == COCOA_BEANS && VanillaMaterials.COCOA_PLANT.onPlacement(block, data, against, clickedPos, isClickedBlock);
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock, Cause<?> cause) {
+		return this == COCOA_BEANS && VanillaMaterials.COCOA_PLANT.onPlacement(block, data, against, clickedPos, isClickedBlock, cause);
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data) {
-		return this == COCOA_BEANS && VanillaMaterials.COCOA_PLANT.onPlacement(block, data);
+	public boolean onPlacement(Block block, short data, Cause<?> cause) {
+		return this == COCOA_BEANS && VanillaMaterials.COCOA_PLANT.onPlacement(block, data, cause);
 	}
 
 	@Override
 	public void onInteract(Entity entity, Entity other, Action action) {
 		if (action == Action.RIGHT_CLICK) {
-			if (!(other.getController() instanceof Sheep)) {
+			if (!other.has(Sheep.class)) {
 				return;
 			}
 
-			InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
+			PlayerQuickbar inv = entity.get(Human.class).getInventory().getQuickbar();
 			if (inv != null) {
-				ItemStack holding = inv.getItem();
+				ItemStack holding = inv.getCurrentItem();
 				if (holding != null) {
 					//get color from holding item
-					((Sheep) other.getController()).setColor(WoolColor.getById((short) (0xF - holding.getData())));
+					other.get(Sheep.class).setColor(WoolColor.getById((short) (0xF - holding.getData())));
 
-					if (VanillaPlayerUtil.isSurvival(entity)) {
-						inv.addItemAmount(0, -1);
+					if (entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
+						inv.addAmount(0, -1);
 					}
 				}
 			}

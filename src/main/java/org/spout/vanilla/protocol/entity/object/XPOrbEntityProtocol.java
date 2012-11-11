@@ -27,28 +27,23 @@
 package org.spout.vanilla.protocol.entity.object;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import org.spout.api.entity.Controller;
 import org.spout.api.entity.Entity;
 import org.spout.api.protocol.Message;
 
-import org.spout.vanilla.entity.object.moving.XPOrb;
+import org.spout.vanilla.component.substance.XPOrb;
 import org.spout.vanilla.protocol.entity.VanillaEntityProtocol;
-import org.spout.vanilla.protocol.msg.entity.EntitySpawnExperienceOrbMessage;
+import org.spout.vanilla.protocol.msg.entity.spawn.EntityExperienceOrbMessage;
 
 public class XPOrbEntityProtocol extends VanillaEntityProtocol {
 	@Override
 	public List<Message> getSpawnMessages(Entity entity) {
-		final Controller c = entity.getController();
-		if (!(c instanceof XPOrb)) {
-			return Collections.emptyList();
-		}
+		XPOrb xp = entity.add(XPOrb.class);
 		int id = entity.getId();
-		int x = (int) (entity.getPosition().getX() * 32);
-		int y = (int) (entity.getPosition().getY() * 32);
-		int z = (int) (entity.getPosition().getZ() * 32);
-		return Arrays.<Message>asList(new EntitySpawnExperienceOrbMessage(id, x, y, z, ((XPOrb) c).getExperience()));
+		int x = (int) (entity.getTransform().getPosition().getX() * 32);
+		int y = (int) (entity.getTransform().getPosition().getY() * 32);
+		int z = (int) (entity.getTransform().getPosition().getZ() * 32);
+		return Arrays.<Message>asList(new EntityExperienceOrbMessage(id, x, y, z, xp.getExperience()));
 	}
 }

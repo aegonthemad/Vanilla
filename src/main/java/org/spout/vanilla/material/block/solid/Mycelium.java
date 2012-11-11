@@ -26,17 +26,19 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import java.util.Random;
+
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.SpreadingSolid;
-import org.spout.vanilla.util.ToolType;
 
 public class Mycelium extends SpreadingSolid implements InitializableMaterial {
 	public Mycelium(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/mycelium/mycelium.spm");
 		this.setHardness(0.6F).setResistance(0.8F).addMiningType(ToolType.SPADE);
 	}
 
@@ -57,5 +59,10 @@ public class Mycelium extends SpreadingSolid implements InitializableMaterial {
 	public boolean canDecayAt(Block block) {
 		block = block.translate(BlockFace.TOP);
 		return block.getMaterial().getOpacity() > 1 && block.getLight() < 4;
+	}
+
+	@Override
+	public long getSpreadingTime(Block b) {
+		return 120000L + new Random(b.getWorld().getAge()).nextInt(60000) * 5;
 	}
 }

@@ -38,8 +38,11 @@ import org.spout.api.math.MathHelper;
 import org.spout.api.math.Quaternion;
 import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Attachable;
 import org.spout.vanilla.material.block.Directional;
+import org.spout.vanilla.material.block.Liquid;
+import org.spout.vanilla.world.generator.object.RotatableObject;
 
 public abstract class StructureComponent {
 	protected Structure parent;
@@ -69,7 +72,7 @@ public abstract class StructureComponent {
 	}
 
 	public Block getBlock(int xx, int yy, int zz) {
-		return position.getWorld().getBlock(transform(xx, yy, zz), position.getWorld());
+		return position.getWorld().getBlock(transform(xx, yy, zz));
 	}
 
 	public BlockMaterial getBlockMaterial(int xx, int yy, int zz) {
@@ -78,30 +81,54 @@ public abstract class StructureComponent {
 	}
 
 	public void setBlockMaterial(int xx, int yy, int zz, BlockMaterial material) {
+		setBlockMaterial(xx, yy, zz, material, material.getData());
+	}
+
+	public void setBlockMaterial(int xx, int yy, int zz, BlockMaterial material, short data) {
 		final Vector3 transformed = transform(xx, yy, zz);
 		position.getWorld().setBlockMaterial(transformed.getFloorX(), transformed.getFloorY(), transformed.getFloorZ(),
-				material, material.getData(), position.getWorld());
+				material, data, null);
 		if (material instanceof Attachable) {
 			final Attachable attachable = (Attachable) material;
-			final Block block = position.getWorld().getBlock(transformed, position.getWorld());
-			final BlockFace face = attachable.findAttachedFace(block);
-			if (face != null) {
-				attachable.setAttachedFace(block, face);
-			}
+			final Block block = position.getWorld().getBlock(transformed);
+			attachable.setAttachedFace(block,
+					BlockFace.fromYaw(attachable.getAttachedFace(block).getDirection().getYaw() + rotation.getYaw()), null);
 		} else if (material instanceof Directional) {
-			final BlockFace face = BlockFace.fromYaw(rotation.getYaw());
-			final Block block = position.getWorld().getBlock(transformed, position.getWorld());
-			((Directional) material).setFacing(block, face);
+			final Directional directional = (Directional) material;
+			final Block block = position.getWorld().getBlock(transformed);
+			directional.setFacing(block,
+					BlockFace.fromYaw(directional.getFacing(block).getDirection().getYaw() + rotation.getYaw()));
 		}
 	}
 
 	public void randomSetBlockMaterial(float odd, int xx, int yy, int zz, BlockMaterial material) {
+		randomSetBlockMaterial(odd, xx, yy, zz, material, material.getData());
+	}
+
+	public void randomSetBlockMaterial(float odd, int xx, int yy, int zz, BlockMaterial material, short data) {
 		if (getRandom().nextFloat() > odd) {
-			setBlockMaterial(xx, yy, zz, material);
+			setBlockMaterial(xx, yy, zz, material, data);
+		}
+	}
+
+	public void fillDownwards(int xx, int yy, int zz, short limit, BlockMaterial material) {
+		fillDownwards(xx, yy, zz, limit, material, material.getData());
+	}
+
+	public void fillDownwards(int xx, int yy, int zz, short limit, BlockMaterial material, short data) {
+		short counter = 0;
+		Block block;
+		while (((block = getBlock(xx, yy, zz)).getMaterial().isMaterial(VanillaMaterials.AIR)
+				|| block.getMaterial() instanceof Liquid) && counter++ < limit) {
+			block.setMaterial(material, data);
+			yy--;
 		}
 	}
 
 	public void placeObject(int xx, int yy, int zz, WorldGeneratorObject object) {
+		if (object instanceof RotatableObject) {
+			((RotatableObject) object).addRotation(rotation);
+		}
 		final Vector3 transformed = transform(xx, yy, zz);
 		if (object.canPlaceObject(position.getWorld(), transformed.getFloorX(), transformed.getFloorY(), transformed.getFloorZ())) {
 			object.placeObject(position.getWorld(), transformed.getFloorX(), transformed.getFloorY(), transformed.getFloorZ());

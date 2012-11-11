@@ -30,9 +30,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import org.spout.api.util.SpoutToStringStyle;
 
-import org.spout.vanilla.protocol.msg.WindowMessage;
-import org.spout.vanilla.window.Window;
-import org.spout.vanilla.window.WindowType;
+import org.spout.vanilla.component.inventory.window.Window;
+import org.spout.vanilla.inventory.window.WindowType;
 
 public final class WindowOpenMessage extends WindowMessage {
 	private final int slots;
@@ -40,7 +39,7 @@ public final class WindowOpenMessage extends WindowMessage {
 	private final WindowType type;
 
 	public WindowOpenMessage(Window window, int slots) {
-		this(window.getInstanceId(), window.getType(), window.getTitle(), slots);
+		this(window.getId(), window.getType(), window.getTitle(), slots);
 	}
 
 	public WindowOpenMessage(int windowInstanceId, WindowType type, String title, int slots) {

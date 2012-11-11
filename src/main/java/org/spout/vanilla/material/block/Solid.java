@@ -31,22 +31,23 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
+import org.spout.vanilla.data.MoveReaction;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.util.MoveReaction;
 
 public class Solid extends VanillaBlockMaterial {
-	public Solid(String name, int id) {
-		this((short) 0, name, id);
+
+	public Solid(String name, int id, String model) {
+		this((short) 0, name, id, model);
 	}
 
-	public Solid(short dataMask, String name, int id) {
-		super(dataMask, name, id);
+	public Solid(short dataMask, String name, int id, String model) {
+		super(dataMask, name, id, model);
 		this.setCollision(CollisionStrategy.SOLID).setOpaque();
 	}
 
-	public Solid(String name, int id, int data, VanillaBlockMaterial parent) {
-		super(name, id, data, parent);
+	public Solid(String name, int id, int data, VanillaBlockMaterial parent, String model) {
+		super(name, id, data, parent, model);
 		this.setCollision(CollisionStrategy.SOLID).setOpaque();
 	}
 

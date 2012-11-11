@@ -30,8 +30,10 @@ import java.util.Random;
 import java.util.Set;
 
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.material.RandomBlockMaterial;
+import org.spout.api.geo.cuboid.Region;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
+import org.spout.api.material.range.EffectRange;
 import org.spout.api.util.flag.Flag;
 
 import org.spout.vanilla.data.drops.flag.BlockFlags;
@@ -39,11 +41,11 @@ import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
-import org.spout.vanilla.world.generator.VanillaBiomes;
+import org.spout.vanilla.world.generator.biome.VanillaBiomes;
 
-public class NetherWartBlock extends GroundAttachable implements Plant, Growing, RandomBlockMaterial {
+public class NetherWartBlock extends GroundAttachable implements Plant, Growing, DynamicMaterial {
 	public NetherWartBlock(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false);
 		this.setResistance(0.0F).setHardness(0.0F).setOpacity((byte) 0);
 		this.getDrops().DEFAULT.clear();
@@ -93,18 +95,39 @@ public class NetherWartBlock extends GroundAttachable implements Plant, Growing,
 	}
 
 	@Override
-	public void onRandomTick(Block block) {
+	public EffectRange getDynamicRange() {
+		return EffectRange.THIS_AND_NEIGHBORS;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		//TODO : Delay before first grow
+		b.dynamicUpdate(getGrowthTime(b) + currentTime);
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
 		if (this.isFullyGrown(block) || block.getBiomeType() != VanillaBiomes.NETHERRACK) {
 			return;
 		}
 		Random rand = new Random(block.getWorld().getAge());
 		if (rand.nextInt(10) != 0) {
+			//TODO : Delay before first grow
+			block.dynamicUpdate(updateTime + getGrowthTime(block));
 			return;
 		}
 		int minLight = this.getMinimumLightToGrow();
 		if (minLight > 0 && block.translate(BlockFace.TOP).getLight() < minLight) {
+			//TODO : Delay before first grow
+			block.dynamicUpdate(updateTime + 10000);
 			return;
 		}
 		this.setGrowthStage(block, this.getGrowthStage(block) + 1);
+		//TODO : Delay before first grow
+		block.dynamicUpdate(updateTime + getGrowthTime(block));
+	}
+
+	private long getGrowthTime(Block block) {
+		return 120000L + new Random(block.getWorld().getAge()).nextInt(120000);
 	}
 }

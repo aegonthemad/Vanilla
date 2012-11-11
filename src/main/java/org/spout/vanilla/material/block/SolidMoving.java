@@ -30,21 +30,21 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 
-import org.spout.vanilla.entity.object.moving.MovingBlock;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 
 public class SolidMoving extends Solid {
-	public SolidMoving(short dataMask, String name, int id) {
-		super(dataMask, name, id);
-	}
 
 	public SolidMoving(String name, int id, int data, VanillaBlockMaterial parent) {
-		super(name, id, data, parent);
+		this(name, id, data, parent, (String) null);
 	}
-
-	public SolidMoving(String name, int id) {
-		super(name, id);
+	
+	public SolidMoving(String name, int id, int data, VanillaBlockMaterial parent, String model) {
+		super(name, id, data, parent, model);
+	}
+	
+	public SolidMoving(String name, int id, String model) {
+		super(name, id, model);
 	}
 
 	@Override
@@ -57,7 +57,7 @@ public class SolidMoving extends Solid {
 		super.onUpdate(oldMaterial, block);
 		if (!block.translate(BlockFace.BOTTOM).getMaterial().isPlacementObstacle()) {
 			// turn this block into a mobile block
-			block.getWorld().createAndSpawnEntity(block.getPosition(), new MovingBlock(this));
+			//block.getWorld().createAndSpawnEntity(block.getPosition(), block.getComponent().getClass(), LoadOption.NO_LOAD);
 			block.setMaterial(VanillaMaterials.AIR);
 		}
 	}

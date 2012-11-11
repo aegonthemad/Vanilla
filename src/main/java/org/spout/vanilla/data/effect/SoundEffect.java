@@ -28,7 +28,6 @@ package org.spout.vanilla.data.effect;
 
 import java.util.List;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 
@@ -104,7 +103,7 @@ public class SoundEffect extends Effect {
 	 * @param ignore Entity to ignore
 	 * @return a Set of nearby Players
 	 */
-	public List<Player> getNearbyPlayers(Point position, Entity ignore, float volume) {
+	public List<Player> getNearbyPlayers(Point position, Player ignore, float volume) {
 		int range = this.getRange();
 		if (volume > 1.0f) {
 			// Multiply range for different volumes
@@ -119,6 +118,10 @@ public class SoundEffect extends Effect {
 	}
 
 	public void play(Player player, Point position, float volume, float pitch) {
+		//TODO Fix this, these should NEVER BE NULL
+		if (player == null || player.getSession() == null | player.getSession().getNetworkSynchronizer() == null) {
+			return;
+		}
 		player.getSession().getNetworkSynchronizer().callProtocolEvent(new PlaySoundEffectEvent(position, this, volume, pitch));
 	}
 
@@ -132,7 +135,7 @@ public class SoundEffect extends Effect {
 		this.playGlobal(position, volume, pitch, null);
 	}
 
-	public void playGlobal(Point position, float volume, float pitch, Entity ignore) {
+	public void playGlobal(Point position, float volume, float pitch, Player ignore) {
 		this.play(getNearbyPlayers(position, ignore, volume), position, volume, pitch);
 	}
 }

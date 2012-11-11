@@ -26,20 +26,20 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import org.spout.vanilla.data.Instrument;
 import org.spout.vanilla.data.effect.store.SoundEffects;
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.Instrument;
-import org.spout.vanilla.util.ToolType;
 
 public class SoulSand extends Solid {
 	public SoulSand(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/soulsand/soulsand.spm");
 		this.setHardness(0.5F).setResistance(0.8F).setStepSound(SoundEffects.STEP_SAND);
 		this.addMiningType(ToolType.SPADE);
 	}
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.SNAREDRUM;
+		return Instrument.SNARE_DRUM;
 	}
 }

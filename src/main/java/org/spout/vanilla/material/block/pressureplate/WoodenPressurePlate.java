@@ -26,17 +26,17 @@
  */
 package org.spout.vanilla.material.block.pressureplate;
 
+import org.spout.vanilla.data.Instrument;
 import org.spout.vanilla.material.block.PressurePlate;
-import org.spout.vanilla.util.Instrument;
 
 public class WoodenPressurePlate extends PressurePlate {
 	public WoodenPressurePlate(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setHardness(0.5F).setResistance(0.8F).setOpacity((byte) 0);
 	}
 
 	@Override
 	public Instrument getInstrument() {
-		return Instrument.BASSGUITAR;
+		return Instrument.BASS_GUITAR;
 	}
 }

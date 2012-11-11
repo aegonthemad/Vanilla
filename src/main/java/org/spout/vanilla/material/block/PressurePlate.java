@@ -36,17 +36,17 @@ import org.spout.api.material.range.CuboidEffectRange;
 import org.spout.api.material.range.EffectRange;
 import org.spout.api.material.range.ListEffectRange;
 
+import org.spout.vanilla.data.RedstonePowerMode;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.redstone.RedstoneSource;
-import org.spout.vanilla.util.RedstonePowerMode;
 
 public abstract class PressurePlate extends GroundAttachable implements RedstoneSource, DynamicMaterial {
 	public static final int TICK_DELAY = 1000;
 	private static final EffectRange physicsRange = new ListEffectRange(new CubicEffectRange(1), new CuboidEffectRange(0, -2, 0, 0, -1, 0));
 
-	public PressurePlate(String name, int id) {
-		super(name, id);
+	public PressurePlate(String name, int id, String model) {
+		super(name, id, model);
 		this.setHardness(0.5F).setResistance(0.8F).setOpacity((byte) 1);
 	}
 
@@ -57,6 +57,11 @@ public abstract class PressurePlate extends GroundAttachable implements Redstone
 	 */
 	public boolean isPressed(Block block) {
 		return block.isDataBitSet(0x1);
+	}
+
+	@Override
+	public short getRedstonePowerStrength(short data) {
+		return ((data & 0x1) == 1) ? REDSTONE_POWER_MAX : REDSTONE_POWER_MIN;
 	}
 
 	/**

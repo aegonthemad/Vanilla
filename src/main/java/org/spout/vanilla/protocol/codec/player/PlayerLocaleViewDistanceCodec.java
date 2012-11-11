@@ -1,0 +1,72 @@
+/*
+ * This file is part of Vanilla.
+ *
+ * Copyright (c) 2011-2012, VanillaDev <http://www.spout.org/>
+ * Vanilla is licensed under the SpoutDev License Version 1.
+ *
+ * Vanilla is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * In addition, 180 days after any changes are published, you can use the
+ * software, incorporating those changes, under the terms of the MIT license,
+ * as described in the SpoutDev License Version 1.
+ *
+ * Vanilla is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License,
+ * the MIT license and the SpoutDev License Version 1 along with this program.
+ * If not, see <http://www.gnu.org/licenses/> for the GNU Lesser General Public
+ * License and see <http://www.spout.org/SpoutDevLicenseV1.txt> for the full license,
+ * including the MIT license.
+ */
+package org.spout.vanilla.protocol.codec.player;
+
+import java.io.IOException;
+
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+
+import org.spout.api.protocol.MessageCodec;
+
+import org.spout.vanilla.protocol.ChannelBufferUtils;
+import org.spout.vanilla.protocol.msg.player.PlayerLocaleViewDistanceMessage;
+
+public class PlayerLocaleViewDistanceCodec extends MessageCodec<PlayerLocaleViewDistanceMessage> {
+	public PlayerLocaleViewDistanceCodec() {
+		super(PlayerLocaleViewDistanceMessage.class, 0xCC);
+	}
+
+	@Override
+	public PlayerLocaleViewDistanceMessage decode(ChannelBuffer buffer) throws IOException {
+		String locale = ChannelBufferUtils.readString(buffer);
+		byte viewDistance = buffer.readByte();
+		byte chatFlags = buffer.readByte();
+		byte difficulty = buffer.readByte();
+		boolean showCape = buffer.readByte() != 0;
+<<<<<<< HEAD:src/main/java/org/spout/vanilla/protocol/codec/ClientSettingsCodec.java
+		return new ClientSettingsMessage(locale, viewDistance, chatFlags, difficulty, showCape);
+=======
+		return new PlayerLocaleViewDistanceMessage(locale, viewDistance, chatFlags, difficulty, showCape);
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42:src/main/java/org/spout/vanilla/protocol/codec/player/PlayerLocaleViewDistanceCodec.java
+	}
+
+	@Override
+	public ChannelBuffer encode(PlayerLocaleViewDistanceMessage message) throws IOException {
+		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
+		ChannelBufferUtils.writeString(buffer, message.getLocale());
+		buffer.writeByte(message.getViewDistance());
+		buffer.writeByte(message.getChatFlags());
+		buffer.writeByte(message.getDifficulty());
+<<<<<<< HEAD:src/main/java/org/spout/vanilla/protocol/codec/ClientSettingsCodec.java
+		buffer.writeByte(message.isShowCape() ? 1:0);
+=======
+		buffer.writeByte(message.showsCape() ? 1 : 0);
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42:src/main/java/org/spout/vanilla/protocol/codec/player/PlayerLocaleViewDistanceCodec.java
+		return buffer;
+	}
+}

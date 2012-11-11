@@ -36,9 +36,9 @@ import org.spout.vanilla.world.generator.normal.decorator.TallGrassDecorator;
 public class PlainBiome extends GrassyBiome {
 	public PlainBiome(int id) {
 		super(id, new SandAndClayDecorator(), new FlowerDecorator((byte) 4),
-				new TallGrassDecorator(new NormalTallGrassFactory(), (byte) 10),
+				new TallGrassDecorator(new NormalTallGrassFactory(), (byte) 5),
 				new MushroomDecorator(), new SugarCaneDecorator(), new PumpkinDecorator());
-		setMinMax((byte) 64, (byte) 69);
+		setMinMax(64, 75);
 	}
 
 	@Override

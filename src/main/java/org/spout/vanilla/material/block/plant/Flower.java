@@ -35,7 +35,7 @@ import org.spout.vanilla.material.block.attachable.GroundAttachable;
 
 public class Flower extends GroundAttachable implements Plant {
 	public Flower(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
@@ -43,7 +43,7 @@ public class Flower extends GroundAttachable implements Plant {
 	@Override
 	public boolean canAttachTo(Block block, BlockFace face) {
 		if (super.canAttachTo(block, face)) {
-			return block.isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FARMLAND);
+			return block.isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FARMLAND, VanillaMaterials.FLOWER_POT_BLOCK);
 		}
 		return false;
 	}

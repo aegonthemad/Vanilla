@@ -31,13 +31,11 @@ import java.util.Random;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.Material;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.item.misc.Dye;
-import org.spout.vanilla.material.item.misc.MusicDisc;
 import org.spout.vanilla.world.generator.object.RandomObject;
 import org.spout.vanilla.world.generator.object.RandomizableObject;
 
@@ -65,23 +63,21 @@ public class DungeonObject extends RandomObject implements RandomizableObject {
 	public DungeonObject(Random random) {
 		super(random);
 		randomize();
-		final double ELEVEN = 1.0 / 11.0;
+		final double oneOnEleven = 1.0 / 11.0;
 		chestObject = new LootChestObject(random);
 		chestObject.setMaxNumberOfStacks(8);
-		chestObject.addMaterial(VanillaMaterials.SADDLE, ELEVEN, 1, 1)
-				.addMaterial(VanillaMaterials.IRON_INGOT, ELEVEN, 1, 4)
-				.addMaterial(VanillaMaterials.BREAD, ELEVEN, 1, 2)
-				.addMaterial(VanillaMaterials.WHEAT, ELEVEN, 1, 4)
-				.addMaterial(VanillaMaterials.GUNPOWDER, ELEVEN, 1, 4)
-				.addMaterial(VanillaMaterials.STRING, ELEVEN, 1, 4)
-				.addMaterial(VanillaMaterials.BUCKET, ELEVEN, 1, 1)
-				.addMaterial(Dye.COCOA_BEANS, ELEVEN, 1, 3)
-				.addMaterial(VanillaMaterials.REDSTONE_DUST, 1.0 / 22.0, 1, 4)
-				.addMaterial(VanillaMaterials.GOLDEN_APPLE, 1.0 / 1100.0, 1, 1);
-		final double discProbability = (1.0 / 110.0) / (double) MusicDisc.values().length;
-		for (Material disc : MusicDisc.values()) {
-			chestObject.addMaterial(disc, discProbability, 1, 1);
-		}
+		chestObject.addMaterial(VanillaMaterials.SADDLE, oneOnEleven, 1, 1)
+				.addMaterial(VanillaMaterials.IRON_INGOT, oneOnEleven, 1, 4)
+				.addMaterial(VanillaMaterials.BREAD, oneOnEleven, 1, 2)
+				.addMaterial(VanillaMaterials.WHEAT, oneOnEleven, 1, 4)
+				.addMaterial(VanillaMaterials.GUNPOWDER, oneOnEleven, 1, 4)
+				.addMaterial(VanillaMaterials.STRING, oneOnEleven, 1, 4)
+				.addMaterial(VanillaMaterials.BUCKET, oneOnEleven, 1, 1)
+				.addMaterial(Dye.COCOA_BEANS, oneOnEleven, 1, 3)
+				.addMaterial(VanillaMaterials.REDSTONE_DUST, oneOnEleven / 2.0, 1, 4)
+				.addMaterial(VanillaMaterials.MUSIC_DISK_13, oneOnEleven / 10.0, 1, 1)
+				.addMaterial(VanillaMaterials.MUSIC_DISK_CAT, oneOnEleven / 10.0, 1, 1)
+				.addMaterial(VanillaMaterials.GOLDEN_APPLE, oneOnEleven / 100.0, 1, 1);
 	}
 
 	@Override
@@ -91,13 +87,14 @@ public class DungeonObject extends RandomObject implements RandomizableObject {
 			for (byte xx = (byte) (-radiusX - 1); xx < radiusX + 2; xx++) {
 				for (byte zz = (byte) (-radiusZ - 1); zz < radiusZ + 2; zz++) {
 					BlockMaterial material = w.getBlockMaterial(x + xx, y + yy, z + zz);
-					if ((yy == -1 || yy == height + 1) && material == VanillaMaterials.AIR) {
+					if ((yy == -1 || yy == height + 1)
+							&& material.isMaterial(VanillaMaterials.AIR)) {
 						return false;
 					}
 					if ((xx == -radiusX - 1 || xx == radiusX + 1
 							|| zz == -radiusZ - 1 || zz == radiusZ + 1)
-							&& yy == 0 && w.getBlockMaterial(x + xx, y + yy, z + zz) == VanillaMaterials.AIR
-							&& w.getBlockMaterial(x + xx, y + yy + 1, z + zz) == VanillaMaterials.AIR) {
+							&& yy == 0 && material.isMaterial(VanillaMaterials.AIR)
+							&& w.getBlockMaterial(x + xx, y + yy + 1, z + zz).isMaterial(VanillaMaterials.AIR)) {
 						unsuportedEdgeBlockCount++;
 					}
 				}
@@ -113,20 +110,20 @@ public class DungeonObject extends RandomObject implements RandomizableObject {
 				for (byte zz = (byte) (-radiusZ - 1); zz < radiusZ + 2; zz++) {
 					if (xx == -radiusX - 1 || yy == -1 || zz == -radiusZ - 1
 							|| xx == radiusX + 1 || yy == height + 1 || zz == radiusZ + 1) {
-						if (yy > -1 && w.getBlockMaterial(x + xx, y + yy - 1, z + zz) == VanillaMaterials.AIR) {
-							w.setBlockMaterial(x + xx, y + yy, z + zz, VanillaMaterials.AIR, (short) 0, w);
+						if (yy > -1 && w.getBlockMaterial(x + xx, y + yy - 1, z + zz).isMaterial(VanillaMaterials.AIR)) {
+							w.setBlockMaterial(x + xx, y + yy, z + zz, VanillaMaterials.AIR, (short) 0, null);
 							continue;
 						}
-						if (w.getBlockMaterial(x + xx, y + yy, z + zz) == VanillaMaterials.AIR) {
+						if (w.getBlockMaterial(x + xx, y + yy, z + zz).isMaterial(VanillaMaterials.AIR)) {
 							continue;
 						}
 						if (yy == -1 && random.nextInt(4) != 0) {
-							w.setBlockMaterial(x + xx, y + yy, z + zz, secondWallMaterial, (short) 0, w);
+							w.setBlockMaterial(x + xx, y + yy, z + zz, secondWallMaterial, (short) 0, null);
 						} else {
-							w.setBlockMaterial(x + xx, y + yy, z + zz, firstWallMaterial, (short) 0, w);
+							w.setBlockMaterial(x + xx, y + yy, z + zz, firstWallMaterial, (short) 0, null);
 						}
 					} else {
-						w.setBlockMaterial(x + xx, y + yy, z + zz, VanillaMaterials.AIR, (short) 0, w);
+						w.setBlockMaterial(x + xx, y + yy, z + zz, VanillaMaterials.AIR, (short) 0, null);
 					}
 				}
 			}
@@ -137,19 +134,22 @@ public class DungeonObject extends RandomObject implements RandomizableObject {
 			for (byte attempts = 0; attempts < 6; attempts++) {
 				final int xx = random.nextInt(radiusX * 2 + 1) - radiusX + x;
 				final int zz = random.nextInt(radiusZ * 2 + 1) - radiusZ + z;
-				final Block middle = w.getBlock(xx, y, zz, w);
-				if (middle.getMaterial() != VanillaMaterials.AIR) {
+				final Block middle = w.getBlock(xx, y, zz);
+				if (!middle.getMaterial().isMaterial(VanillaMaterials.AIR)) {
 					continue;
 				}
 				byte adjacentSolidBlockCount = 0;
+				BlockFace wallFace = BlockFace.THIS;
 				for (final BlockFace face : BlockFaces.NESW) {
-					if (middle.translate(face).getMaterial() != VanillaMaterials.AIR) {
+					if (!middle.translate(face).getMaterial().isMaterial(VanillaMaterials.AIR)) {
+						wallFace = face;
 						adjacentSolidBlockCount++;
 					}
 				}
 				if (adjacentSolidBlockCount != 1) {
 					continue;
 				}
+				chestObject.setRotation(wallFace.getDirection());
 				chestObject.placeObject(w, xx, y, zz);
 				chestCount++;
 				if (chestCount == maxNumberOfChests) {
@@ -158,7 +158,7 @@ public class DungeonObject extends RandomObject implements RandomizableObject {
 			}
 		}
 		if (addSpawner) {
-			w.setBlockMaterial(x, y, z, VanillaMaterials.MONSTER_SPAWNER, (short) 0, w);
+			w.setBlockMaterial(x, y, z, VanillaMaterials.MONSTER_SPAWNER, (short) 0, null);
 		}
 	}
 

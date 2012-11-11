@@ -26,30 +26,30 @@
  */
 package org.spout.vanilla.material.block.piston;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.math.Vector3;
 
-import org.spout.vanilla.entity.VanillaControllerTypes;
+import org.spout.vanilla.data.MoveReaction;
 import org.spout.vanilla.material.block.Directional;
-import org.spout.vanilla.material.block.controlled.ControlledMaterial;
-import org.spout.vanilla.util.MoveReaction;
+import org.spout.vanilla.material.block.Solid;
 
-public class PistonExtension extends ControlledMaterial implements Directional {
+public class PistonExtension extends Solid implements Directional {
 	public PistonExtension(String name, int id) {
-		super(VanillaControllerTypes.PISTON_MOVING, name, id);
+		super(name, id, (String)null);
 		this.setHardness(0.5F).setResistance(0.8F).setTransparent();
 	}
 
 	@Override
-	public void onDestroy(Block block) {
+	public void onDestroy(Block block, Cause<?> cause) {
 		block = block.translate(this.getFacing(block).getOpposite());
 		BlockMaterial mat = block.getMaterial();
-		if (mat instanceof Piston) {
-			((Piston) mat).onDestroy(block);
+		if (mat instanceof PistonBlock) {
+			mat.onDestroy(block, cause);
 		} else {
-			super.onDestroy(block);
+			super.onDestroy(block, cause);
 		}
 	}
 
@@ -70,11 +70,11 @@ public class PistonExtension extends ControlledMaterial implements Directional {
 
 	@Override
 	public BlockFace getFacing(Block block) {
-		return Piston.BTEWNS.get(block.getDataField(0x7));
+		return PistonBlock.BTEWNS.get(block.getDataField(0x7));
 	}
 
 	@Override
 	public void setFacing(Block block, BlockFace facing) {
-		block.setData(Piston.BTEWNS.indexOf(facing, 1));
+		block.setData(PistonBlock.BTEWNS.indexOf(facing, 1));
 	}
 }

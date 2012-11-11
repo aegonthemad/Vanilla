@@ -32,13 +32,12 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.source.DataSource;
 
-import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Solid;
 
 public class CakeBlock extends Solid {
 	public CakeBlock(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setHardness(0.5F).setResistance(0.8F).setTransparent();
 		this.getDrops().clear();
 	}
@@ -51,11 +50,6 @@ public class CakeBlock extends Solid {
 				block.setMaterial(VanillaMaterials.AIR);
 			} else {
 				setSize(block, CakeSize.getByData((short) (getSize(block).getData() + 1)));
-			}
-
-			if (entity.getController() instanceof VanillaPlayerController) {
-				VanillaPlayerController player = (VanillaPlayerController) entity.getController();
-				player.getSurvivalComponent().setHunger((short) (player.getSurvivalComponent().getHunger() + 2));
 			}
 		}
 	}

@@ -29,16 +29,20 @@ package org.spout.vanilla.material.block.plant;
 import java.util.Random;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.range.EffectRange;
 
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
 import org.spout.vanilla.material.Fuel;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Plant;
@@ -46,7 +50,6 @@ import org.spout.vanilla.material.block.Spreading;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.block.solid.Log;
 import org.spout.vanilla.material.item.misc.Dye;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 import org.spout.vanilla.world.generator.normal.object.tree.TreeObject;
 
 public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel, DynamicMaterial {
@@ -54,17 +57,17 @@ public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel,
 	public static final Sapling SPRUCE = new Sapling("Spruce Sapling", 1, DEFAULT);
 	public static final Sapling BIRCH = new Sapling("Birch Sapling", 2, DEFAULT);
 	public static final Sapling JUNGLE = new Sapling("Jungle Sapling", 3, DEFAULT);
-	public final float BURN_TIME = 5.f;
+	public final float BURN_TIME = 5;
 	private static final short dataMask = 0x3;
 
 	private Sapling(String name) {
-		super(dataMask, name, 6);
+		super(dataMask, name, 6, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
 	private Sapling(String name, int data, Sapling parent) {
-		super(name, 6, data, parent);
+		super(name, 6, data, parent, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
@@ -83,7 +86,7 @@ public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel,
 	@Override
 	public boolean canAttachTo(Block block, BlockFace face) {
 		if (super.canAttachTo(block, face)) {
-			return block.isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT);
+			return block.isMaterial(VanillaMaterials.GRASS, VanillaMaterials.DIRT, VanillaMaterials.FLOWER_POT_BLOCK);
 		}
 		return false;
 	}
@@ -94,11 +97,11 @@ public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel,
 		if (type != Action.RIGHT_CLICK) {
 			return;
 		}
-		InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
-		ItemStack current = inv.getItem();
+		PlayerQuickbar inv = entity.get(Human.class).getInventory().getQuickbar();
+		ItemStack current = inv.getCurrentItem();
 		if (current != null && current.isMaterial(Dye.BONE_MEAL)) {
-			if (VanillaPlayerUtil.isSurvival(entity)) {
-				inv.addItemAmount(0, -1);
+			if (entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
+				inv.addAmount(0, -1);
 			}
 			this.growTree(block);
 		}
@@ -125,7 +128,7 @@ public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel,
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
 		block.clearDataBits((short) (~dataMask));
 	}
 
@@ -136,7 +139,7 @@ public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel,
 
 	@Override
 	public void onPlacement(Block b, Region r, long currentTime) {
-		b.dynamicUpdate(currentTime + 10000);
+		b.dynamicUpdate(currentTime + getGrowthTime(b));
 	}
 
 	@Override
@@ -145,5 +148,9 @@ public class Sapling extends GroundAttachable implements Spreading, Plant, Fuel,
 		b.setMaterial(Log.DEFAULT);
 		b.setData(oldData & dataMask);
 		b.setDataBits(Log.aliveMask);
+	}
+
+	private long getGrowthTime(Block block) {
+		return 240000L + new Random(block.getWorld().getAge()).nextInt(240000);
 	}
 }

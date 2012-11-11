@@ -29,31 +29,39 @@ package org.spout.vanilla.inventory.block;
 import org.spout.api.inventory.Inventory;
 import org.spout.api.inventory.ItemStack;
 
-import org.spout.vanilla.inventory.VanillaInventory;
-
 /**
- * Represents the inventory of a {@link org.spout.vanilla.material.block.controlled.JukeboxBlock}.
+ * Represents the inventory of a {@link org.spout.vanilla.material.block.component.JukeboxBlock}.
  */
-public class JukeboxInventory extends Inventory implements VanillaInventory {
+public class JukeboxInventory extends Inventory {
 	private static final long serialVersionUID = 1L;
+	public static final int SIZE = 1;
+	public static final int SLOT = 0;
 
 	public JukeboxInventory() {
-		super(1);
+		super(SIZE);
+	}
+
+	/**
+	 * Returns true if the Jukebox has an {@link ItemStack} in it.
+	 * @return true if Jukebox has item
+	 */
+	public boolean has() {
+		return get(SLOT) != null;
 	}
 
 	/**
 	 * Gets the {@link org.spout.api.inventory.ItemStack} in the Jukebox's music slot
 	 * @return item in slot
 	 */
-	public ItemStack getMusicSlot() {
-		return getItem(0);
+	public ItemStack get() {
+		return get(SLOT);
 	}
 
 	/**
 	 * Sets the {@link org.spout.api.inventory.ItemStack} in the Jukebox's music slot
 	 * @param item in slot
 	 */
-	public void setMusicSlot(ItemStack item) {
-		setItem(0, item);
+	public void set(ItemStack item) {
+		set(SLOT, item);
 	}
 }

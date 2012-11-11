@@ -26,17 +26,16 @@
  */
 package org.spout.vanilla.material.block.redstone;
 
-import org.spout.api.Source;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 
-import org.spout.vanilla.util.RedstonePowerMode;
+import org.spout.vanilla.data.RedstonePowerMode;
 
 /**
  * Defines a material that can supply redstone power<br>
  * Redstone wire will automatically attach to this material
  */
-public interface RedstoneSource extends Source {
+public interface RedstoneSource  {
 	/**
 	 * Gets how much redstone power this redstone source block provides to the direction given.<br>
 	 * @param block of this redstone source
@@ -54,4 +53,12 @@ public interface RedstoneSource extends Source {
 	 * @return True if this redstone source block provides power
 	 */
 	public boolean hasRedstonePowerTo(Block block, BlockFace direction, RedstonePowerMode powerMode);
+
+	/**
+	 * Gets the amount of redstone power this material generates for itself
+	 * 
+	 * @param data
+	 * @return power strength
+	 */
+	public short getRedstonePowerStrength(short data);
 }

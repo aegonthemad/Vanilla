@@ -26,7 +26,6 @@
  */
 package org.spout.vanilla.material.block;
 
-import org.spout.api.Source;
 import org.spout.api.collision.CollisionStrategy;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
@@ -40,12 +39,16 @@ import org.spout.api.material.range.EffectRange;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.util.flowing.LiquidModel;
 
-public abstract class Liquid extends VanillaBlockMaterial implements DynamicMaterial, Source {
+public abstract class Liquid extends VanillaBlockMaterial implements DynamicMaterial {
 	private final boolean flowing;
 	private int delay;
 
 	public Liquid(String name, int id, boolean flowing) {
-		super(name, id);
+		this(name, id, flowing, (String) null);
+	}
+
+	public Liquid(String name, int id, boolean flowing, String model) {
+		super(name, id, model);
 		this.flowing = flowing;
 		this.setLiquidObstacle(false).setHardness(100.0F).setResistance(166.7F).setOpacity(2).setCollision(CollisionStrategy.SOFT);
 		this.getDrops().clear();
@@ -97,7 +100,7 @@ public abstract class Liquid extends VanillaBlockMaterial implements DynamicMate
 				return false;
 			}
 		}
-		Block spread = block.getWorld().getBlock(block.getX(), block.getY(), block.getZ(), this).translate(to);
+		Block spread = block.getWorld().getBlock(block.getX(), block.getY(), block.getZ()).translate(to);
 		BlockMaterial spreadMat = spread.getMaterial();
 		if (this.isMaterial(spreadMat)) {
 			if (this.isMaximumLevel(spread)) {
@@ -145,7 +148,7 @@ public abstract class Liquid extends VanillaBlockMaterial implements DynamicMate
 	 * @return True to notify spreading was allowed, False to deny
 	 */
 	public void onSpread(Block block, int newLevel, BlockFace from) {
-		block.getMaterial().destroy(block);
+		block.getMaterial().destroy(block, this.toCause(block));
 		block.setMaterial(this.getFlowingMaterial());
 		this.setLevel(block, newLevel);
 		if (from == BlockFace.TOP) {
@@ -327,5 +330,10 @@ public abstract class Liquid extends VanillaBlockMaterial implements DynamicMate
 	@Override
 	public EffectRange getDynamicRange() {
 		return EffectRange.THIS_AND_NEIGHBORS;
+	}
+
+	@Override
+	public boolean isFaceRendered(BlockFace face, BlockMaterial neighbor) {
+		return neighbor != this;
 	}
 }

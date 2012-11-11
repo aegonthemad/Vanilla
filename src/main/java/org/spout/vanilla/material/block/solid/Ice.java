@@ -26,8 +26,10 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import java.util.Random;
+
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
@@ -38,10 +40,6 @@ import org.spout.vanilla.data.Climate;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.SpreadingSolid;
-import org.spout.vanilla.material.enchantment.Enchantments;
-import org.spout.vanilla.material.item.tool.Tool;
-import org.spout.vanilla.util.EnchantmentUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 import org.spout.vanilla.world.generator.nether.NetherGenerator;
 
 public class Ice extends SpreadingSolid implements InitializableMaterial {
@@ -49,7 +47,7 @@ public class Ice extends SpreadingSolid implements InitializableMaterial {
 	private static final EffectRange ICE_SPREAD_RANGE = new CubicEffectRange(1);
 
 	public Ice(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/iceblock/iceblock.spm");
 		this.setHardness(0.5F).setResistance(0.8F).setOcclusion((short) 0, BlockFaces.NONE).setOpacity((byte) 2);
 		this.getDrops().clear();
 	}
@@ -66,20 +64,9 @@ public class Ice extends SpreadingSolid implements InitializableMaterial {
 	}
 
 	@Override
-	public void onDestroy(Block block) {
+	public void onDestroy(Block block, Cause<?> cause) {
 		if (!(block.getWorld().getGenerator() instanceof NetherGenerator) || block.translate(BlockFace.BOTTOM).getMaterial() != VanillaMaterials.AIR) {
-			// TODO Setting the source to world correct?
-			if (VanillaPlayerUtil.isCreative(block.getSource())) {
-				// Do not turn into water when in creative
-			} else {
-				// Only set material to water source block if the block was not destroyed by an item with Silk Touch
-				ItemStack held = VanillaPlayerUtil.getCurrentItem(block.getSource());
-
-				if (held == null || !(held.getMaterial() instanceof Tool) || !EnchantmentUtil.hasEnchantment(held, Enchantments.SILK_TOUCH)) {
-					block.setMaterial(VanillaMaterials.STATIONARY_WATER);
-					return;
-				}
-			}
+			block.setMaterial(VanillaMaterials.WATER, cause);
 		}
 		super.onDecay(block);
 	}
@@ -115,5 +102,10 @@ public class Ice extends SpreadingSolid implements InitializableMaterial {
 	@Override
 	public boolean canSpreadTo(Block from, Block to) {
 		return super.canSpreadTo(from, to) && VanillaMaterials.WATER.isSource(to);
+	}
+
+	@Override
+	public long getSpreadingTime(Block b) {
+		return 120000L + new Random(b.getWorld().getAge()).nextInt(60000) * 5;
 	}
 }

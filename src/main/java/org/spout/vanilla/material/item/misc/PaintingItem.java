@@ -29,61 +29,39 @@ package org.spout.vanilla.material.item.misc;
 import java.util.Random;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.entity.Player;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
+import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
-import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.block.BlockFace;
-import org.spout.api.material.block.BlockFaces;
 
-import org.spout.vanilla.entity.object.misc.Painting;
+import org.spout.vanilla.component.substance.Painting;
+import org.spout.vanilla.data.PaintingType;
 import org.spout.vanilla.material.item.VanillaItemMaterial;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class PaintingItem extends VanillaItemMaterial {
-	private Random random = new Random();
-
-	public enum PaintingStyle {
-		Kebab,
-		Aztec,
-		Alban,
-		Aztec2,
-		Bomb,
-		Plant,
-		Wasteland,
-		Pool,
-		Courbet,
-		Sea,
-		Sunset,
-		Creebet,
-		Wanderer,
-		Graham,
-		Match,
-		Bust,
-		Stage,
-		Void,
-		SkullAndRoses,
-		Fighters,
-		Pointer,
-		Pigscene,
-		BurningSkull,
-		Skeleton,
-		DonkeyKong;
-	}
+	private final Random random = new Random();
 
 	public PaintingItem(String name, int id) {
 		super(name, id);
 	}
 
 	@Override
-	public void onInteract(Entity entity, Block block, Action type, BlockFace clickedface) {
-		if (type != Action.RIGHT_CLICK) {
+	public void onInteract(Entity entity, Block block, Action type, BlockFace face) {
+		if (!(entity instanceof Player) || type != Action.RIGHT_CLICK) {
 			return;
 		}
-		Painting painting = new Painting(PaintingStyle.values()[random.nextInt(PaintingStyle.values().length)], BlockFaces.NESW.indexOf(clickedface, -1));//TODO fix the 0 here, and the position on the next line
-		block.getWorld().createAndSpawnEntity(block.translate(clickedface).getPosition(), painting);
-		InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
-		if (inv != null) {
-			inv.addItemAmount(0, -1);
-		}
+
+		World world = block.getWorld();
+		Entity e = world.createEntity(block.getPosition(), Painting.class);
+		PaintingType[] types = PaintingType.values();
+		PaintingType paintingType = types[random.nextInt(types.length - 1)];
+		BlockFace direction = face.getOpposite();
+
+		e.getTransform().setPosition(paintingType.getCenter(direction, block.getPosition()));
+		Painting painting = e.add(Painting.class);
+		painting.setType(paintingType);
+		painting.setFace(direction);
+		world.spawnEntity(e);
 	}
 }

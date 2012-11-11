@@ -35,15 +35,14 @@ import gnu.trove.set.TIntSet;
 
 import org.spout.api.Server;
 import org.spout.api.Spout;
-import org.spout.api.entity.Controller;
 import org.spout.api.entity.Entity;
-import org.spout.api.entity.Player;
 import org.spout.api.event.EventHandler;
 import org.spout.api.generator.biome.Biome;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.cuboid.ChunkSnapshot;
+import org.spout.api.geo.cuboid.ChunkSnapshot.BlockComponentSnapshot;
 import org.spout.api.geo.cuboid.ChunkSnapshot.EntityType;
 import org.spout.api.geo.cuboid.ChunkSnapshot.ExtraData;
 import org.spout.api.geo.cuboid.ChunkSnapshot.SnapshotType;
@@ -56,12 +55,17 @@ import org.spout.api.protocol.Message;
 import org.spout.api.protocol.NetworkSynchronizer;
 import org.spout.api.protocol.Session;
 import org.spout.api.protocol.Session.State;
+import org.spout.api.protocol.event.ProtocolEvent;
 import org.spout.api.protocol.event.ProtocolEventListener;
 import org.spout.api.util.hashing.IntPairHashed;
 import org.spout.api.util.map.concurrent.TSyncIntPairObjectHashMap;
 import org.spout.api.util.set.concurrent.TSyncIntHashSet;
 import org.spout.api.util.set.concurrent.TSyncIntPairHashSet;
 import org.spout.vanilla.VanillaPlugin;
+import org.spout.vanilla.component.inventory.PlayerInventory;
+import org.spout.vanilla.component.inventory.window.DefaultWindow;
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.component.substance.material.Sign;
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.data.Difficulty;
 import org.spout.vanilla.data.Dimension;
@@ -69,61 +73,62 @@ import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.Weather;
 import org.spout.vanilla.data.WorldType;
-import org.spout.vanilla.entity.VanillaPlayerController;
 import org.spout.vanilla.event.block.BlockActionEvent;
 import org.spout.vanilla.event.block.BlockControllerDataEvent;
 import org.spout.vanilla.event.block.SignUpdateEvent;
 import org.spout.vanilla.event.entity.EntityAnimationEvent;
 import org.spout.vanilla.event.entity.EntityCollectItemEvent;
+import org.spout.vanilla.event.entity.EntityEquipmentEvent;
 import org.spout.vanilla.event.entity.EntityMetaChangeEvent;
 import org.spout.vanilla.event.entity.EntityStatusEvent;
-import org.spout.vanilla.event.player.PlayerGameModeChangedEvent;
+import org.spout.vanilla.event.player.network.PlayerBedEvent;
 import org.spout.vanilla.event.player.network.PlayerGameStateEvent;
-import org.spout.vanilla.event.player.network.PlayerKeepAliveEvent;
-import org.spout.vanilla.event.player.network.PlayerUpdateStatsEvent;
-import org.spout.vanilla.event.player.network.PlayerUpdateUserListEvent;
+import org.spout.vanilla.event.player.network.PlayerHealthEvent;
+import org.spout.vanilla.event.player.network.PlayerListEvent;
+import org.spout.vanilla.event.player.network.PlayerPingEvent;
 import org.spout.vanilla.event.window.WindowCloseEvent;
+import org.spout.vanilla.event.window.WindowItemsEvent;
 import org.spout.vanilla.event.window.WindowOpenEvent;
 import org.spout.vanilla.event.window.WindowPropertyEvent;
-import org.spout.vanilla.event.window.WindowSetSlotEvent;
-import org.spout.vanilla.event.window.WindowSetSlotsEvent;
+import org.spout.vanilla.event.window.WindowSlotEvent;
 import org.spout.vanilla.event.world.PlayExplosionEffectEvent;
 import org.spout.vanilla.event.world.PlayParticleEffectEvent;
 import org.spout.vanilla.event.world.PlaySoundEffectEvent;
 import org.spout.vanilla.event.world.TimeUpdateEvent;
 import org.spout.vanilla.event.world.WeatherChangeEvent;
 import org.spout.vanilla.material.VanillaMaterials;
-import org.spout.vanilla.protocol.msg.BlockActionMessage;
-import org.spout.vanilla.protocol.msg.BlockChangeMessage;
-import org.spout.vanilla.protocol.msg.ChangeGameStateMessage;
-import org.spout.vanilla.protocol.msg.CompressedChunkMessage;
-import org.spout.vanilla.protocol.msg.ExplosionMessage;
-import org.spout.vanilla.protocol.msg.KeepAliveMessage;
-import org.spout.vanilla.protocol.msg.NamedSoundEffectMessage;
-import org.spout.vanilla.protocol.msg.PlayEffectMessage;
-import org.spout.vanilla.protocol.msg.PlayerListMessage;
-import org.spout.vanilla.protocol.msg.PlayerLookMessage;
-import org.spout.vanilla.protocol.msg.PlayerPositionLookMessage;
-import org.spout.vanilla.protocol.msg.PlayerUpdateStatsMessage;
-import org.spout.vanilla.protocol.msg.RespawnMessage;
-import org.spout.vanilla.protocol.msg.SpawnPositionMessage;
-import org.spout.vanilla.protocol.msg.TileEntityDataMessage;
-import org.spout.vanilla.protocol.msg.TimeUpdateMessage;
-import org.spout.vanilla.protocol.msg.UpdateSignMessage;
+import org.spout.vanilla.material.block.component.VanillaComplexMaterial;
 import org.spout.vanilla.protocol.msg.entity.EntityAnimationMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityCollectItemMessage;
 import org.spout.vanilla.protocol.msg.entity.EntityEquipmentMessage;
 import org.spout.vanilla.protocol.msg.entity.EntityMetadataMessage;
 import org.spout.vanilla.protocol.msg.entity.EntityStatusMessage;
-import org.spout.vanilla.protocol.msg.entity.EntityTeleportMessage;
-import org.spout.vanilla.protocol.msg.login.LoginRequestMessage;
+import org.spout.vanilla.protocol.msg.entity.EntityTileDataMessage;
+import org.spout.vanilla.protocol.msg.entity.pos.EntityTeleportMessage;
+import org.spout.vanilla.protocol.msg.player.PlayerBedMessage;
+import org.spout.vanilla.protocol.msg.player.PlayerCollectItemMessage;
+import org.spout.vanilla.protocol.msg.player.PlayerGameStateMessage;
+import org.spout.vanilla.protocol.msg.player.PlayerHealthMessage;
+import org.spout.vanilla.protocol.msg.player.PlayerSoundEffectMessage;
+import org.spout.vanilla.protocol.msg.player.PlayerTimeMessage;
+import org.spout.vanilla.protocol.msg.player.conn.PlayerListMessage;
+import org.spout.vanilla.protocol.msg.player.conn.PlayerLoginRequestMessage;
+import org.spout.vanilla.protocol.msg.player.conn.PlayerPingMessage;
+import org.spout.vanilla.protocol.msg.player.pos.PlayerPositionYawMessage;
+import org.spout.vanilla.protocol.msg.player.pos.PlayerRespawnMessage;
+import org.spout.vanilla.protocol.msg.player.pos.PlayerSpawnPositionMessage;
+import org.spout.vanilla.protocol.msg.player.pos.PlayerYawMessage;
 import org.spout.vanilla.protocol.msg.window.WindowCloseMessage;
+import org.spout.vanilla.protocol.msg.window.WindowItemsMessage;
 import org.spout.vanilla.protocol.msg.window.WindowOpenMessage;
 import org.spout.vanilla.protocol.msg.window.WindowPropertyMessage;
-import org.spout.vanilla.protocol.msg.window.WindowSetSlotMessage;
-import org.spout.vanilla.protocol.msg.window.WindowSetSlotsMessage;
-import org.spout.vanilla.window.DefaultWindow;
-import org.spout.vanilla.world.generator.VanillaBiome;
+import org.spout.vanilla.protocol.msg.window.WindowSlotMessage;
+import org.spout.vanilla.protocol.msg.world.EffectMessage;
+import org.spout.vanilla.protocol.msg.world.ExplosionMessage;
+import org.spout.vanilla.protocol.msg.world.block.BlockActionMessage;
+import org.spout.vanilla.protocol.msg.world.block.BlockChangeMessage;
+import org.spout.vanilla.protocol.msg.world.block.SignMessage;
+import org.spout.vanilla.protocol.msg.world.chunk.ChunkDataMessage;
+import org.spout.vanilla.world.generator.biome.VanillaBiome;
 
 import static org.spout.vanilla.material.VanillaMaterials.getMinecraftData;
 import static org.spout.vanilla.material.VanillaMaterials.getMinecraftId;
@@ -133,8 +138,6 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	private static final byte[] SOLID_CHUNK_DATA = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
 	private static final byte[] AIR_CHUNK_DATA = new byte[Chunk.BLOCKS.HALF_VOLUME * 5];
 	private static final double STANCE = 1.6D;
-	@SuppressWarnings("unused")
-	private static final int POSITION_UPDATE_TICKS = 20;
 	private boolean first = true;
 	private final TSyncIntPairObjectHashMap<TSyncIntHashSet> initializedChunks = new TSyncIntPairObjectHashMap<TSyncIntHashSet>();
 	private final ConcurrentLinkedQueue<Long> emptyColumns = new ConcurrentLinkedQueue<Long>();
@@ -162,8 +165,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		}
 	}
 
-	public VanillaNetworkSynchronizer(Player player, Entity entity) {
-		super(player, player.getSession(), entity, 3);
+	public VanillaNetworkSynchronizer(Session session) {
+		super(session, 0);
 		registerProtocolEvents(this);
 		chunkInit = ChunkInit.getChunkInit(VanillaConfiguration.CHUNK_INIT.getString("client"));
 	}
@@ -186,7 +189,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			} // TODO - is this required?
 			/*
 			else {
-				CCMsg = new CompressedChunkMessage(x, z, false, null, null, null, true);
+				CCMsg = new ChunkDataMessage(x, z, false, null, null, null, true);
 			}*/
 		}
 	}
@@ -270,6 +273,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 		Collection<Chunk> chunks = null;
 
+		List<ProtocolEvent> events = new ArrayList<ProtocolEvent>();
+
 		if (activeChunks.add(x, z)) {
 			Point p = c.getBase();
 			int[][] heights = getColumnHeights(p);
@@ -279,38 +284,58 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 			for (int cube = 0; cube < 16; cube++) {
 				Point pp = new Point(c.getWorld(), x << Chunk.BLOCKS.BITS, cube << Chunk.BLOCKS.BITS, z << Chunk.BLOCKS.BITS);
-				packetChunkData[cube] = chunkInit.getChunkData(heights, materials, pp);
+				packetChunkData[cube] = chunkInit.getChunkData(heights, materials, pp, events);
 			}
 
 			Chunk chunk = p.getWorld().getChunkFromBlock(p);
 			byte[] biomeData = new byte[Chunk.BLOCKS.AREA];
 			for (int dx = x; dx < x + Chunk.BLOCKS.SIZE; ++dx) {
 				for (int dz = z; dz < z + Chunk.BLOCKS.SIZE; ++dz) {
-					Biome biome = chunk.getBiomeType(dx & Chunk.BLOCKS.MASK, 0, dz & Chunk.BLOCKS.MASK);
+					Biome biome = chunk.getBiome(dx & Chunk.BLOCKS.MASK, 0, dz & Chunk.BLOCKS.MASK);
 					if (biome instanceof VanillaBiome) {
 						biomeData[(dz & Chunk.BLOCKS.MASK) << 4 | (dx & Chunk.BLOCKS.MASK)] = (byte) ((VanillaBiome) biome).getBiomeId();
 					}
 				}
 			}
 
+<<<<<<< HEAD
 			CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, true, new boolean[16], packetChunkData, biomeData);
 			owner.getSession().send(CCMsg);
+=======
+			ChunkDataMessage CCMsg = new ChunkDataMessage(x, z, true, new boolean[16], packetChunkData, biomeData, player.getSession());
+			player.getSession().send(false, CCMsg);
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 
 			chunks = chunkInit.getChunks(c);
 		}
 
-		byte[] fullChunkData = ChunkInit.getChunkFullData(c);
+		if (chunks == null || !chunks.contains(c)) {
 
+<<<<<<< HEAD
 		byte[][] packetChunkData = new byte[16][];
 		packetChunkData[y] = fullChunkData;
 		CompressedChunkMessage CCMsg = new CompressedChunkMessage(x, z, false, new boolean[16], packetChunkData, null);
 		owner.getSession().send(CCMsg);
+=======
+			byte[] fullChunkData = ChunkInit.getChunkFullData(c, events);
+
+			byte[][] packetChunkData = new byte[16][];
+			packetChunkData[y] = fullChunkData;
+			ChunkDataMessage CCMsg = new ChunkDataMessage(x, z, false, new boolean[16], packetChunkData, null, player.getSession());
+			player.getSession().send(false, CCMsg);
+		}
+
+		for (ProtocolEvent e : events) {
+			this.callProtocolEvent(e);
+		}
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 
 		return chunks;
 	}
 
 	@Override
 	protected void sendPosition(Point p, Quaternion rot) {
+<<<<<<< HEAD
 		//TODO: Implement Spout Protocol
 		Session session = owner.getSession();
 		if (p.distanceSquared(entity.getPosition()) >= 16) {
@@ -320,33 +345,33 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		} else {
 			PlayerPositionLookMessage PPLMsg = new PlayerPositionLookMessage(p.getX(), p.getY() + STANCE, p.getZ(), STANCE, rot.getYaw(), rot.getPitch(), true);
 			session.send(PPLMsg);
+=======
+		//TODO we have EntityProtocols in Vanilla....what does this actually do?
+		Session session = player.getSession();
+		if (p.distanceSquared(player.getTransform().getPosition()) >= 16) {
+			EntityTeleportMessage ETMMsg = new EntityTeleportMessage(player.getId(), (int) p.getX(), (int) p.getY(), (int) p.getZ(), (int) rot.getYaw(), (int) rot.getPitch());
+			PlayerYawMessage PLMsg = new PlayerYawMessage(rot.getYaw(), rot.getPitch(), true);
+			session.sendAll(false, ETMMsg, PLMsg);
+		} else {
+			PlayerPositionYawMessage PPLMsg = new PlayerPositionYawMessage(p.getX(), p.getY() + STANCE, p.getZ(), STANCE, rot.getYaw(), rot.getPitch(), true);
+			session.send(false, PPLMsg);
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 		}
 	}
 
 	@Override
 	protected void worldChanged(World world) {
-		VanillaPlayerController vc = (VanillaPlayerController) owner.getController();
-
-		GameMode gamemode = world.getDataMap().get(VanillaData.GAMEMODE);
-		//The world the player is entering has a different gamemode...
-		if (gamemode != null) {
-			if (gamemode != vc.getGameMode()) {
-				PlayerGameModeChangedEvent event = Spout.getEngine().getEventManager().callEvent(new PlayerGameModeChangedEvent(owner, gamemode));
-				if (!event.isCancelled()) {
-					gamemode = event.getMode();
-				}
-			}
-		} else {
-			//The world has no gamemode setting in its map so default to the Player's GameMode.
-			gamemode = vc.getGameMode();
+		GameMode gamemode = world.getComponentHolder().getData().get(VanillaData.GAMEMODE);
+		Difficulty difficulty = world.getComponentHolder().getData().get(VanillaData.DIFFICULTY);
+		Dimension dimension = world.getComponentHolder().getData().get(VanillaData.DIMENSION);
+		WorldType worldType = world.getComponentHolder().getData().get(VanillaData.WORLD_TYPE);
+		if (player.has(Human.class)) {
+			player.get(Human.class).setGamemode(gamemode, false);
 		}
-		Difficulty difficulty = world.getDataMap().get(VanillaData.DIFFICULTY);
-		Dimension dimension = world.getDataMap().get(VanillaData.DIMENSION);
-		WorldType worldType = world.getDataMap().get(VanillaData.WORLD_TYPE);
-
 		//TODO Handle infinite height
 		if (first) {
 			first = false;
+<<<<<<< HEAD
 			int entityId = owner.getId();
 			LoginRequestMessage idMsg = new LoginRequestMessage(entityId, worldType.toString(), gamemode.getId(), (byte) dimension.getId(), difficulty.getId(), (byte) ((Server) session.getEngine()).getMaxPlayers());
 			owner.getSession().send(true, idMsg);
@@ -362,6 +387,26 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		Point pos = world.getSpawnPoint().getPosition();
 		SpawnPositionMessage SPMsg = new SpawnPositionMessage((int) pos.getX(), (int) pos.getY(), (int) pos.getZ());
 		owner.getSession().send(SPMsg);
+=======
+			int entityId = player.getId();
+			Server server = (Server) session.getEngine();
+			PlayerLoginRequestMessage idMsg = new PlayerLoginRequestMessage(entityId, worldType.toString(), gamemode.getId(), (byte) dimension.getId(), difficulty.getId(), (byte) server.getMaxPlayers());
+			player.getSession().send(false, true, idMsg);
+			player.getSession().setState(State.GAME);
+			if (player.has(Human.class)) {
+				for (int slot = 0; slot < 4; slot++) {
+					ItemStack slotItem = player.get(Human.class).getInventory().getArmor().get(slot);
+					player.getSession().send(false, new EntityEquipmentMessage(entityId, slot, slotItem));
+				}
+			}
+		} else {
+			player.getSession().send(false, new PlayerRespawnMessage(dimension.getId(), difficulty.getId(), gamemode.getId(), 256, worldType.toString()));
+		}
+
+		Point pos = world.getSpawnPoint().getPosition();
+		PlayerSpawnPositionMessage SPMsg = new PlayerSpawnPositionMessage((int) pos.getX(), (int) pos.getY(), (int) pos.getZ());
+		player.getSession().send(false, SPMsg);
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 	}
 
 	@Override
@@ -376,7 +421,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			if (column.isEmpty()) {
 				column = initializedChunks.remove(x, z);
 				activeChunks.remove(x, z);
-				session.send(false, new CompressedChunkMessage(x, z, true, null, null, null, true));
+				session.send(false, new ChunkDataMessage(x, z, true, null, null, null, true, player.getSession()));
 			}
 		}
 	}
@@ -395,26 +440,29 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@Override
 	public void syncEntity(Entity e, boolean spawn, boolean destroy, boolean update) {
-		Controller c = e.getController();
-		if (c != null) {
-			EntityProtocol ep = c.getType().getEntityProtocol(VanillaPlugin.VANILLA_PROTOCOL_ID);
-			if (ep != null) {
-				List<Message> messages = new ArrayList<Message>(3);
-				// Sync using vanilla protocol
-				if (destroy) {
-					messages.addAll(ep.getDestroyMessages(e));
-				}
-				if (spawn) {
-					messages.addAll(ep.getSpawnMessages(e));
-				}
-				if (update) {
-					messages.addAll(ep.getUpdateMessages(e));
-				}
-				for (Message message : messages) {
-					this.session.send(false, message);
-				}
+		super.syncEntity(e, spawn, destroy, update);
+		EntityProtocol ep = e.getNetwork().getEntityProtocol(VanillaPlugin.VANILLA_PROTOCOL_ID);
+		if (ep != null) {
+			List<Message> messages = new ArrayList<Message>();
+			// Sync using vanilla protocol
+			if (destroy) {
+				messages.addAll(ep.getDestroyMessages(e));
+			}
+			if (spawn) {
+				messages.addAll(ep.getSpawnMessages(e));
+			}
+			if (update) {
+				messages.addAll(ep.getUpdateMessages(e));
+			}
+			for (Message message : messages) {
+				this.session.send(false, message);
 			}
 		}
+	}
+
+	@EventHandler
+	public Message onEntityEquipment(EntityEquipmentEvent event) {
+		return new EntityEquipmentMessage(event.getEntity().getId(), event.getSlot(), event.getItem());
 	}
 
 	@EventHandler
@@ -422,7 +470,8 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (event.getWindow() instanceof DefaultWindow) {
 			return null; // no message for the default Window
 		}
-		int size = event.getWindow().getInventorySize() - event.getWindow().getParent().getInventory().getMain().getSize();
+		PlayerInventory inventory = event.getWindow().getHuman().getInventory();
+		int size = event.getWindow().getInventorySize() - (inventory.getMain().size() + inventory.getQuickbar().size());
 		return new WindowOpenMessage(event.getWindow(), size);
 	}
 
@@ -435,13 +484,17 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	}
 
 	@EventHandler
-	public Message onWindowSetSlot(WindowSetSlotEvent event) {
-		return new WindowSetSlotMessage(event.getWindow(), event.getGlobalSlot(), event.getItem());
+	public Message onWindowSetSlot(WindowSlotEvent event) {
+		return new WindowSlotMessage(event.getWindow(), event.getSlot(), event.getItem());
 	}
 
 	@EventHandler
-	public Message onWindowSetSlots(WindowSetSlotsEvent event) {
-		return new WindowSetSlotsMessage(event.getWindow(), event.getItems());
+	public Message onWindowItems(WindowItemsEvent event) {
+		System.out.println("Sending items...");
+		for (ItemStack item : event.getItems()) {
+			System.out.println(item == null ? "null" : item.getMaterial().getName());
+		}
+		return new WindowItemsMessage(event.getWindow(), event.getItems());
 	}
 
 	@EventHandler
@@ -451,7 +504,7 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@EventHandler
 	public Message onSoundEffect(PlaySoundEffectEvent event) {
-		return new NamedSoundEffectMessage(event.getSound().getName(), event.getPosition(), event.getVolume(), event.getPitch());
+		return new PlayerSoundEffectMessage(event.getSound().getName(), event.getPosition(), event.getVolume(), event.getPitch());
 	}
 
 	@EventHandler
@@ -467,8 +520,12 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 		if (y < 0 || y > 255) {
 			return null; // don't play effects outside the byte range
 		}
+<<<<<<< HEAD
 		//FIXME Nicks hack method of hard coding
 		return new PlayEffectMessage(event.getEffect().getId(), x, y, z, event.getData(), false);
+=======
+		return new EffectMessage(event.getEffect().getId(), x, y, z, event.getData());
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 	}
 
 	@EventHandler
@@ -482,25 +539,24 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	}
 
 	@EventHandler
-	public Message onPlayerKeepAlive(PlayerKeepAliveEvent event) {
-		return new KeepAliveMessage(event.getHash());
+	public Message onPlayerKeepAlive(PlayerPingEvent event) {
+		return new PlayerPingMessage(event.getHash());
 	}
 
 	@EventHandler
-	public Message onPlayerUpdateUserList(PlayerUpdateUserListEvent event) {
-		Controller controller = event.getPlayer().getController();
-		String name;
-		if (controller instanceof VanillaPlayerController) {
-			name = ((VanillaPlayerController) controller).getTabListName();
-		} else {
-			name = event.getPlayer().getDisplayName();
-		}
-		return new PlayerListMessage(name, true, (short) event.getPingDelay());
+	public Message onPlayerUpdateUserList(PlayerListEvent event) {
+		String name = event.getPlayerDisplayName();
+		return new PlayerListMessage(name, event.getOnline(), (short) event.getPingDelay());
+	}
+
+	@EventHandler
+	public Message onPlayerBed(PlayerBedEvent event) {
+		return new PlayerBedMessage(event.getPlayer(), event.getBed());
 	}
 
 	@EventHandler
 	public Message onEntityAnimation(EntityAnimationEvent event) {
-		return new EntityAnimationMessage(event.getEntity().getId(), event.getAnimation());
+		return new EntityAnimationMessage(event.getEntity().getId(), (byte) event.getAnimation().getId());
 	}
 
 	@EventHandler
@@ -509,12 +565,9 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 	}
 
 	@EventHandler
-	public Message onPlayerUpdateStats(PlayerUpdateStatsEvent event) {
-		if (event.getPlayer() != getOwner()) {
-			return null;
-		}
-		VanillaPlayerController player = (VanillaPlayerController) event.getPlayer().getController();
-		return new PlayerUpdateStatsMessage((short) player.getHealth().getHealth(), player.getSurvivalComponent().getHunger(), player.getSurvivalComponent().getFoodSaturation());
+	public Message onPlayerUpdateStats(PlayerHealthEvent event) {
+		//TODO: Fix these stats?
+		return new PlayerHealthMessage((short) player.get(Human.class).getHealth().getHealth(), (short) 0, 0);
 	}
 
 	@EventHandler
@@ -524,40 +577,44 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 
 	@EventHandler
 	public Message onSignUpdate(SignUpdateEvent event) {
-		Block block = event.getSign().getBlock();
-		return new UpdateSignMessage(block.getX(), block.getY(), block.getZ(), event.getLines());
+		Sign sign = event.getSign();
+		return new SignMessage(sign.getOwner().getX(), sign.getOwner().getY(), sign.getOwner().getZ(), event.getLines());
 	}
 
 	@EventHandler
 	public Message onEntityCollectItem(EntityCollectItemEvent event) {
-		return new EntityCollectItemMessage(event.getCollected().getId(), event.getEntity().getId());
+		return new PlayerCollectItemMessage(event.getCollected().getId(), event.getEntity().getId());
 	}
 
 	@EventHandler
 	public Message onPlayerGameState(PlayerGameStateEvent event) {
-		return new ChangeGameStateMessage(event.getReason(), event.getGameMode());
+		return new PlayerGameStateMessage(event.getReason(), event.getGameMode());
 	}
 
 	@EventHandler
 	public Message onWeatherChanged(WeatherChangeEvent event) {
 		Weather newWeather = event.getNewWeather();
 		if (newWeather.equals(Weather.RAIN) || newWeather.equals(Weather.THUNDERSTORM)) {
-			return new ChangeGameStateMessage(ChangeGameStateMessage.BEGIN_RAINING);
+			return new PlayerGameStateMessage(PlayerGameStateMessage.BEGIN_RAINING);
 		} else {
-			return new ChangeGameStateMessage(ChangeGameStateMessage.END_RAINING);
+			return new PlayerGameStateMessage(PlayerGameStateMessage.END_RAINING);
 		}
 	}
 
 	@EventHandler
 	public Message onTimeUpdate(TimeUpdateEvent event) {
+<<<<<<< HEAD
 	    //FIXME This is a hack! Need a repair...
 		return new TimeUpdateMessage(event.getNewTime(), event.getNewTime());
+=======
+		return new PlayerTimeMessage(event.getWorld().getAge(), event.getNewTime());
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 	}
 
 	@EventHandler
 	public Message onBlockControllerData(BlockControllerDataEvent event) {
 		Block b = event.getBlock();
-		return new TileEntityDataMessage(b.getX(), b.getY(), b.getZ(), event.getAction(), event.getData());
+		return new EntityTileDataMessage(b.getX(), b.getY(), b.getZ(), event.getAction(), event.getData());
 	}
 
 	public static enum ChunkInit {
@@ -607,28 +664,28 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 			return this == CLIENT_SEL || this == FULL_COLUMN;
 		}
 
-		public byte[] getChunkData(int[][] heights, BlockMaterial[][] materials, Point p) {
+		public byte[] getChunkData(int[][] heights, BlockMaterial[][] materials, Point p, List<ProtocolEvent> updateEvents) {
 			switch (this) {
 				case CLIENT_SEL:
-					return getChunkFullColumn(heights, materials, p);
+					return getChunkFullColumn(heights, materials, p, updateEvents);
 				case FULL_COLUMN:
-					return getChunkFullColumn(heights, materials, p);
+					return getChunkFullColumn(heights, materials, p, updateEvents);
 				case HEIGHTMAP:
 					return getChunkHeightMap(heights, materials, p);
 				case EMPTY_COLUMN:
 					return getEmptyChunk(heights, materials, p);
 				default:
-					return getChunkFullColumn(heights, materials, p);
+					return getChunkFullColumn(heights, materials, p, updateEvents);
 			}
 		}
 
-		private static byte[] getChunkFullColumn(int[][] heights, BlockMaterial[][] materials, Point p) {
+		private static byte[] getChunkFullColumn(int[][] heights, BlockMaterial[][] materials, Point p, List<ProtocolEvent> updateEvents) {
 			Chunk c = p.getWorld().getChunkFromBlock(p);
-			return getChunkFullData(c);
+			return getChunkFullData(c, updateEvents);
 		}
 
-		public static byte[] getChunkFullData(Chunk c) {
-			ChunkSnapshot snapshot = c.getSnapshot(SnapshotType.BOTH, EntityType.NO_ENTITIES, ExtraData.NO_EXTRA_DATA);
+		public static byte[] getChunkFullData(Chunk c, List<ProtocolEvent> updateEvents) {
+			ChunkSnapshot snapshot = c.getSnapshot(SnapshotType.BOTH, EntityType.BLOCK_COMPONENTS, ExtraData.NO_EXTRA_DATA);
 			short[] rawBlockIdArray = snapshot.getBlockIds();
 			short[] rawBlockData = snapshot.getBlockData();
 			byte[] rawBlockLight = snapshot.getBlockLight();
@@ -649,14 +706,17 @@ public class VanillaNetworkSynchronizer extends NetworkSynchronizer implements P
 				arrIndex++;
 			}
 
-			arrIndex = rawBlockIdArray.length + (rawBlockData.length >> 1);
-
-			// The old method which doesn't use the Minecraft data conversion function
-			/*
-			for (int i = 0; i < rawBlockData.length; i += 2) {
-				fullChunkData[arrIndex++] = (byte) ((rawBlockData[i + 1] << 4) | (rawBlockData[i] & 0xF));
+			for (BlockComponentSnapshot component : snapshot.getBlockComponents()) {
+				BlockMaterial bm = c.getBlockMaterial(component.getX(), component.getY(), component.getZ());
+				if (bm instanceof VanillaComplexMaterial) {
+					ProtocolEvent event = ((VanillaComplexMaterial) bm).getUpdate(c.getWorld(), component.getX(), component.getY(), component.getZ());
+					if (event != null) {
+						updateEvents.add(event);
+					}
+				}
 			}
-			*/
+
+			arrIndex = rawBlockIdArray.length + (rawBlockData.length >> 1);
 
 			System.arraycopy(rawBlockLight, 0, fullChunkData, arrIndex, rawBlockLight.length);
 			arrIndex += rawBlockLight.length;

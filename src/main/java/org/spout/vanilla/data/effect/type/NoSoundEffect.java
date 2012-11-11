@@ -26,7 +26,6 @@
  */
 package org.spout.vanilla.data.effect.type;
 
-import org.spout.api.entity.Entity;
 import org.spout.api.entity.Player;
 import org.spout.api.geo.discrete.Point;
 
@@ -42,10 +41,10 @@ public class NoSoundEffect extends SoundEffect {
 	}
 
 	@Override
-	public void playGlobal(Point position, Entity ignore) {
+	public void playGlobal(Point position, Player ignore) {
 	}
 
 	@Override
-	public void playGlobal(Point position, float volume, float pitch, Entity ignore) {
+	public void playGlobal(Point position, float volume, float pitch, Player ignore) {
 	}
 }

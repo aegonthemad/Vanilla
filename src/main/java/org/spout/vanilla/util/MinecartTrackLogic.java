@@ -30,17 +30,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.spout.api.Source;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.BlockMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 
+import org.spout.vanilla.data.RailsState;
 import org.spout.vanilla.material.block.rail.Rail;
 import org.spout.vanilla.material.block.rail.RailBase;
 
-public class MinecartTrackLogic implements Source {
+public class MinecartTrackLogic{
 	public Block block;
 	public RailBase rails;
 	public boolean isPowered;
@@ -69,7 +69,7 @@ public class MinecartTrackLogic implements Source {
 	}
 
 	public static MinecartTrackLogic create(World world, int x, int y, int z) {
-		return create(world.getBlock(x, y, z, world));
+		return create(world.getBlock(x, y, z));
 	}
 
 	/**

@@ -31,16 +31,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import org.spout.api.component.Component;
 import org.spout.api.entity.Player;
+import org.spout.api.geo.LoadOption;
 import org.spout.api.geo.World;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.math.MathHelper;
-import org.spout.api.tickable.BasicTickable;
 
+import org.spout.vanilla.component.substance.Lightning;
 import org.spout.vanilla.data.Weather;
-import org.spout.vanilla.entity.object.misc.Lightning;
 
-public class LightningSimulator extends BasicTickable {
+public class LightningSimulator extends Component {
 	private static final int MAX_LIGHTNING_BRANCHES = 5;
 	private static Random ra = new Random();
 	final WeatherSimulator weather;
@@ -116,7 +117,7 @@ public class LightningSimulator extends BasicTickable {
 
 	public void strikePlayers(List<Player> toStrike) {
 		for (Player player : toStrike) {
-			Point playerPos = player.getPosition();
+			Point playerPos = player.getTransform().getPosition();
 			final int posX = MathHelper.floor(playerPos.getX());
 			final int posY = MathHelper.floor(playerPos.getY());
 			final int posZ = MathHelper.floor(playerPos.getZ());
@@ -153,7 +154,7 @@ public class LightningSimulator extends BasicTickable {
 							adjustZ += (ra.nextBoolean() ? -1 : 1) * ra.nextInt(2);
 						}
 						World world = getWorld();
-						world.createAndSpawnEntity(new Point(world, x + adjustX, y + adjustY, z + adjustZ), new Lightning());
+						world.createAndSpawnEntity(new Point(world, x + adjustX, y + adjustY, z + adjustZ), Lightning.class, LoadOption.NO_LOAD);
 					}
 					//success, go to the next player
 					break;
@@ -172,7 +173,6 @@ public class LightningSimulator extends BasicTickable {
 }
 
 enum Intensity {
-
 	STRONG_ELECTRICAL_STORM(3, 6),
 	ELECTRICAL_STORM(10, 20),
 	STRONG_THUNDERSTORM(20, 80),

@@ -28,6 +28,7 @@ package org.spout.vanilla;
 
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
+import java.awt.Color;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -36,19 +37,27 @@ import java.util.logging.Level;
 import org.spout.api.Engine;
 import org.spout.api.Server;
 import org.spout.api.Spout;
+import org.spout.api.Client;
+import org.spout.api.chat.style.ChatStyle;
 import org.spout.api.command.CommandRegistrationsFactory;
 import org.spout.api.command.annotated.AnnotatedCommandRegistrationFactory;
 import org.spout.api.command.annotated.SimpleAnnotatedCommandExecutorFactory;
 import org.spout.api.command.annotated.SimpleInjector;
-import org.spout.api.entity.controller.basic.PointObserver;
-import org.spout.api.entity.controller.type.ControllerType;
+import org.spout.api.component.components.NetworkComponent;
+import org.spout.api.component.components.ObserverComponent;
 import org.spout.api.exception.ConfigurationException;
+import org.spout.api.geo.LoadOption;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
 import org.spout.api.geo.discrete.Transform;
+import org.spout.api.gui.Screen;
+import org.spout.api.gui.Widget;
+import org.spout.api.gui.component.LabelComponent;
+import org.spout.api.gui.component.TexturedRectComponent;
 import org.spout.api.math.IntVector3;
 import org.spout.api.math.Quaternion;
+import org.spout.api.math.Rectangle;
 import org.spout.api.math.Vector3;
 import org.spout.api.plugin.CommonPlugin;
 import org.spout.api.plugin.Platform;
@@ -57,21 +66,23 @@ import org.spout.api.plugin.ServiceManager;
 import org.spout.api.plugin.services.ProtectionService;
 import org.spout.api.protocol.PortBinding;
 import org.spout.api.protocol.Protocol;
-import org.spout.api.scheduler.TaskPriority;
+import org.spout.api.render.Font;
+import org.spout.api.render.RenderMaterial;
 import org.spout.api.util.OutwardIterator;
 
 import org.spout.vanilla.command.AdministrationCommands;
 import org.spout.vanilla.command.TestCommands;
+import org.spout.vanilla.component.player.HUDComponent;
+import org.spout.vanilla.component.world.VanillaSky;
+import org.spout.vanilla.component.world.sky.NetherSky;
+import org.spout.vanilla.component.world.sky.NormalSky;
+import org.spout.vanilla.component.world.sky.TheEndSky;
 import org.spout.vanilla.configuration.VanillaConfiguration;
 import org.spout.vanilla.configuration.WorldConfigurationNode;
 import org.spout.vanilla.data.Difficulty;
 import org.spout.vanilla.data.Dimension;
 import org.spout.vanilla.data.GameMode;
 import org.spout.vanilla.data.VanillaData;
-import org.spout.vanilla.entity.world.VanillaSky;
-import org.spout.vanilla.entity.world.sky.NetherSky;
-import org.spout.vanilla.entity.world.sky.NormalSky;
-import org.spout.vanilla.entity.world.sky.TheEndSky;
 import org.spout.vanilla.inventory.recipe.VanillaRecipes;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
@@ -88,11 +99,13 @@ import org.spout.vanilla.service.protection.SpawnProtection;
 import org.spout.vanilla.thread.SpawnLoaderThread;
 import org.spout.vanilla.world.generator.VanillaGenerator;
 import org.spout.vanilla.world.generator.VanillaGenerators;
+import org.spout.vanilla.world.generator.nether.NetherGenerator;
+import org.spout.vanilla.world.generator.theend.TheEndGenerator;
 
 public class VanillaPlugin extends CommonPlugin {
 	private static final int LOADER_THREAD_COUNT = 16;
-	public static final int MINECRAFT_PROTOCOL_ID = 39;
-	public static final int VANILLA_PROTOCOL_ID = ControllerType.getProtocolId("org.spout.vanilla.protocol");
+	public static final int MINECRAFT_PROTOCOL_ID = 47;
+	public static final int VANILLA_PROTOCOL_ID = NetworkComponent.getProtocolId("org.spout.vanilla.protocol");
 	private static VanillaPlugin instance;
 	private Engine engine;
 	private VanillaConfiguration config;
@@ -139,7 +152,7 @@ public class VanillaPlugin extends CommonPlugin {
 		VanillaBlockMaterial.REDSTONE_POWER_MAX = (short) VanillaConfiguration.REDSTONE_MAX_RANGE.getInt();
 		VanillaBlockMaterial.REDSTONE_POWER_MIN = (short) VanillaConfiguration.REDSTONE_MIN_RANGE.getInt();
 
-		if (engine.getPlatform() == Platform.SERVER) {
+		if (engine.debugMode() || engine.getPlatform() == Platform.SERVER) {
 			//Worlds
 			setupWorlds();
 		}
@@ -151,7 +164,7 @@ public class VanillaPlugin extends CommonPlugin {
 			lanThread.start();
 		}
 
-		getLogger().info("v" + getDescription().getVersion() + " enabled. Protocol: " + getDescription().getData("protocol").get());
+		getLogger().info("v" + getDescription().getVersion() + " enabled. Protocol: " + getDescription().getData("protocol"));
 	}
 
 	@Override
@@ -165,8 +178,8 @@ public class VanillaPlugin extends CommonPlugin {
 
 		VanillaMaterials.initialize();
 		MapPalette.DEFAULT = (MapPalette) Spout.getFilesystem().getResource("mappalette://Vanilla/resources/map/mapColorPalette.dat");
-		RecipeYaml.DEFAULT = (RecipeYaml) Spout.getFilesystem().getResource("recipe://Vanilla/resources/recipes.yml");
-		VanillaRecipes.initialize();
+		//RecipeYaml.DEFAULT = (RecipeYaml) Spout.getFilesystem().getResource("recipe://Vanilla/resources/recipes.yml");
+		//VanillaRecipes.initialize();
 
 		getLogger().info("loaded");
 	}
@@ -241,7 +254,7 @@ public class VanillaPlugin extends CommonPlugin {
 			if (worldNode.LOAD.getBoolean()) {
 				// Obtain generator and start generating world
 				String generatorName = worldNode.GENERATOR.getString();
-				VanillaGenerator generator = VanillaGenerators.getGenerator(generatorName);
+				VanillaGenerator generator = VanillaGenerators.byName(generatorName);
 				if (generator == null) {
 					throw new IllegalArgumentException("Invalid generator name for world '" + worldNode.getWorldName() + "': " + generatorName);
 				}
@@ -309,28 +322,21 @@ public class VanillaPlugin extends CommonPlugin {
 				}
 			}
 
-			WorldConfigurationNode worldConfig = VanillaConfiguration.WORLDS.getOrCreate(world);
+			WorldConfigurationNode worldConfig = VanillaConfiguration.WORLDS.get(world);
 
 			// Keep spawn loaded
 			if (worldConfig.LOADED_SPAWN.getBoolean()) {
-				world.createAndSpawnEntity(point, new PointObserver(radius));
+				world.createAndSpawnEntity(point, ObserverComponent.class, LoadOption.LOAD_GEN);
 			}
 
-			//TODO Remove sky setting when Weather and Time are Region tasks.
-			// Sky
-			String skyType = worldConfig.SKY_TYPE.getString();
-			VanillaSky sky;
-			if (skyType.equalsIgnoreCase("normal")) {
-				sky = new NormalSky(world);
-			} else if (skyType.equalsIgnoreCase("nether")) {
-				sky = new NetherSky(world);
-			} else if (skyType.equalsIgnoreCase("the_end")) {
-				sky = new TheEndSky(world);
+			if (world.getGenerator() instanceof NetherGenerator) {
+				world.getComponentHolder().add(NetherSky.class).setHasWeather(false);
+			} else if (world.getGenerator() instanceof TheEndGenerator) {
+				world.getComponentHolder().add(TheEndSky.class).setHasWeather(false);
 			} else {
-				throw new IllegalArgumentException("Invalid sky type for world '" + world.getName() + "': " + skyType);
+				world.getComponentHolder().add(NormalSky.class);
 			}
-			world.getTaskManager().scheduleSyncRepeatingTask(this, sky, 50, 50, TaskPriority.NORMAL);
-			sky.onAttach();
+			VanillaSky sky = world.getComponentHolder().get(VanillaSky.class);
 		}
 	}
 

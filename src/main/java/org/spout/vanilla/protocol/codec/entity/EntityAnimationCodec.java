@@ -51,7 +51,7 @@ public final class EntityAnimationCodec extends MessageCodec<EntityAnimationMess
 	public ChannelBuffer encode(EntityAnimationMessage message) throws IOException {
 		ChannelBuffer buffer = ChannelBuffers.buffer(5);
 		buffer.writeInt(message.getEntityId());
-		buffer.writeByte(message.getAnimation());
+		buffer.writeByte(message.getAnimationId());
 		return buffer;
 	}
 }

@@ -26,78 +26,31 @@
  */
 package org.spout.vanilla.inventory.player;
 
-import org.spout.api.Spout;
-import org.spout.api.inventory.InventoryBase;
+import org.spout.api.inventory.Inventory;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventoryRange;
-import org.spout.api.inventory.special.InventorySlot;
 
-import org.spout.vanilla.entity.VanillaPlayerController;
-import org.spout.vanilla.event.player.PlayerSlotChangeEvent;
-
-public class PlayerQuickbar extends InventoryRange {
+public class PlayerQuickbar extends Inventory {
 	private static final long serialVersionUID = 1L;
-	public static final int QUICKBAR_SIZE = 9;
-	private final InventorySlot[] slots;
-	private final VanillaPlayerController owner;
+	public static final int SIZE = 9;
 	private int currentSlot = 0;
 
-	public PlayerQuickbar(VanillaPlayerController owner, InventoryBase main) {
-		super(main, 0, QUICKBAR_SIZE);
-		this.owner = owner;
-		this.slots = new InventorySlot[QUICKBAR_SIZE];
-		for (int i = 0; i < this.slots.length; i++) {
-			this.slots[i] = new InventorySlot(this, i);
-		}
+	public PlayerQuickbar() {
+		super(SIZE);
 	}
 
-	/**
-	 * Gets the inventory slot at a certain index
-	 * @param slot to obtain
-	 * @return the Inventory Slot
-	 */
-	public InventorySlot getSlotInventory(int slot) {
-		return this.slots[slot];
-	}
-
-	/**
-	 * Sets the quickbar slot index the player currently has selected
-	 * @param slotIndex to set to
-	 */
-	public void setCurrentSlot(int slotIndex) {
-		this.checkSlotRange(slotIndex);
-		this.currentSlot = Spout.getEventManager().callEvent(new PlayerSlotChangeEvent(this.owner.getParent(), this.currentSlot, slotIndex)).getNewSlotIndex();
-	}
-
-	/**
-	 * Gets the quickbar slot index the player currently has selected
-	 * @return slot index
-	 */
 	public int getCurrentSlot() {
-		return this.currentSlot;
+		return currentSlot;
 	}
 
-	/**
-	 * Sets the quickbar item the player currently has selected to the item
-	 * @param item to set to
-	 */
-	public void setCurrentItem(ItemStack item) {
-		this.setItem(this.getCurrentSlot(), item);
+	public void setCurrentSlot(int currentSlot) {
+		this.currentSlot = currentSlot;
 	}
 
-	/**
-	 * Gets the quickbar item the player currently has selected
-	 * @return slot item
-	 */
 	public ItemStack getCurrentItem() {
-		return this.getItem(this.getCurrentSlot());
+		return get(currentSlot);
 	}
 
-	/**
-	 * Gets the currently selected Inventory slot
-	 * @return the selected Inventory Slot
-	 */
-	public InventorySlot getCurrentSlotInventory() {
-		return this.slots[this.getCurrentSlot()];
+	public void setCurrentItem(ItemStack item) {
+		set(currentSlot, item);
 	}
 }

@@ -31,6 +31,8 @@ import java.lang.reflect.Modifier;
 
 import org.junit.Test;
 
+import org.spout.api.Spout;
+
 import org.spout.vanilla.material.VanillaMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.solid.Stone;
@@ -40,6 +42,7 @@ import static org.junit.Assert.fail;
 public class StaticInitialisationOrderTest {
 	@Test
 	public void materialStaticInitialisationTest() {
+		EngineFaker.setupEngine();
 		try {
 			new Stone("Test Stone", 87945);
 			VanillaMaterials.initialize();

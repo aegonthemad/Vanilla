@@ -159,8 +159,8 @@ public class OreObject extends RandomObject {
 							for (int z = startZ; z <= endZ; z++) {
 								float sizeZ = (z + 0.5f - seedZ) / size;
 								sizeZ *= sizeZ;
-								if (sizeX + sizeY + sizeZ < 1 && world.getBlockMaterial(x, y, z) == VanillaMaterials.STONE) {
-									world.setBlockMaterial(x, y, z, material, (short) 0, world);
+								if (sizeX + sizeY + sizeZ < 1 && world.getBlockMaterial(x, y, z).isMaterial(VanillaMaterials.STONE)) {
+									world.setBlockMaterial(x, y, z, material, (short) 0, null);
 								}
 							}
 						}

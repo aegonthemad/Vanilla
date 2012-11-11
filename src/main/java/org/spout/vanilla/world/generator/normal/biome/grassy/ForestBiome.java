@@ -41,9 +41,9 @@ import org.spout.vanilla.world.generator.object.VanillaObjects;
 public class ForestBiome extends GrassyBiome {
 	public ForestBiome(int biomeId) {
 		super(biomeId, new SandAndClayDecorator(), new TreeDecorator(new ForestTreeWGOFactory()),
-				new FlowerDecorator(), new TallGrassDecorator(new NormalTallGrassFactory(), (byte) 5),
+				new FlowerDecorator(), new TallGrassDecorator(new NormalTallGrassFactory(), (byte) 3),
 				new MushroomDecorator(), new SugarCaneDecorator(), new PumpkinDecorator());
-		setMinMax((byte) 64, (byte) 72);
+		setMinMax(51, 90);
 	}
 
 	@Override

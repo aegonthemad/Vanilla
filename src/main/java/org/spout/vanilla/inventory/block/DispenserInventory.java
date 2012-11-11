@@ -28,26 +28,14 @@ package org.spout.vanilla.inventory.block;
 
 import org.spout.api.inventory.Inventory;
 
-import org.spout.vanilla.entity.block.Dispenser;
-import org.spout.vanilla.inventory.VanillaInventory;
-
 /**
  * Represents a dispenser inventory belonging to a dispenser entity.
  */
-public class DispenserInventory extends Inventory implements VanillaInventory {
+public class DispenserInventory extends Inventory {
 	private static final long serialVersionUID = 1L;
-	private final Dispenser owner;
+	public static final int SIZE = 9;
 
-	public DispenserInventory(Dispenser owner) {
-		super(9);
-		this.owner = owner;
-	}
-
-	/**
-	 * Returns the dispenser entity that this inventory belongs to.
-	 * @return owner the dispenser entity
-	 */
-	public Dispenser getOwner() {
-		return owner;
+	public DispenserInventory() {
+		super(SIZE);
 	}
 }

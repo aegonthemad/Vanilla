@@ -29,9 +29,12 @@ package org.spout.vanilla.material.block.plant;
 import java.util.Random;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
+import org.spout.api.event.cause.EntityCause;
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.RandomBlockMaterial;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.CuboidEffectRange;
@@ -40,20 +43,20 @@ import org.spout.api.math.IntVector3;
 import org.spout.api.math.Vector3;
 import org.spout.api.util.BlockIterator;
 
+import org.spout.vanilla.component.misc.HeadComponent;
 import org.spout.vanilla.data.drops.flag.ToolTypeFlags;
-import org.spout.vanilla.entity.component.HeadOwner;
 import org.spout.vanilla.material.Burnable;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Plant;
 import org.spout.vanilla.material.block.Spreading;
 
-public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Burnable, RandomBlockMaterial {
+public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Burnable, DynamicMaterial {
 	private static final EffectRange VINE_RANGE = new CuboidEffectRange(-4, -1, -4, 4, 1, 4);
 	private static final int MAX_PER_GROUP = 5;
 
 	public Vines(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false);
 		this.setHardness(0.2F).setResistance(0.3F).setTransparent();
 		this.getDrops().DEFAULT.clear().add(this).addFlags(ToolTypeFlags.SHEARS);
@@ -130,7 +133,7 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 		if (block.getData() == 0) {
 			//check if there is a block above it can attach to, else destroy
 			if (!this.canAttachTo(above, BlockFace.BOTTOM)) {
-				this.onDestroy(block);
+				this.onDestroy(block, above.getMaterial().toCause(above));
 			}
 		}
 	}
@@ -146,12 +149,12 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 		return this.canAttachTo(block.getMaterial(), face);
 	}
 
-	public BlockFace getTracedFace(Block block) {
-		if (block.getMaterial().equals(VanillaMaterials.VINES) && block.getSource() instanceof Entity) {
+	public BlockFace getTracedFace(Block block, Cause<?> cause) {
+		if (block.getMaterial().equals(VanillaMaterials.VINES) && cause instanceof EntityCause) {
 			//get block by block tracing from the player view
-			Entity entity = (Entity) block.getSource();
-			if (entity.getController() instanceof HeadOwner) {
-				BlockIterator iter = ((HeadOwner) entity.getController()).getHead().getBlockView();
+			Entity entity = ((EntityCause) cause).getSource();
+			if (entity.has(HeadComponent.class)) {
+				BlockIterator iter = entity.get(HeadComponent.class).getBlockView();
 				Block next;
 				while (iter.hasNext()) {
 					next = iter.next();
@@ -203,10 +206,10 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short dat, BlockFace face, Vector3 clickedPos, boolean isClicked) {
+	public boolean onPlacement(Block block, short dat, BlockFace face, Vector3 clickedPos, boolean isClicked, Cause<?> cause) {
 		if (block.getMaterial().equals(VanillaMaterials.VINES)) {
 			if (isClicked) {
-				face = getTracedFace(block);
+				face = getTracedFace(block, cause);
 				if (face == null) {
 					return false;
 				}
@@ -238,7 +241,7 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 					return false;
 				}
 
-				block.setMaterial(VanillaMaterials.VINES);
+				block.setMaterial(VanillaMaterials.VINES, cause);
 				return true;
 
 			default:
@@ -250,7 +253,7 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 					return false;
 				}
 
-				block.setMaterial(VanillaMaterials.VINES);
+				block.setMaterial(VanillaMaterials.VINES, cause);
 				this.setFaceAttached(block, face, true);
 				return true;
 		}
@@ -262,7 +265,18 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 	}
 
 	@Override
-	public void onRandomTick(Block block) {
+	public EffectRange getDynamicRange() {
+		return EffectRange.THIS_AND_NEIGHBORS;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		//TODO : Delay before first grow
+		b.dynamicUpdate(10000 + currentTime);
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
 		Random rand = new Random(block.getWorld().getAge());
 		if (rand.nextInt(4) != 0) {
 			return;
@@ -375,5 +389,7 @@ public class Vines extends VanillaBlockMaterial implements Spreading, Plant, Bur
 				below.setDataBits(randomData);
 			}
 		}
+
+		block.dynamicUpdate(updateTime + 10000);
 	}
 }

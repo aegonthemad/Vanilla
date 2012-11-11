@@ -32,11 +32,11 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Ore;
-import org.spout.vanilla.material.block.controlled.SignBase;
+import org.spout.vanilla.material.block.component.SignBase;
 
 public class Glowstone extends Ore implements InitializableMaterial {
 	public Glowstone(String name, int id) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/glowstone/glowstone.spm");
 		this.setHardness(0.3F).setResistance(0.5F);
 	}
 

@@ -26,18 +26,12 @@
  */
 package org.spout.vanilla.world.generator.theend.biome;
 
-import org.spout.api.util.cuboid.CuboidShortBuffer;
-
-import org.spout.vanilla.world.generator.VanillaBiome;
+import org.spout.vanilla.world.generator.biome.VanillaBiome;
 import org.spout.vanilla.world.generator.theend.decorator.SpireDecorator;
 
 public class EndStoneBiome extends VanillaBiome {
 	public EndStoneBiome(int biomeId) {
 		super(biomeId, new SpireDecorator());
-	}
-
-	@Override
-	public void generateColumn(CuboidShortBuffer blockData, int x, int chunkY, int z) {
 	}
 
 	@Override

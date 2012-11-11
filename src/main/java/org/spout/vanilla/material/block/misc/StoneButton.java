@@ -27,6 +27,7 @@
 package org.spout.vanilla.material.block.misc;
 
 import org.spout.api.entity.Entity;
+import org.spout.api.event.Cause;
 import org.spout.api.event.player.PlayerInteractEvent.Action;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.geo.cuboid.Region;
@@ -36,17 +37,18 @@ import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.material.range.EffectRange;
 
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.RedstonePowerMode;
+import org.spout.vanilla.data.VanillaData;
 import org.spout.vanilla.data.effect.store.GeneralEffects;
 import org.spout.vanilla.material.block.AttachedRedstoneSource;
 import org.spout.vanilla.material.block.attachable.PointAttachable;
-import org.spout.vanilla.util.RedstonePowerMode;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
 public class StoneButton extends AttachedRedstoneSource implements PointAttachable, DynamicMaterial {
 	public static final int TICK_DELAY = 1000;
 
 	public StoneButton(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setAttachable(BlockFaces.NESW).setLiquidObstacle(false).setHardness(0.5F).setResistance(0.8F).setTransparent();
 	}
 
@@ -71,14 +73,14 @@ public class StoneButton extends AttachedRedstoneSource implements PointAttachab
 	@Override
 	public void onInteractBy(Entity entity, Block block, Action type, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, type, clickedFace);
-		if (type != Action.LEFT_CLICK || !VanillaPlayerUtil.isCreative(entity)) {
+		if (type != Action.LEFT_CLICK || !entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.CREATIVE)) {
 			this.setPressed(block, true);
 		}
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
-		block.setData((short) (BlockFaces.NSEW.indexOf(attachedFace, 3) + 1));
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
+		block.setData((short) (BlockFaces.NSEW.indexOf(attachedFace, 3) + 1), cause);
 	}
 
 	@Override
@@ -114,5 +116,10 @@ public class StoneButton extends AttachedRedstoneSource implements PointAttachab
 	@Override
 	public EffectRange getDynamicRange() {
 		return EffectRange.THIS;
+	}
+
+	@Override
+	public short getRedstonePowerStrength(short data) {
+		return ((data & 0x8) == 1) ? REDSTONE_POWER_MAX : REDSTONE_POWER_MIN;
 	}
 }

@@ -26,21 +26,22 @@
  */
 package org.spout.vanilla.material.block.solid;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
 import org.spout.api.math.Vector3;
 
+import org.spout.vanilla.data.tool.ToolType;
 import org.spout.vanilla.material.block.Directional;
 import org.spout.vanilla.material.block.Solid;
-import org.spout.vanilla.util.ToolType;
-import org.spout.vanilla.util.VanillaPlayerUtil;
+import org.spout.vanilla.util.PlayerUtil;
 
 public class Pumpkin extends Solid implements Directional {
 	private final boolean lantern;
 
 	public Pumpkin(String name, int id, boolean lantern) {
-		super(name, id);
+		super(name, id, "model://Vanilla/resources/materials/block/solid/pumpkin/pumpkin.spm");
 		this.lantern = lantern;
 		this.setHardness(1.0F).setResistance(1.7F).addMiningType(ToolType.AXE);
 	}
@@ -61,9 +62,9 @@ public class Pumpkin extends Solid implements Directional {
 	}
 
 	@Override
-	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock) {
-		if (super.onPlacement(block, data, against, clickedPos, isClickedBlock)) {
-			this.setFacing(block, VanillaPlayerUtil.getFacing(block.getSource()).getOpposite());
+	public boolean onPlacement(Block block, short data, BlockFace against, Vector3 clickedPos, boolean isClickedBlock, Cause<?> cause) {
+		if (super.onPlacement(block, data, against, clickedPos, isClickedBlock, cause)) {
+			this.setFacing(block, PlayerUtil.getFacing(cause).getOpposite());
 			return true;
 		}
 

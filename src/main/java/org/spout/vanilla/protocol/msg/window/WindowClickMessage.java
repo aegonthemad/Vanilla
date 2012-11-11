@@ -28,9 +28,13 @@ package org.spout.vanilla.protocol.msg.window;
 
 import org.spout.api.inventory.ItemStack;
 
+<<<<<<< HEAD
 import org.spout.nbt.CompoundMap;
 import org.spout.vanilla.protocol.msg.WindowMessage;
 import org.spout.vanilla.window.Window;
+=======
+import org.spout.vanilla.component.inventory.window.Window;
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 
 public final class WindowClickMessage extends WindowMessage {
 	private final int slot;
@@ -38,6 +42,7 @@ public final class WindowClickMessage extends WindowMessage {
 	private final int transaction;
 	private final CompoundMap item;
 
+<<<<<<< HEAD
 	public WindowClickMessage(
 	        int windowInstanceId, 
 	        int slot, 
@@ -52,6 +57,28 @@ public final class WindowClickMessage extends WindowMessage {
         this.shift = shift;
         this.item = item;
     }
+=======
+	public WindowClickMessage(Window window, int slot, boolean rightClick, int transaction, boolean shift) {
+		this(window.getId(), slot, rightClick, transaction, shift);
+	}
+
+	public WindowClickMessage(int windowInstanceId, int slot, boolean rightClick, int transaction, boolean shift) {
+		this(windowInstanceId, slot, rightClick, transaction, shift, null);
+	}
+
+	public WindowClickMessage(Window window, int slot, boolean rightClick, int transaction, boolean shift, ItemStack item) {
+		this(window.getId(), slot, rightClick, transaction, shift, item);
+	}
+
+	public WindowClickMessage(int windowInstanceId, int slot, boolean rightClick, int transaction, boolean shift, ItemStack item) {
+		super(windowInstanceId);
+		this.slot = slot;
+		this.rightClick = rightClick;
+		this.transaction = transaction;
+		this.shift = shift;
+		this.item = item;
+	}
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 
     public int getSlot() {
 		return slot;
@@ -69,7 +96,11 @@ public final class WindowClickMessage extends WindowMessage {
 		return transaction;
 	}
 
+<<<<<<< HEAD
 	public CompoundMap getItem() {
+=======
+	public ItemStack get() {
+>>>>>>> 43c4837603f8d11e79b43629e6d211aac83e5e42
 		return item;
 	}
 

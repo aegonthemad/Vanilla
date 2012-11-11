@@ -26,6 +26,7 @@
  */
 package org.spout.vanilla.material.block.misc;
 
+import org.spout.api.event.Cause;
 import org.spout.api.geo.cuboid.Block;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
@@ -34,13 +35,13 @@ import org.spout.vanilla.material.block.attachable.AbstractAttachable;
 
 public class Ladder extends AbstractAttachable {
 	public Ladder(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setAttachable(BlockFaces.WESN).setHardness(0.4F).setResistance(0.7F).setTransparent();
 	}
 
 	@Override
-	public void setAttachedFace(Block block, BlockFace attachedFace) {
-		block.setData((short) (BlockFaces.WESN.indexOf(attachedFace, 0) + 2));
+	public void setAttachedFace(Block block, BlockFace attachedFace, Cause<?> cause) {
+		block.setData((short) (BlockFaces.WESN.indexOf(attachedFace, 0) + 2), cause);
 	}
 
 	@Override

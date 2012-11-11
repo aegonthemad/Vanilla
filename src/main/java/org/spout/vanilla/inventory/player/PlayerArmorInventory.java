@@ -28,57 +28,80 @@ package org.spout.vanilla.inventory.player;
 
 import org.spout.api.inventory.Inventory;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventorySlot;
-
-import org.spout.vanilla.inventory.VanillaInventory;
 
 /**
- * Represents the four armor slots on a {@link PlayerInventory}.
+ * Represents the four armor slots on a {@link org.spout.vanilla.component.inventory.PlayerInventory}.
  */
-public class PlayerArmorInventory extends Inventory implements VanillaInventory {
+public class PlayerArmorInventory extends Inventory {
 	private static final long serialVersionUID = 1L;
-	private final InventorySlot helmet;
-	private final InventorySlot chestPlate;
-	private final InventorySlot leggings;
-	private final InventorySlot boots;
+	public static final int SIZE = 4;
+	public static final int BOOT_SLOT = 0, LEGGINGS_SLOT = 1, CHEST_PLATE_SLOT = 2, HELMET_SLOT = 3;
 
 	public PlayerArmorInventory() {
-		super(4);
-		this.helmet = new InventorySlot(this, 0);
-		this.chestPlate = new InventorySlot(this, 1);
-		this.leggings = new InventorySlot(this, 2);
-		this.boots = new InventorySlot(this, 3);
+		super(SIZE);
 	}
 
 	/**
-	 * Returns the current {@link ItemStack} in the helmet slot (slot 44) ; can return null.
-	 * @return helmet item stack
+	 * Returns the {@link ItemStack} in the boots slot.
+	 * @return boots
 	 */
-	public InventorySlot getHelmet() {
-		return this.helmet;
+	public ItemStack getBoots() {
+		return get(BOOT_SLOT);
 	}
 
 	/**
-	 * Returns the current {@link ItemStack} in the chest plate slot (slot 41) ; can return null.
-	 * @return chest plate item stack
+	 * Sets the {@link ItemStack} in the boots slot.
+	 * @param boots
 	 */
-	public InventorySlot getChestPlate() {
-		return this.chestPlate;
+	public void setBoots(ItemStack boots) {
+		set(BOOT_SLOT, boots);
 	}
 
 	/**
-	 * Returns the current {@link ItemStack} in the leggings slot (slot 37) ; can return null.
-	 * @return leggings item stack
+	 * Returns the {@link ItemStack} in the leggings slot.
+	 * @return leggings
 	 */
-	public InventorySlot getLeggings() {
-		return this.leggings;
+	public ItemStack getLeggings() {
+		return get(LEGGINGS_SLOT);
 	}
 
 	/**
-	 * Returns the current {@link ItemStack} in the boots slot (slot 36) ; can return null.
-	 * @return boots item stack
+	 * Sets the {@link ItemStack} in the leggings slot.
+	 * @param leggings
 	 */
-	public InventorySlot getBoots() {
-		return this.boots;
+	public void setLeggings(ItemStack leggings) {
+		set(LEGGINGS_SLOT, leggings);
+	}
+
+	/**
+	 * Returns the {@link ItemStack} in the chest plate slot.
+	 * @return chest plate
+	 */
+	public ItemStack getChestPlate() {
+		return get(CHEST_PLATE_SLOT);
+	}
+
+	/**
+	 * Sets the {@link ItemStack} in the chest plate slot.
+	 * @param chestPlate
+	 */
+	public void setChestPlate(ItemStack chestPlate) {
+		set(CHEST_PLATE_SLOT, chestPlate);
+	}
+
+	/**
+	 * Returns the {@link ItemStack} in the helmet slot
+	 * @return helmet
+	 */
+	public ItemStack getHelmet() {
+		return get(HELMET_SLOT);
+	}
+
+	/**
+	 * Sets the {@link ItemStack} in the helmet slot.
+	 * @param helmet
+	 */
+	public void setHelmet(ItemStack helmet) {
+		set(HELMET_SLOT, helmet);
 	}
 }

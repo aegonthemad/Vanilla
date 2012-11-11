@@ -26,119 +26,78 @@
  */
 package org.spout.vanilla.inventory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.spout.api.Spout;
 import org.spout.api.inventory.Inventory;
-import org.spout.api.inventory.InventoryBase;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.Recipe;
-import org.spout.api.inventory.RecipeManager;
-import org.spout.api.inventory.special.InventoryRange;
-import org.spout.api.inventory.special.InventorySlot;
-import org.spout.api.material.Material;
+import org.spout.api.inventory.shape.Grid;
+import org.spout.api.inventory.util.GridIterator;
 
-public class CraftingInventory extends Inventory implements VanillaInventory {
+/**
+ * Represents an inventory that contains a crafting matrix.
+ */
+public class CraftingInventory extends Inventory {
 	private static final long serialVersionUID = 1L;
-	private final int columns, rows;
-	private final InventorySlot output;
-	private final InventoryRange grid;
+	private final Grid grid;
+	private final int outputSlot, offset;
 
-	public CraftingInventory(int columns, int rows) {
-		super(columns * rows + 1);
-		this.columns = columns;
-		this.rows = rows;
-		this.grid = this.createRange(0, this.getSize() - 1);
-		this.output = this.createSlot(this.getSize() - 1);
+	public CraftingInventory(Grid grid, int outputSlot, int offset) {
+		super(grid.getSize() + 1);
+		this.grid = grid;
+		this.outputSlot = outputSlot;
+		this.offset = offset;
+	}
+
+	public CraftingInventory(Grid grid, int outputSlot) {
+		this(grid, outputSlot, 0);
+	}
+
+	public CraftingInventory(int length, int width, int outputSlot, int offset) {
+		this(new Grid(length, width), outputSlot, offset);
+	}
+
+	public CraftingInventory(int length, int width, int outputSlot) {
+		this(new Grid(length, width), outputSlot);
 	}
 
 	/**
-	 * Gets the output slot in the grid.
-	 * @return output slot
+	 * Returns the grid of the slots that will have the output slot updated.
+	 * @return grid of slots to trigger update
 	 */
-	public InventorySlot getOutput() {
-		return this.output;
+	public Grid getGrid() {
+		return grid;
 	}
 
 	/**
-	 * Gets the row size of the grid.
-	 * @return row size
+	 * Returns the slot to update when a slot is updated in the crafting grid.
+	 * @return slot to update
 	 */
-	public int getRowSize() {
-		return this.rows;
+	public int getOutputSlot() {
+		return outputSlot;
 	}
 
 	/**
-	 * Gets the column size of the grid.
-	 * @return column size
+	 * Returns the offset of the first slot in the crafting grid.
+	 * @return offset of grid
 	 */
-	public int getColumnSize() {
-		return this.columns;
-	}
-
-	/**
-	 * Gets the grid contained in this inventory
-	 * @return grid inventory range
-	 */
-	public InventoryRange getGrid() {
-		return this.grid;
+	public int getOffset() {
+		return offset;
 	}
 
 	@Override
 	public void onSlotChanged(int slot, ItemStack item) {
-		super.onSlotChanged(slot, item);
-		if (slot != this.getOutput().getOffset()) {
-			this.updateOutput();
+		GridIterator i = grid.iterator();
+		while (i.hasNext()) {
+			if (i.next() + offset == slot) {
+				updateOutput();
+				return;
+			}
 		}
 	}
 
 	/**
-	 * Crafts the current recipe, subtracting all the requirements from the crafting grid
+	 * Assesses the crafting matrix to determine if an {@link ItemStack} should
+	 * be crafted to the {@link #outputSlot};
 	 */
-	public void craft() {
-		for (int i = 0; i < this.getGrid().getSize(); i++) {
-			this.getGrid().addItemAmount(i, -1);
-		}
-	}
-
-	public boolean updateOutput() {
-		InventoryBase grid = this.getGrid();
-		int rowSize = this.getRowSize();
-		List<List<Material>> materials = new ArrayList<List<Material>>();
-		List<Material> current = new ArrayList<Material>();
-		List<Material> shapeless = new ArrayList<Material>();
-		int cntr = 0;
-		for (ItemStack item : grid) {
-			cntr++;
-			Material mat = null;
-			if (item != null) {
-				mat = item.getMaterial();
-			}
-			current.add(mat);
-			if (mat != null) {
-				shapeless.add(mat);
-			}
-			if (cntr >= rowSize) {
-				materials.add(current);
-				current = new ArrayList<Material>();
-				cntr = 0;
-			}
-		}
-		RecipeManager recipeManager = this.getRecipeManager();
-		Recipe recipe = recipeManager.matchShapedRecipe(materials);
-		if (recipe == null) {
-			recipe = recipeManager.matchShapelessRecipe(shapeless);
-		}
-		if (recipe != null) {
-			this.getOutput().setItem(recipe.getResult());
-			return true;
-		}
-		this.getOutput().setItem(null);
-		return false;
-	}
-
-	public RecipeManager getRecipeManager() {
-		return Spout.getEngine().getRecipeManager();
+	public void updateOutput() {
+		// TODO: Update output
 	}
 }

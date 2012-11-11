@@ -34,6 +34,9 @@ import org.spout.api.geo.cuboid.Block;
 import org.spout.api.inventory.ItemStack;
 import org.spout.api.material.block.BlockFace;
 
+/**
+ * Event which is called when a player fills or empties a bucket
+ */
 public class PlayerBucketEvent extends PlayerEvent implements Cancellable {
 	private static HandlerList handlers = new HandlerList();
 	private ItemStack bucket;
@@ -50,7 +53,7 @@ public class PlayerBucketEvent extends PlayerEvent implements Cancellable {
 
 	/**
 	 * Get the resulting bucket in hand after the bucket event.
-	 * @return Bucket held in hand after the event.
+	 * @return EmptyBucket held in hand after the event.
 	 */
 	public ItemStack getBucket() {
 		return bucket;

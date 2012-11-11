@@ -26,64 +26,34 @@
  */
 package org.spout.vanilla;
 
-import java.util.HashSet;
-
-import org.spout.api.chat.style.ChatStyle;
-import org.spout.api.entity.Controller;
-import org.spout.api.entity.Entity;
+import org.spout.api.Client;
+import org.spout.api.Spout;
+import org.spout.api.entity.Player;
 import org.spout.api.event.EventHandler;
 import org.spout.api.event.Listener;
 import org.spout.api.event.Order;
 import org.spout.api.event.Result;
-import org.spout.api.event.entity.EntitySpawnEvent;
+import org.spout.api.event.block.BlockChangeEvent;
+import org.spout.api.event.player.PlayerJoinEvent;
+import org.spout.api.event.server.ClientEnableEvent;
 import org.spout.api.event.server.permissions.PermissionNodeEvent;
-import org.spout.api.event.world.RegionLoadEvent;
-import org.spout.api.geo.cuboid.Region;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.scheduler.TaskPriority;
-
+import org.spout.vanilla.component.inventory.window.DefaultWindow;
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.component.misc.PickupItemComponent;
+import org.spout.vanilla.component.misc.SleepComponent;
+import org.spout.vanilla.component.player.HUDComponent;
+import org.spout.vanilla.component.player.PingComponent;
+import org.spout.vanilla.component.player.PlayerListComponent;
 import org.spout.vanilla.configuration.VanillaConfiguration;
-import org.spout.vanilla.configuration.WorldConfigurationNode;
-import org.spout.vanilla.entity.VanillaControllerTypes;
-import org.spout.vanilla.entity.creature.hostile.Ghast;
-import org.spout.vanilla.entity.creature.passive.Sheep;
-import org.spout.vanilla.entity.world.RegionSpawner;
-import org.spout.vanilla.event.player.PlayerDeathEvent;
-import org.spout.vanilla.material.VanillaMaterials;
+import org.spout.vanilla.event.block.RedstoneChangeEvent;
+import org.spout.vanilla.material.block.redstone.RedstoneSource;
 
 public class VanillaListener implements Listener {
 	private final VanillaPlugin plugin;
 
 	public VanillaListener(VanillaPlugin plugin) {
 		this.plugin = plugin;
-	}
-
-	@EventHandler
-	public void onRegionLoad(RegionLoadEvent event) {
-		Region region = event.getRegion();
-
-		RegionSpawner spawner = new RegionSpawner(region);
-		int taskId = region.getTaskManager().scheduleSyncRepeatingTask(plugin, spawner, 100, 100, TaskPriority.LOW);
-		spawner.setTaskId(taskId);
-		spawner.setTaskManager(region.getTaskManager());
-
-		WorldConfigurationNode worldConfig = VanillaConfiguration.WORLDS.getOrCreate(event.getWorld());
-		if (worldConfig.SPAWN_ANIMALS.getBoolean()) {
-			HashSet<BlockMaterial> grass = new HashSet<BlockMaterial>();
-			grass.add(VanillaMaterials.GRASS);
-			spawner.addSpawnableType(VanillaControllerTypes.SHEEP, grass, 5);
-
-			spawner.addSpawnableType(VanillaControllerTypes.PIG, grass, 5);
-
-			spawner.addSpawnableType(VanillaControllerTypes.COW, grass, 5);
-
-			spawner.addSpawnableType(VanillaControllerTypes.CHICKEN, grass, 5);
-		}
-		if (worldConfig.SPAWN_MONSTERS.getBoolean()) {
-			HashSet<BlockMaterial> endStone = new HashSet<BlockMaterial>();
-			endStone.add(VanillaMaterials.END_STONE);
-			spawner.addSpawnableType(VanillaControllerTypes.ENDERMAN, endStone, 7);
-		}
 	}
 
 	@EventHandler(order = Order.EARLIEST)
@@ -94,9 +64,60 @@ public class VanillaListener implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerDeath(PlayerDeathEvent event) {
-		if (VanillaConfiguration.HARDCORE_MODE.getBoolean()) {
-			event.getPlayer().ban(true, ChatStyle.RED, "Game Over");
+	public void onPlayerJoin(PlayerJoinEvent event) {
+		Player player = event.getPlayer();
+		player.add(Human.class).setName(player.getName());
+		player.add(DefaultWindow.class);
+		player.add(PlayerListComponent.class);
+		player.add(PingComponent.class);
+		player.add(PickupItemComponent.class);
+		player.add(SleepComponent.class);
+	}
+
+	@EventHandler
+	public void onClientEnable(ClientEnableEvent event) {
+		final HUDComponent HUD = ((Client) Spout.getEngine()).getActivePlayer().add(HUDComponent.class);
+		HUD.openHUD();
+	}
+
+	@EventHandler
+	public void onBlockChange(BlockChangeEvent event) {
+		if (event.isCancelled()) {
+			return;
+		}
+
+		if (RedstoneChangeEvent.getHandlerList().getRegisteredListeners().length == 0) {
+			return;
+		}
+
+		//Redstone event
+		BlockMaterial oldMat = event.getBlock().getMaterial();
+		BlockMaterial newMat = event.getSnapshot().getMaterial();
+		short prevData = event.getBlock().getData();
+		short newData = event.getSnapshot().getData();
+		//RedstoneChangeEvent
+		//Three possibilities here:
+		//1.) Redstone source material was placed, generating power
+		//2.) Redstone source material was removed, removing power
+		//3.) Redstone source material's data level changed, indicating change in power
+		short prevPower = -1;
+		short newPower =  -1;
+		if (!(oldMat instanceof RedstoneSource) && newMat instanceof RedstoneSource) {
+			prevPower = 0;
+			newPower = ((RedstoneSource)newMat).getRedstonePowerStrength(newData);
+		} else if (!(newMat instanceof RedstoneSource) && oldMat instanceof RedstoneSource) {
+			prevPower = ((RedstoneSource)oldMat).getRedstonePowerStrength(prevData);
+			newPower = 0;
+		} else if (newMat == oldMat && oldMat instanceof RedstoneSource) {
+			prevPower = ((RedstoneSource)oldMat).getRedstonePowerStrength(prevData);
+			newPower = ((RedstoneSource)newMat).getRedstonePowerStrength(newData);
+		}
+		if (prevPower != -1) {
+			RedstoneChangeEvent redstoneEvent = new RedstoneChangeEvent(event.getBlock(), event.getCause(), prevPower, newPower);
+			Spout.getEventManager().callEvent(redstoneEvent);
+			if (redstoneEvent.isCancelled()) {
+				event.setCancelled(true);
+			}
 		}
 	}
 }

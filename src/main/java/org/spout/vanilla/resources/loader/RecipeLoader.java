@@ -36,8 +36,8 @@ import java.util.logging.Level;
 
 import org.spout.api.Spout;
 import org.spout.api.exception.ConfigurationException;
-import org.spout.api.inventory.Recipe;
-import org.spout.api.inventory.RecipeBuilder;
+import org.spout.api.inventory.recipe.Recipe;
+import org.spout.api.inventory.recipe.RecipeBuilder;
 import org.spout.api.material.Material;
 import org.spout.api.material.MaterialRegistry;
 import org.spout.api.resource.BasicResourceLoader;
@@ -65,7 +65,7 @@ public class RecipeLoader extends BasicResourceLoader<RecipeYaml> {
 		for (String key : recipesNode.getKeys(false)) {
 			ConfigurationNode recipe = recipesNode.getNode(key);
 			RecipeBuilder builder = new RecipeBuilder();
-			builder.setIncludeData(recipe.getNode("includedata") != null && recipe.getNode("includedata").getBoolean() == true);
+			builder.setIncludeData(recipe.getNode("includedata") != null &&  recipe.getNode("includedata").getBoolean() == true);
 			String[] resultString = recipe.getNode("result").getString().split(",");
 			Material matched = MaterialRegistry.get(resultString[0]);
 			if (matched == null) {
@@ -86,9 +86,9 @@ public class RecipeLoader extends BasicResourceLoader<RecipeYaml> {
 						Spout.getLogger().log(Level.WARNING, "Unknown material ingredient: {0}", recipe.getNode("ingredients").getNode(inKey).getString());
 						continue;
 					}
-					builder.addIngredient(inKey.charAt(0), ingredient);
+					builder.setIngredient(inKey.charAt(0), ingredient);
 				}
-				for (Iterator<String> it = recipe.getNode("rows").getStringList().iterator(); it.hasNext(); ) {
+				for (Iterator<String> it = recipe.getNode("rows").getStringList().iterator(); it.hasNext();) {
 					String row = it.next();
 					List<Character> rowChars = new ArrayList<Character>();
 					for (char c : row.toCharArray()) {
@@ -100,17 +100,27 @@ public class RecipeLoader extends BasicResourceLoader<RecipeYaml> {
 					recipes.put(key, builder.buildShapedRecipe());
 				} catch (IllegalStateException ex) {
 					Spout.getLogger().log(Level.WARNING, "Error when adding recipe {0} because: {1}", new Object[]{key, ex.getMessage()});
+					
 				}
 			} else if (recipe.getNode("type").getString().equalsIgnoreCase("Shapeless")) {
 				for (String rowString : recipe.getNode("ingredients").getStringList(new ArrayList<String>())) {
 					Material ingredient = MaterialRegistry.get(rowString);
-					if (ingredient == null) {
-						continue;
-					}
+					if (ingredient == null) continue;
 					builder.addIngredient(ingredient);
 				}
 				try {
 					recipes.put(key, builder.buildShapelessRecipe());
+				} catch (IllegalStateException ex) {
+					Spout.getLogger().log(Level.WARNING, "Error when adding recipe {0} because: {1}", new Object[]{key, ex.getMessage()});
+				}
+			} else if (recipe.getNode("type").getString().equalsIgnoreCase("Smelted")) {
+				for (String rowString : recipe.getNode("ingredients").getStringList(new ArrayList<String>())) {
+					Material ingredient = MaterialRegistry.get(rowString);
+					if (ingredient == null) continue;
+					builder.addIngredient(ingredient);
+				}
+				try {
+					recipes.put(key, builder.buildSmeltedRecipe());
 				} catch (IllegalStateException ex) {
 					Spout.getLogger().log(Level.WARNING, "Error when adding recipe {0} because: {1}", new Object[]{key, ex.getMessage()});
 				}

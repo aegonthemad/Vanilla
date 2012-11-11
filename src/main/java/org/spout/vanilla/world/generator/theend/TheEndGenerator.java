@@ -37,29 +37,29 @@ import net.royawesome.jlibnoise.module.modifier.Turbulence;
 import net.royawesome.jlibnoise.module.source.Perlin;
 
 import org.spout.api.generator.WorldGeneratorUtils;
-import org.spout.api.generator.biome.BiomePopulator;
-import org.spout.api.generator.biome.selector.PerBlockBiomeSelector;
+import org.spout.api.generator.biome.BiomeManager;
 import org.spout.api.geo.World;
 import org.spout.api.geo.cuboid.Chunk;
 import org.spout.api.geo.discrete.Point;
+import org.spout.api.math.MathHelper;
+import org.spout.api.math.Vector3;
 import org.spout.api.util.cuboid.CuboidShortBuffer;
 
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Liquid;
-import org.spout.vanilla.world.generator.VanillaBiomeChunkGenerator;
-import org.spout.vanilla.world.generator.VanillaBiomes;
-import org.spout.vanilla.world.generator.VanillaGenerator;
+import org.spout.vanilla.world.generator.VanillaSingleBiomeGenerator;
+import org.spout.vanilla.world.generator.biome.VanillaBiomes;
 
-public class TheEndGenerator extends VanillaBiomeChunkGenerator implements VanillaGenerator {
-	public static final int HEIGHT = 128;
+public class TheEndGenerator extends VanillaSingleBiomeGenerator {
 	private static final int SEA_LEVEL = 63;
 	private static final int ISLAND_HEIGHT = 56;
 	private static final int ISLAND_OFFSET = 8;
 	private static final int ISLAND_RADIUS = 144;
-	private static final float ISLAND_TOTAL_OFFSET = ISLAND_OFFSET + ISLAND_HEIGHT / 2f;
-	private static final float ISLAND_HEIGHT_SCALE = ((float) ISLAND_RADIUS / (float) ISLAND_HEIGHT) * 2f;
+	private static final double ISLAND_TOTAL_OFFSET = ISLAND_OFFSET + ISLAND_HEIGHT / 2d;
+	private static final double ISLAND_HEIGHT_SCALE = ((double) ISLAND_RADIUS / (double) ISLAND_HEIGHT) * 2d;
+	public static final int HEIGHT = ((ISLAND_HEIGHT + ISLAND_OFFSET + 1) / 4) * 4 + 4;
 	// noise for generation
-	private static final Perlin BASE = new Perlin();
+	private static final Perlin ELEVATION = new Perlin();
 	private static final Perlin ROUGHNESS = new Perlin();
 	private static final Perlin DETAIL = new Perlin();
 	private static final Turbulence TURBULENCE = new Turbulence();
@@ -67,11 +67,11 @@ public class TheEndGenerator extends VanillaBiomeChunkGenerator implements Vanil
 	private static final Clamp FINAL = new Clamp();
 
 	static {
-		BASE.setFrequency(0.012);
-		BASE.setLacunarity(1);
-		BASE.setNoiseQuality(NoiseQuality.STANDARD);
-		BASE.setPersistence(0.7);
-		BASE.setOctaveCount(1);
+		ELEVATION.setFrequency(0.012);
+		ELEVATION.setLacunarity(1);
+		ELEVATION.setNoiseQuality(NoiseQuality.STANDARD);
+		ELEVATION.setPersistence(0.7);
+		ELEVATION.setOctaveCount(1);
 
 		ROUGHNESS.setFrequency(0.0318);
 		ROUGHNESS.setLacunarity(1);
@@ -91,7 +91,7 @@ public class TheEndGenerator extends VanillaBiomeChunkGenerator implements Vanil
 
 		final Add add = new Add();
 		add.SetSourceModule(0, multiply);
-		add.SetSourceModule(1, BASE);
+		add.SetSourceModule(1, ELEVATION);
 
 		TURBULENCE.SetSourceModule(0, add);
 		TURBULENCE.setFrequency(0.01);
@@ -102,20 +102,19 @@ public class TheEndGenerator extends VanillaBiomeChunkGenerator implements Vanil
 		SCALE.setxScale(0.7);
 		SCALE.setyScale(1);
 		SCALE.setzScale(0.7);
-		
+
 		FINAL.SetSourceModule(0, SCALE);
 		FINAL.setLowerBound(-1);
 		FINAL.setUpperBound(1);
 	}
 
 	public TheEndGenerator() {
-		super(HEIGHT, VanillaBiomes.ENDSTONE);
+		super(VanillaBiomes.ENDSTONE);
 	}
 
 	@Override
 	public void registerBiomes() {
-		setSelector(new PerBlockBiomeSelector(VanillaBiomes.ENDSTONE));
-		addPopulators(new BiomePopulator(getBiomeMap()));
+		super.registerBiomes();
 		register(VanillaBiomes.ENDSTONE);
 	}
 
@@ -125,25 +124,27 @@ public class TheEndGenerator extends VanillaBiomeChunkGenerator implements Vanil
 	}
 
 	@Override
-	protected void generateTerrain(CuboidShortBuffer blockData, int x, int y, int z) {
+	protected void generateTerrain(CuboidShortBuffer blockData, int x, int y, int z, BiomeManager biomes, long seed) {
 		if (x < -ISLAND_RADIUS || x > ISLAND_RADIUS
-				|| y < 0 || y > ISLAND_HEIGHT + ISLAND_OFFSET
+				|| y < 0 || y > HEIGHT
 				|| z < -ISLAND_RADIUS || z > ISLAND_RADIUS) {
 			return;
 		}
-		final int seed = (int) blockData.getWorld().getSeed();
-		BASE.setSeed(seed * 23);
-		ROUGHNESS.setSeed(seed * 29);
-		DETAIL.setSeed(seed * 17);
-		TURBULENCE.setSeed(seed * 53);
-		final int size = blockData.getSize().getFloorX();
-		final double[][][] densityNoise = WorldGeneratorUtils.fastNoise(FINAL, size, size, size, 4, x, y, z);
-		for (int xx = 0; xx < size; xx++) {
-			for (int yy = 0; yy < size; yy++) {
-				for (int zz = 0; zz < size; zz++) {
+		ELEVATION.setSeed((int) seed * 23);
+		ROUGHNESS.setSeed((int) seed * 29);
+		DETAIL.setSeed((int) seed * 17);
+		TURBULENCE.setSeed((int) seed * 53);
+		final Vector3 size = blockData.getSize();
+		final int sizeX = size.getFloorX();
+		final int sizeY = MathHelper.clamp(size.getFloorY(), 0, HEIGHT);
+		final int sizeZ = size.getFloorZ();
+		final double[][][] densityNoise = WorldGeneratorUtils.fastNoise(FINAL, sizeX, sizeY, sizeZ, 4, x, y, z);
+		for (int xx = 0; xx < sizeX; xx++) {
+			for (int yy = 0; yy < sizeY; yy++) {
+				for (int zz = 0; zz < sizeZ; zz++) {
 					final int totalX = x + xx;
 					final int totalY = y + yy;
-					final float distanceY = (totalY - ISLAND_TOTAL_OFFSET) * ISLAND_HEIGHT_SCALE;
+					final double distanceY = (totalY - ISLAND_TOTAL_OFFSET) * ISLAND_HEIGHT_SCALE;
 					final int totalZ = z + zz;
 					final double distance = Math.sqrt(totalX * totalX + distanceY * distanceY + totalZ * totalZ);
 					if (distance == 0) {

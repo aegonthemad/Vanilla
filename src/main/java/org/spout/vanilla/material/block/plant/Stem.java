@@ -31,26 +31,30 @@ import java.util.Random;
 import org.spout.api.entity.Entity;
 import org.spout.api.event.player.PlayerInteractEvent;
 import org.spout.api.geo.cuboid.Block;
+import org.spout.api.geo.cuboid.Region;
 import org.spout.api.inventory.ItemStack;
-import org.spout.api.inventory.special.InventorySlot;
 import org.spout.api.material.BlockMaterial;
-import org.spout.api.material.RandomBlockMaterial;
+import org.spout.api.material.DynamicMaterial;
 import org.spout.api.material.block.BlockFace;
 import org.spout.api.material.block.BlockFaces;
+import org.spout.api.material.range.EffectRange;
 
+import org.spout.vanilla.component.living.Human;
+import org.spout.vanilla.data.GameMode;
+import org.spout.vanilla.data.VanillaData;
+import org.spout.vanilla.inventory.player.PlayerQuickbar;
+import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.Crop;
 import org.spout.vanilla.material.block.Growing;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
 import org.spout.vanilla.material.item.misc.Dye;
-import org.spout.vanilla.util.VanillaBlockUtil;
-import org.spout.vanilla.util.VanillaPlayerUtil;
 
-public abstract class Stem extends GroundAttachable implements Growing, Crop, RandomBlockMaterial {
+public abstract class Stem extends GroundAttachable implements Growing, Crop, DynamicMaterial {
 	private BlockMaterial lastMaterial;
 
 	public Stem(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false);
 		this.setResistance(0.0F).setHardness(0.0F).setTransparent();
 	}
@@ -104,12 +108,12 @@ public abstract class Stem extends GroundAttachable implements Growing, Crop, Ra
 	@Override
 	public void onInteractBy(Entity entity, Block block, PlayerInteractEvent.Action type, BlockFace clickedFace) {
 		super.onInteractBy(entity, block, type, clickedFace);
-		InventorySlot inv = VanillaPlayerUtil.getCurrentSlot(entity);
-		ItemStack current = inv.getItem();
+		PlayerQuickbar inv = entity.get(Human.class).getInventory().getQuickbar();
+		ItemStack current = inv.getCurrentItem();
 		if (current != null && current.isMaterial(Dye.BONE_MEAL)) {
 			if (this.getGrowthStage(block) != 0x7) {
-				if (VanillaPlayerUtil.isSurvival(entity)) {
-					inv.addItemAmount(0, -1);
+				if (entity.getData().get(VanillaData.GAMEMODE).equals(GameMode.SURVIVAL)) {
+					inv.addAmount(0, -1);
 				}
 				this.setGrowthStage(block, 0x7);
 			}
@@ -117,11 +121,23 @@ public abstract class Stem extends GroundAttachable implements Growing, Crop, Ra
 	}
 
 	@Override
-	public void onRandomTick(Block block) {
+	public EffectRange getDynamicRange() {
+		return EffectRange.THIS_AND_NEIGHBORS;
+	}
+
+	@Override
+	public void onPlacement(Block b, Region r, long currentTime) {
+		//TODO : Delay before first grow
+		b.dynamicUpdate(10000 + currentTime);
+	}
+
+	@Override
+	public void onDynamicUpdate(Block block, Region region, long updateTime, int data) {
 		if (block.translate(BlockFace.TOP).getLight() < this.getMinimumLightToGrow()) {
+			block.dynamicUpdate(updateTime + 10000);
 			return;
 		}
-		int chance = VanillaBlockUtil.getCropGrowthChance(block) + 1;
+		int chance = VanillaBlockMaterial.getCropGrowthChance(block) + 1;
 		Random rand = new Random(block.getWorld().getAge());
 		if (rand.nextInt(chance) == 0) {
 			if (isFullyGrown(block)) {
@@ -141,5 +157,7 @@ public abstract class Stem extends GroundAttachable implements Growing, Crop, Ra
 				block.addData(1);
 			}
 		}
+
+		block.dynamicUpdate(updateTime + 10000);
 	}
 }

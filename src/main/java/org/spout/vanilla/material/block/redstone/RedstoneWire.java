@@ -36,11 +36,11 @@ import org.spout.api.material.range.ListEffectRange;
 import org.spout.api.material.range.PlusEffectRange;
 
 import org.spout.vanilla.configuration.VanillaConfiguration;
+import org.spout.vanilla.data.RedstonePowerMode;
 import org.spout.vanilla.material.InitializableMaterial;
 import org.spout.vanilla.material.VanillaBlockMaterial;
 import org.spout.vanilla.material.VanillaMaterials;
 import org.spout.vanilla.material.block.attachable.GroundAttachable;
-import org.spout.vanilla.util.RedstonePowerMode;
 import org.spout.vanilla.util.RedstoneUtil;
 
 public class RedstoneWire extends GroundAttachable implements RedstoneSource, RedstoneTarget, InitializableMaterial {
@@ -50,7 +50,7 @@ public class RedstoneWire extends GroundAttachable implements RedstoneSource, Re
 	private static final EffectRange maximumPhysicsRange = new PlusEffectRange(15, true);
 
 	public RedstoneWire(String name, int id) {
-		super(name, id);
+		super(name, id, (String)null);
 		this.setLiquidObstacle(false).setHardness(0.0F).setResistance(0.0F).setTransparent();
 	}
 
@@ -106,7 +106,7 @@ public class RedstoneWire extends GroundAttachable implements RedstoneSource, Re
 				block.setMaterial(this, receiving);
 			} else {
 				//Power became less, disable all attached wires and recalculate
-				block = block.getWorld().getBlock(block.getX(), block.getY(), block.getZ(), this);
+				block = block.getWorld().getBlock(block.getX(), block.getY(), block.getZ());
 				this.disableRedstone(block);
 				for (BlockFace face : BlockFaces.NESWB) {
 					this.disableRedstone(block.translate(face));
@@ -255,5 +255,10 @@ public class RedstoneWire extends GroundAttachable implements RedstoneSource, Re
 	@Override
 	public EffectRange getMaximumPhysicsRange(short data) {
 		return maximumPhysicsRange;
+	}
+
+	@Override
+	public short getRedstonePowerStrength(short data) {
+		return (short) (data & 0xF);
 	}
 }
